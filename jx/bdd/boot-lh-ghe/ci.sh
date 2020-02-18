@@ -29,7 +29,7 @@ git config --global --add user.email jenkins-x@googlegroups.com
 
 echo "running the BDD tests with JX_HOME = $JX_HOME"
 
-sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g boot-vault.platform.yaml.template > boot-vault.platform.yaml
+sed -e s/\$VERSION/${VERSION_PREFIX}${VERSION}/g -e s/\$CODECOV_TOKEN/${CODECOV_TOKEN}/g jx/bdd/boot-vault.platform.yaml.template > jx/bdd/boot-vault.platform.yaml
 
 # setup jx boot parameters
 export JX_VALUE_ADMINUSER_PASSWORD="$JENKINS_PASSWORD"
@@ -53,7 +53,7 @@ cp ../jx/bdd/boot-lh-ghe/jx-requirements.yml .
 cp ../jx/bdd/boot-lh-ghe/parameters.yaml env
 
 cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
-cat tmp.yaml ../boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
+cat tmp.yaml ../jx/bdd/boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
 rm tmp.yaml
 
 # TODO hack until we fix boot to do this too!
