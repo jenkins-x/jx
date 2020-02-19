@@ -173,6 +173,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 	po := &StepVerifyPackagesOptions{}
 	po.CommonOptions = o.CommonOptions
 	po.Packages = []string{"kubectl", "git", "helm"}
+	po.Dir = o.Dir
 	if !o.DisableVerifyPackages {
 		err = po.Run()
 		if err != nil {

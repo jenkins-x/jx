@@ -511,23 +511,17 @@ func NewRequirementsConfig() *RequirementsConfig {
 // if there is not a file called `jx-requirements.yml` in the given dir we will scan up the parent
 // directories looking for the requirements file as we often run 'jx' steps in sub directories.
 func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
-	fileName := RequirementsConfigFileName
-	if dir != "" {
-		fileName = filepath.Join(dir, fileName)
-	}
-
-	absolute, err := filepath.Abs(fileName)
+	absolute, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "creating absolute path")
 	}
-	sub := filepath.Dir(absolute)
-	for sub != "" && sub != "." && sub != "/" {
-		fileName = filepath.Join(sub, RequirementsConfigFileName)
+	for absolute != "" && absolute != "." && absolute != "/" {
+		fileName := filepath.Join(absolute, RequirementsConfigFileName)
 		config, err := LoadRequirementsConfigFile(fileName)
 		if err == nil {
 			return config, fileName, nil
 		}
-		sub = filepath.Dir(sub)
+		absolute = filepath.Dir(absolute)
 	}
 	return nil, "", errors.New("jx-requirements.yml file not found")
 }
@@ -542,7 +536,7 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+		return nil, fmt.Errorf("failed to load file %s due to %s", fileName, err)
 	}
 
 	validationErrors, err := util.ValidateYaml(config, data)
@@ -551,12 +545,12 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 	}
 
 	if len(validationErrors) > 0 {
-		return nil, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+		return nil, fmt.Errorf("validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
 	}
 
 	err = yaml.Unmarshal(data, config)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
+		return nil, fmt.Errorf("failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
 
 	config.addDefaults()
@@ -569,6 +563,7 @@ func GetRequirementsConfigFromTeamSettings(settings *v1.TeamSettings) (*Requirem
 	if settings == nil {
 		return nil, nil
 	}
+
 	// TeamSettings does not have a real value for BootRequirements, so this is probably not a boot cluster.
 	if settings.BootRequirements == "" {
 		return nil, nil

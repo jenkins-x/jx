@@ -3,11 +3,14 @@
 package config_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
@@ -355,4 +358,53 @@ func TestHelmfileRequirementValues(t *testing.T) {
 	assert.NoError(t, err, "failed to save file %s", file)
 	assert.FileExists(t, file)
 	assert.FileExists(t, valuesFile, "file %s should exist", valuesFile)
+}
+
+func Test_LoadRequirementsConfig(t *testing.T) {
+	t.Parallel()
+
+	var gitPublicTests = []struct {
+		requirementsPath   string
+		createRequirements bool
+	}{
+		{"a", false},
+		{"a/b", false},
+		{"a/b/c", false},
+		{"e", true},
+		{"e/f", true},
+		{"e/f/g", true},
+	}
+
+	for _, testCase := range gitPublicTests {
+		t.Run(testCase.requirementsPath, func(t *testing.T) {
+			dir, err := ioutil.TempDir("", "jx-test-load-requirements-config")
+			require.NoError(t, err, "failed to create tmp directory")
+			defer func() {
+				_ = os.RemoveAll(dir)
+			}()
+
+			testPath := filepath.Join(dir, testCase.requirementsPath)
+			err = os.MkdirAll(testPath, 0700)
+			require.NoError(t, err, "unable to create test path %s", testPath)
+
+			var expectedRequirementsFile string
+			if testCase.createRequirements {
+				expectedRequirementsFile = filepath.Join(testPath, config.RequirementsConfigFileName)
+				dummyRequirementsData := []byte("webhook: prow\n")
+				err := ioutil.WriteFile(expectedRequirementsFile, dummyRequirementsData, 0644)
+				require.NoError(t, err, "unable to write requirements file %s", expectedRequirementsFile)
+			}
+
+			requirements, requirementsFile, err := config.LoadRequirementsConfig(testPath)
+			if testCase.createRequirements {
+				require.NoError(t, err)
+				assert.Equal(t, expectedRequirementsFile, requirementsFile)
+				assert.Equal(t, fmt.Sprintf("%s", requirements.Webhook), "prow")
+			} else {
+				require.Error(t, err)
+				assert.Equal(t, "", requirementsFile)
+				assert.Nil(t, requirements)
+			}
+		})
+	}
 }
