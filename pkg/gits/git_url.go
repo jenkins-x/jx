@@ -77,6 +77,9 @@ func (i *GitRepository) HostURL() string {
 func (i *GitRepository) URLWithoutUser() string {
 	u := i.URL
 	if u != "" {
+		if strings.HasPrefix(u, gitPrefix) {
+			return u
+		}
 		u2, err := url.Parse(u)
 		if err == nil {
 			u2.User = nil
