@@ -4,7 +4,6 @@ clusters:
       - create
       - cluster
       - gke
-      - --tekton
       - --project-id=jenkins-x-bdd3
       - -m=n1-standard-2
       - --min-num-nodes=3
@@ -14,7 +13,8 @@ clusters:
     commands:
       - command: jx
         args:
-          - boot
+          - install
+          - --tekton
           - -b
       - command: jx
         args:
