@@ -595,45 +595,15 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	binary := o.Flags.JxBinary
 	args := cluster.Args
 
-	// lets modify the local requirements file if it exists
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Flags.Dir)
+	requirements, err := o.getTestSpecificRequirementsIfExists(cluster)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to generate test specific jx-requirements.yaml")
 	}
-	exists, err := util.FileExists(requirementsFile)
-	if err != nil {
-		return err
+	bootType := "using"
+	if requirements == nil {
+		bootType = "not using"
 	}
-	if exists {
-		// lets modify the version stream to use the PR
-		if o.Flags.VersionsRepoPr {
-			requirements.VersionStream.Ref = o.InstallOptions.Flags.VersionsGitRef
-			log.Logger().Infof("setting the jx-requirements.yml version stream ref to: %s\n", util.ColorInfo(requirements.VersionStream.Ref))
-		}
-		requirements.VersionStream.URL = o.InstallOptions.Flags.VersionsRepository
-
-		if cluster.Name != requirements.Cluster.ClusterName {
-			requirements.Cluster.ClusterName = cluster.Name
-
-			// lets ensure that there's git repositories setup
-			o.ensureTestEnvironmentRepoSetup(requirements, "staging")
-			o.ensureTestEnvironmentRepoSetup(requirements, "production")
-
-			err = requirements.SaveConfig(requirementsFile)
-			if err != nil {
-				return errors.Wrapf(err, "failed to save file %s after setting the cluster name to %s", requirementsFile, cluster.Name)
-			}
-			log.Logger().Infof("wrote file %s after setting the cluster name to %s\n", requirementsFile, cluster.Name)
-
-			data, err := ioutil.ReadFile(requirementsFile)
-			if err != nil {
-				return errors.Wrapf(err, "failed to load file %s", requirementsFile)
-			}
-			log.Logger().Infof("%s is:\n", requirementsFile)
-			log.Logger().Infof("%s\n", util.ColorStatus(string(data)))
-			log.Logger().Info("\n")
-		}
-	}
+	log.Logger().Infof("cluster creation is %s jx requirements", util.ColorInfo(bootType))
 
 	if cluster.Terraform {
 		// use the cluster name as the organisation name
@@ -771,6 +741,43 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	return err
 }
 
+func (o *StepBDDOptions) getTestSpecificRequirementsIfExists(cluster *CreateCluster) (*config.RequirementsConfig, error) {
+	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Flags.Dir)
+	if requirements == nil {
+		return nil, nil
+	}
+
+	// lets modify the version stream to use the PR
+	if o.Flags.VersionsRepoPr {
+		requirements.VersionStream.Ref = o.InstallOptions.Flags.VersionsGitRef
+		log.Logger().Infof("setting the jx-requirements.yml version stream ref to: %s\n", util.ColorInfo(requirements.VersionStream.Ref))
+	}
+	requirements.VersionStream.URL = o.InstallOptions.Flags.VersionsRepository
+
+	if cluster.Name != requirements.Cluster.ClusterName {
+		requirements.Cluster.ClusterName = cluster.Name
+
+		// lets ensure that there's git repositories setup
+		o.ensureTestEnvironmentRepoSetup(requirements, "staging")
+		o.ensureTestEnvironmentRepoSetup(requirements, "production")
+
+		err := requirements.SaveConfig(requirementsFile)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to save file %s after setting the cluster name to %s", requirementsFile, cluster.Name)
+		}
+		log.Logger().Infof("wrote file %s after setting the cluster name to %s\n", requirementsFile, cluster.Name)
+
+		data, err := ioutil.ReadFile(requirementsFile)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load file %s", requirementsFile)
+		}
+		log.Logger().Infof("%s is:\n", requirementsFile)
+		log.Logger().Infof("%s\n", util.ColorStatus(string(data)))
+		log.Logger().Info("\n")
+	}
+	return requirements, nil
+}
+
 func (o *StepBDDOptions) ensureTestEnvironmentRepoSetup(requirements *config.RequirementsConfig, envName string) {
 	idx := -1
 	for i, env := range requirements.Environments {
@@ -864,7 +871,7 @@ func (o *StepBDDOptions) getProvider(requirements *config.RequirementsConfig, cl
 		return requirements.Cluster.Provider, nil
 	}
 	if cluster != nil && len(cluster.Args) > 2 {
-		log.Logger().Infof("Determined that provider is %s from requirements file", cluster.Args[2])
+		log.Logger().Infof("Determined that provider is %s from CreateCluster config", cluster.Args[2])
 		return cluster.Args[2], nil
 	}
 	return "", fmt.Errorf("could not get provider from neither requirements nor cluster configuration yaml")
