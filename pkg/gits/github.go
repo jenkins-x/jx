@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util/trace"
+
 	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
@@ -48,6 +50,11 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter)
 		&oauth2.Token{AccessToken: user.ApiToken},
 	)
 	tc := oauth2.NewClient(ctx, ts)
+
+	traceGitHubAPI := os.Getenv("TRACE_GITHUB_API")
+	if traceGitHubAPI == "1" || traceGitHubAPI == "on" {
+		tc.Transport = &trace.Tracer{tc.Transport}
+	}
 
 	return newGitHubProviderFromOauthClient(tc, provider)
 }
