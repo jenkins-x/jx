@@ -389,6 +389,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			kind:         "release",
 			noKaniko:     true,
 		},
+		{
+			name:         "secret-in-pipelineconfig-env",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -419,6 +427,17 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				Name:      "jenkins-release-gpg",
 				Namespace: "jx",
 			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "some-secret",
+				Namespace: "jx",
+			},
+			Data: map[string][]byte{
+				"FIRST_KEY":  []byte("first value"),
+				"SECOND_KEY": []byte("second value"),
+			},
+			Type: corev1.SecretTypeOpaque,
 		},
 		// Dummy PVCs created for validation purposes
 		&corev1.PersistentVolumeClaim{
