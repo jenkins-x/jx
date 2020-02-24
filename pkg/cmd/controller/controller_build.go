@@ -42,6 +42,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
+const (
+	defaultTargetURLTemplate = "{{ .BaseURL }}/teams/{{ .Namespace }}/projects/{{ .Owner }}/{{ .Repository }}/{{ .Branch }}/{{ .Build }}"
+)
+
 // ControllerBuildOptions are the flags for the commands
 type ControllerBuildOptions struct {
 	ControllerOptions
@@ -51,6 +55,7 @@ type ControllerBuildOptions struct {
 	GitReporting        bool
 	TargetURLTemplate   string
 	FailIfNoGitProvider bool
+	JobURLBase          string
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 
@@ -128,8 +133,9 @@ func NewCmdControllerBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.FailIfNoGitProvider, "fail-on-git-provider-error", "", false, "If enable then lets terminate quickly if we cannot create a git provider")
 
 	// optional git reporting flags
-	cmd.Flags().StringVarP(&options.TargetURLTemplate, "target-url-template", "", "", "The Go template for generating the target URL of pipeline logs/views if git reporting is enabled")
+	cmd.Flags().StringVarP(&options.TargetURLTemplate, "target-url-template", "", "", "The Go template for generating the target URL of pipeline logs/views if git reporting is enabled. If unspecified, a default will be used based on `--job-url-base`.")
 	cmd.Flags().BoolVarP(&options.GitReporting, "git-reporting", "", false, "If enabled then lets report pipeline success/failures to the git provider. Note this is purely tactical until we can do this natively inside tekton")
+	cmd.Flags().StringVarP(&options.JobURLBase, "job-url-base", "", "", "The base URL, such as 'https://dashboard.jenkins-x.live', for generating the target URL for pipeline logs if git reporting is enabled.")
 	return cmd
 }
 
@@ -167,6 +173,9 @@ func (o *ControllerBuildOptions) Run() error {
 	if o.GitReporting {
 		if o.TargetURLTemplate == "" {
 			o.TargetURLTemplate = os.Getenv("TARGET_URL_TEMPLATE")
+		}
+		if o.TargetURLTemplate == "" {
+			o.TargetURLTemplate = defaultTargetURLTemplate
 		}
 	}
 
@@ -1268,18 +1277,36 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	if pipelineContext == "" {
 		pipelineContext = "jenkins-x"
 	}
+
+	var runningStages []string
+	for _, stage := range activity.Spec.Steps {
+		if stage.Kind == v1.ActivityStepKindTypeStage {
+			if stage.Stage.Status == v1.ActivityStatusTypeRunning {
+				runningStages = append(runningStages, stage.Stage.Name)
+			}
+		}
+	}
+
 	description := status
+
+	if len(runningStages) > 0 {
+		description = fmt.Sprintf("Running stage(s): %s", strings.Join(runningStages, ", "))
+	}
+
 	targetURL := CreateReportTargetURL(o.TargetURLTemplate, ReportParams{
 		Owner:      owner,
 		Repository: repo,
+		Branch:     activity.Spec.GitBranch,
 		Build:      activity.Spec.Build,
 		Context:    pipelineContext,
+		BaseURL:    strings.TrimRight(o.JobURLBase, "/"),
+		Namespace:  ns,
 	})
 	gitRepoStatus := &gits.GitRepoStatus{
 		State:       status,
 		Context:     pipelineContext,
 		Description: description,
-		URL:         targetURL,
+		TargetURL:   targetURL,
 	}
 
 	gitProvider, err := o.GitProviderForURL(gitURL, "git provider")
@@ -1298,7 +1325,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 
 // ReportParams contains the parameters for target URL templates
 type ReportParams struct {
-	Owner, Repository, Branch, Build, Context string
+	BaseURL, Owner, Repository, Branch, Build, Context, Namespace string
 }
 
 // CreateReportTargetURL creates the target URL for pipeline results/logs from a template
