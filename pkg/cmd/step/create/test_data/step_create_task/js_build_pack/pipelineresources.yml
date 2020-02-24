@@ -9,7 +9,7 @@ items:
     - name: revision
       value: v0.0.1
     - name: url
-      value: https://github.com/abayer/js-test-repo
+      value: https://github.com/abayer/js.test.repo
     type: git
   status: {}
 metadata: {}
