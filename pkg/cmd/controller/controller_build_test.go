@@ -151,9 +151,11 @@ func TestCreateReportTargetURL(t *testing.T) {
 		Branch:     "PR-5",
 		Build:      "3",
 		Context:    "jenkins-x",
+		Namespace:  "jx",
+		BaseURL:    "https://myconsole.acme.com",
 	}
-	actual := CreateReportTargetURL("https://myconsole.acme.com/{{ .Owner }}/{{ .Repository }}/{{ .Branch }}/{{ .Build }}", params)
-	assert.Equal(t, "https://myconsole.acme.com/jstrachan/myapp/PR-5/3", actual, "created git report URL for params %#v", params)
+	actual := CreateReportTargetURL(defaultTargetURLTemplate, params)
+	assert.Equal(t, "https://myconsole.acme.com/teams/jx/projects/jstrachan/myapp/PR-5/3", actual, "created git report URL for params %#v", params)
 }
 
 func TestUpdateForStagePreTekton051(t *testing.T) {
