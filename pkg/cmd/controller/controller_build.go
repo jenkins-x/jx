@@ -1223,7 +1223,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	repo := activity.Spec.GitRepository
 	gitURL := activity.Spec.GitURL
 	activityStatus := activity.Spec.Status
-	status := toScmStatus(activityStatus)
+	status, description := toScmStatusAndDescription(activityStatus)
 
 	fields := map[string]interface{}{
 		"name":        activity.Name,
@@ -1287,10 +1287,8 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		}
 	}
 
-	description := status
-
 	if len(runningStages) > 0 {
-		description = fmt.Sprintf("Running stage(s): %s", strings.Join(runningStages, ", "))
+		description = fmt.Sprintf("Pipeline running stage(s): %s", strings.Join(runningStages, ", "))
 	}
 
 	targetURL := CreateReportTargetURL(o.TargetURLTemplate, ReportParams{
@@ -1352,16 +1350,16 @@ func CreateReportTargetURL(templateText string, params ReportParams) string {
 	return buf.String()
 }
 
-func toScmStatus(status v1.ActivityStatusType) string {
+func toScmStatusAndDescription(status v1.ActivityStatusType) (string, string) {
 	switch status {
 	case v1.ActivityStatusTypeSucceeded:
-		return "success"
+		return "success", "Pipeline successful"
 	case v1.ActivityStatusTypeRunning, v1.ActivityStatusTypePending:
-		return "pending"
+		return "pending", "Pipeline running"
 	case v1.ActivityStatusTypeError:
-		return "error"
+		return "error", "Error executing pipeline"
 	default:
-		return "failure"
+		return "failure", "Pipeline failed"
 	}
 }
 
