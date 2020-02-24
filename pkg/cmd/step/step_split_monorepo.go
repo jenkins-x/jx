@@ -252,7 +252,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 			if strings.HasSuffix(name, ".yaml") {
 				appName := strings.TrimSuffix(name, ".yaml")
 				outPath := filepath.Join(outputDir, appName)
-				exists, err := util.FileExists(outPath)
+				exists, err := util.DirExists(outPath)
 				if err != nil {
 					return err
 				}
@@ -260,7 +260,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					// lets try strip "-deployment" from the file name
 					appName = strings.TrimSuffix(appName, "-deployment")
 					outPath = filepath.Join(outputDir, appName)
-					exists, err = util.FileExists(outPath)
+					exists, err = util.DirExists(outPath)
 					if err != nil {
 						return err
 					}

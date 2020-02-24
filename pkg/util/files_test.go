@@ -10,8 +10,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/magiconair/properties/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,14 +34,7 @@ func TestGlobFiles(t *testing.T) {
 	err := util.GlobAllFiles("", "test_data/glob_test/*", fn)
 	require.NoError(t, err)
 
-	for _, f := range files {
-		t.Logf("Processed file %s\n", f)
-	}
-
 	sort.Strings(files)
-
-	t.Logf("Found %d files\n", len(files))
-
 	expected := []string{
 		filepath.Join("test_data", "glob_test", "artifacts", "goodbye.txt"),
 		filepath.Join("test_data", "glob_test", "hello.txt"),
@@ -57,7 +51,6 @@ func TestDeleteDirContents(t *testing.T) {
 	defer func() {
 		err = os.RemoveAll(tmpDir)
 	}()
-	fmt.Printf("tmpDir=%s\n", tmpDir)
 
 	// Various types
 	var testFileNames = []string{
@@ -97,7 +90,6 @@ func TestDeleteDirContentsExcept(t *testing.T) {
 	defer func() {
 		err = os.RemoveAll(tmpDir)
 	}()
-	fmt.Printf("tmpDir=%s\n", tmpDir)
 
 	// Various types
 	var testFileNames = []string{
@@ -131,4 +123,39 @@ func TestDeleteDirContentsExcept(t *testing.T) {
 
 func TestToValidFileSystemName(t *testing.T) {
 	assert.Equal(t, util.ToValidFileSystemName("x.y/z"), "x_y_z")
+}
+
+func Test_FileExists_for_non_existing_file_returns_false(t *testing.T) {
+	exists, err := util.FileExists("/foo/bar")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+}
+
+func Test_FileExists_for_existing_file_returns_true(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "Test_FileExists_for_existing_file_returns_true")
+	require.NoError(t, err, "failed to create temporary directory")
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
+
+	data := []byte("hello\nworld\n")
+	testFile := filepath.Join(tmpDir, "hello.txt")
+	err = ioutil.WriteFile(testFile, data, 0644)
+	require.NoError(t, err, "failed to create test file %s", testFile)
+
+	exists, err := util.FileExists(testFile)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func Test_FileExists_for_existing_directory_returns_false(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "Test_FileExists_for_existing_file_returns_true")
+	require.NoError(t, err, "failed to create temporary directory")
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
+
+	exists, err := util.FileExists(tmpDir)
+	assert.NoError(t, err)
+	assert.False(t, exists)
 }

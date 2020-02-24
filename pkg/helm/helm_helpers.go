@@ -216,7 +216,7 @@ func findFileName(dir string, fileName string) (string, error) {
 	}
 	for _, d := range dirs {
 		name := filepath.Join(d, fileName)
-		exists, err := util.FileExists(d)
+		exists, err := util.DirExists(d)
 		if err != nil {
 			return "", err
 		}
@@ -224,7 +224,7 @@ func findFileName(dir string, fileName string) (string, error) {
 			return name, nil
 		}
 	}
-	return "", fmt.Errorf("Could not deduce the default requirements.yaml file name")
+	return "", fmt.Errorf("could not deduce the default requirements.yaml file name")
 }
 
 // LoadRequirementsFile loads the requirements file or creates empty requirements if the file does not exist

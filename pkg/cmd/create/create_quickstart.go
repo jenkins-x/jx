@@ -199,7 +199,7 @@ func (o *CreateQuickstartOptions) CreateQuickStart(q *quickstarts.QuickstartForm
 	}
 	if folder != "" {
 		chartsDir := filepath.Join(genDir, "charts", folder)
-		exists, err := util.FileExists(chartsDir)
+		exists, err := util.DirExists(chartsDir)
 		if err != nil {
 			return err
 		}

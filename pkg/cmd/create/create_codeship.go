@@ -260,7 +260,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		fmt.Fprintf(o.Out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		dir = path.Join(organisationDir, details.RepoName)
-		localDirExists, err := util.FileExists(dir)
+		localDirExists, err := util.DirExists(dir)
 		if err != nil {
 			return err
 		}

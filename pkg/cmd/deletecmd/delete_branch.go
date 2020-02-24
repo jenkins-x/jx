@@ -246,7 +246,7 @@ func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, git
 	dir := filepath.Join(environmentsDir, org, repo)
 
 	// now lets clone the fork and push it...
-	exists, err := util.FileExists(dir)
+	exists, err := util.DirExists(dir)
 	if err != nil {
 		return dir, err
 	}

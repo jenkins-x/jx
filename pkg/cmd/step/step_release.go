@@ -201,7 +201,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 
 	chartsDir := filepath.Join("charts", o.Application)
-	chartExists, err := util.FileExists(chartsDir)
+	chartExists, err := util.DirExists(chartsDir)
 	if err != nil {
 		return fmt.Errorf("Failed to find chart folder: %s", err)
 	}

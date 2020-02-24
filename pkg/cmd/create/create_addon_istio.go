@@ -104,7 +104,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 			return err
 		}
 		chartDir := filepath.Join(dir, kube.ChartIstio)
-		exists, err := util.FileExists(chartDir)
+		exists, err := util.DirExists(chartDir)
 		if !exists {
 			return fmt.Errorf("Could not find folder %s inside istio clone at %s", kube.ChartIstio, dir)
 		}

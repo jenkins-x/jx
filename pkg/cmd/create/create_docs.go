@@ -84,7 +84,7 @@ func NewCmdCreateDocs(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *CreateDocsOptions) Run(jxCommand *cobra.Command) error {
 	dir := o.Dir
 
-	exists, err := util.FileExists(dir)
+	exists, err := util.DirExists(dir)
 	if err != nil {
 		return errors.Wrapf(err, "checking whether the file %q exists", dir)
 	}

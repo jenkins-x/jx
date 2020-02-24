@@ -318,7 +318,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 		fmt.Fprintf(o.Out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		dir = path.Join(backupDir, details.RepoName)
-		localDirExists, err := util.FileExists(dir)
+		localDirExists, err := util.DirExists(dir)
 		if err != nil {
 			return "", err
 		}
