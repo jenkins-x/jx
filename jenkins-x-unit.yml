@@ -36,17 +36,5 @@ pipelineConfig:
                     cpu: 3
                     memory: 3072Mi
             steps:
-              - name: init-jx
-                image: gcr.io/jenkinsxio/builder-jx:0.1.639
-                command: jx
-                args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
-
-              - name: build
-                image: docker.io/golang:1.12.13
-                command: make
-                args: ['build']
-
-              - name: unit-test
-                image: docker.io/golang:1.12.13
-                command: make
-                args: ['test']
+              - name: do-nothing
+                sh: echo "nothing"

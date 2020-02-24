@@ -1197,6 +1197,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		return
 	}
 
+	log.Logger().Warnf("Reporting for %s", activity.Name)
 	sha := activity.Spec.LastCommitSHA
 	if sha == "" {
 		sha = pri.LastCommitSHA
@@ -1268,7 +1269,19 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	if pipelineContext == "" {
 		pipelineContext = "jenkins-x"
 	}
+
+	var runningStages []string
+	for _, stage := range activity.Spec.Steps {
+		if stage.Kind == v1.ActivityStepKindTypeStage {
+			if stage.Stage.StartedTimestamp != nil && stage.Stage.CompletedTimestamp == nil {
+				runningStages = append(runningStages, stage.Stage.Name)
+			}
+		}
+	}
 	description := status
+	if len(runningStages) > 0 {
+		description = fmt.Sprintf("Running stage(s): %s", strings.Join(runningStages, ", "))
+	}
 	targetURL := CreateReportTargetURL(o.TargetURLTemplate, ReportParams{
 		Owner:      owner,
 		Repository: repo,
@@ -1282,6 +1295,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		URL:         targetURL,
 	}
 
+	log.Logger().Warnf("For activity %s, url is %s", activity.Name, targetURL)
 	gitProvider, err := o.GitProviderForURL(gitURL, "git provider")
 	if err != nil {
 		log.Logger().WithFields(fields).WithError(err).Warnf("failed to create git provider")
