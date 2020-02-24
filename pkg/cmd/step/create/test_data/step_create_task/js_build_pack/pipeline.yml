@@ -7,7 +7,7 @@ metadata:
     build: "1"
     jenkins.io/pipelineType: build
     owner: abayer
-    repository: js-test-repo
+    repository: js.test.repo
   name: abayer-js-test-repo-build-pack-9l9zj-1
   namespace: jx
 spec:

@@ -86,7 +86,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		{
 			name:         "js_build_pack",
 			language:     "javascript",
-			repoName:     "js-test-repo",
+			repoName:     "js.test.repo",
 			organization: "abayer",
 			branch:       "build-pack",
 			kind:         "release",
