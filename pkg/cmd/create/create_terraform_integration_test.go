@@ -85,17 +85,17 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 	t.Logf("Generated cluster definitions %s", clusterDefinitions)
 
 	testDir1 := path.Join(dir, "clusters", "foo", "terraform")
-	exists, err := util.FileExists(testDir1)
+	exists, err := util.DirExists(testDir1)
 	assert.NoError(t, err)
 	assert.True(t, exists, "Directory clusters/foo/terraform should exist")
 
 	testDir1NoGit := path.Join(testDir1, ".git")
-	exists, err = util.FileExists(testDir1NoGit)
+	exists, err = util.DirExists(testDir1NoGit)
 	assert.NoError(t, err)
 	assert.False(t, exists, "Directory clusters/foo/terraform/.git should not exist")
 
 	testDir2 := path.Join(dir, "clusters", "bar", "terraform")
-	exists, err = util.FileExists(testDir2)
+	exists, err = util.DirExists(testDir2)
 	assert.NoError(t, err)
 	assert.True(t, exists, "Directory clusters/bar/terraform should exist")
 

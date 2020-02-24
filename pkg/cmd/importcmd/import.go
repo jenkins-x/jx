@@ -1358,7 +1358,7 @@ func (options *ImportOptions) renameChartToMatchAppName() error {
 	var oldChartsDir string
 	dir := options.Dir
 	chartsDir := filepath.Join(dir, "charts")
-	exists, err := util.FileExists(chartsDir)
+	exists, err := util.DirExists(chartsDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if the charts directory exists %s", chartsDir)
 	}
@@ -1383,7 +1383,7 @@ func (options *ImportOptions) renameChartToMatchAppName() error {
 		// chart expects folder name to be the same as app name
 		newChartsDir := filepath.Join(dir, "charts", options.AppName)
 
-		exists, err := util.FileExists(oldChartsDir)
+		exists, err := util.DirExists(oldChartsDir)
 		if err != nil {
 			return err
 		}
@@ -1529,7 +1529,7 @@ func (options *ImportOptions) fixMaven() error {
 			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
 		}
 		if !options.DryRun {
-			exists, err := util.FileExists(filepath.Join(dir, "charts"))
+			exists, err := util.DirExists(filepath.Join(dir, "charts"))
 			if err != nil {
 				return err
 			}

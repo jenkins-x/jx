@@ -450,7 +450,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 	var dir string
 
 	if options.Flags.LocalOrganisationRepository != "" {
-		exists, err := util.FileExists(options.Flags.LocalOrganisationRepository)
+		exists, err := util.DirExists(options.Flags.LocalOrganisationRepository)
 		if err != nil {
 			return err
 		}
@@ -509,7 +509,7 @@ func (options *TerraformGKEOptions) createOrganisationGitRepo() error {
 			log.Logger().Infof("Git repository %s/%s already exists", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 			dir = path.Join(organisationDir, details.RepoName)
-			localDirExists, err := util.FileExists(dir)
+			localDirExists, err := util.DirExists(dir)
 			if err != nil {
 				return err
 			}
@@ -602,7 +602,7 @@ func (options *TerraformGKEOptions) CreateOrganisationFolderStructure(dir string
 	log.Logger().Infof("Creating config for cluster %s", util.ColorInfo(c.Name()))
 
 	path := filepath.Join(dir, Clusters, c.Name(), Terraform)
-	exists, err := util.FileExists(path)
+	exists, err := util.DirExists(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
 	}

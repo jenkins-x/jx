@@ -203,7 +203,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 	if err != nil {
 		return "", err
 	}
-	exists, err := util.FileExists(filepath.Join(dir, "env"))
+	exists, err := util.DirExists(filepath.Join(dir, "env"))
 	if err != nil {
 		return "", err
 	}

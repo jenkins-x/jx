@@ -200,7 +200,7 @@ func (o *BootOptions) Run() error {
 			}
 		}
 
-		bootCloneExists, err := util.FileExists(cloneDir)
+		bootCloneExists, err := util.DirExists(cloneDir)
 		if err != nil {
 			return err
 		}

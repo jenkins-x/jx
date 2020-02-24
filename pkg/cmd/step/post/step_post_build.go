@@ -213,7 +213,7 @@ func (o *StepPostBuildOptions) addImageIDtoHelmValues(imageID string) error {
 	}
 
 	charts := filepath.Join(pwd, "charts")
-	exists, err := util.FileExists(charts)
+	exists, err := util.DirExists(charts)
 	if err != nil {
 		return err
 	}

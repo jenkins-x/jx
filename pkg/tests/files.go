@@ -85,6 +85,33 @@ func AssertFilesExist(t *testing.T, expected bool, paths ...string) {
 	}
 }
 
+// AssertDirsExist asserts that the list of directory paths either exist or don't exist
+func AssertDirsExist(t *testing.T, expected bool, paths ...string) {
+	for _, path := range paths {
+		if expected {
+			AssertDirExists(t, path)
+		} else {
+			AssertDirDoesNotExist(t, path)
+		}
+	}
+}
+
+// AssertDirExists asserts that the given directory exists
+func AssertDirExists(t *testing.T, dir string) bool {
+	exists, err := util.DirExists(dir)
+	assert.NoError(t, err, "Failed checking if directory exists %s", dir)
+	assert.True(t, exists, "directory %s should exist", dir)
+	return exists
+}
+
+// AssertDirDoesNotExist asserts that the given directory does not exist
+func AssertDirDoesNotExist(t *testing.T, dir string) bool {
+	exists, err := util.DirExists(dir)
+	assert.NoError(t, err, "failed checking if directory exists %s", dir)
+	assert.False(t, exists, "directory %s should not exist", dir)
+	return exists
+}
+
 func AssertEqualFileText(t *testing.T, expectedFile string, actualFile string) error {
 	expectedText, err := AssertLoadFileText(t, expectedFile)
 	if err != nil {

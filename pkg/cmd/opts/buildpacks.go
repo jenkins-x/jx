@@ -94,7 +94,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	if len(customDraftPack) > 0 {
 		log.Logger().Infof("trying to use draft pack: %s", customDraftPack)
 		lpack = filepath.Join(packsDir, customDraftPack)
-		f, err := util.FileExists(lpack)
+		f, err := util.DirExists(lpack)
 		if err != nil {
 			log.Logger().Error(err.Error())
 			return "", err
@@ -113,7 +113,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 			}
 			lpack = filepath.Join(packsDir, pack)
 
-			exists, _ = util.FileExists(lpack)
+			exists, _ = util.DirExists(lpack)
 			if !exists {
 				log.Logger().Warn("defaulting to maven pack")
 				lpack = filepath.Join(packsDir, "maven")
@@ -208,7 +208,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	if err != nil {
 		return draftPack, err
 	}
-	exists, err := util.FileExists(chartsDir)
+	exists, err := util.DirExists(chartsDir)
 	if exists && err == nil {
 		exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
 		if exists && err == nil {
@@ -238,7 +238,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	}
 
 	// lets delete empty charts dir if a draft pack created one
-	exists, err = util.FileExists(chartsDir)
+	exists, err = util.DirExists(chartsDir)
 	if err == nil && exists {
 		files, err := ioutil.ReadDir(chartsDir)
 		if err != nil {

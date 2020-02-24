@@ -36,14 +36,14 @@ type IOFileHandles struct {
 
 // FileExists checks if path exists and is a file
 func FileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+	fileInfo, err := os.Stat(path)
 	if err == nil {
-		return true, nil
+		return !fileInfo.IsDir(), nil
 	}
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return true, errors.Wrapf(err, "failed to check if file exists %s", path)
+	return false, errors.Wrapf(err, "failed to check if file exists %s", path)
 }
 
 // DirExists checks if path exists and is a directory

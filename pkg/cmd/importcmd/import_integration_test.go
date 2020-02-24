@@ -209,7 +209,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	}
 
 	err := o.Run()
-	assert.NoError(t, err, "Failed %s with %s", dirName, err)
+	require.NoError(t, err, "Failed %s with %s", dirName, err)
 	if err == nil {
 		defaultJenkinsfileName := jenkinsfile.Name
 		defaultJenkinsfileBackupSuffix := jenkinsfile.BackupSuffix
@@ -261,8 +261,6 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 				if withRename {
 					tests.AssertFileExists(t, defaultJenkinsfile)
 					tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
-				} else if strings.HasSuffix(testcase, gitSuffix) {
-					tests.AssertFileDoesNotExist(t, jfname+defaultJenkinsfileBackupSuffix)
 				} else {
 					tests.AssertFileExists(t, jfname+defaultJenkinsfileBackupSuffix)
 					tests.AssertFileContains(t, jfname+defaultJenkinsfileBackupSuffix, "THIS IS OLD!")

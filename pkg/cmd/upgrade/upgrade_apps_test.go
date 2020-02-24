@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 
@@ -73,20 +75,24 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	}, testOptions.MockHelmer)
 
 	err = o.Run()
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	// Validate a PR was created
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	// Validate the PR has the right title, message
 	assert.Equal(t, fmt.Sprintf("Upgrade %s to %s", name, newVersion.String()), pr.Title)
 	assert.Equal(t, fmt.Sprintf("Upgrade %s from %s to %s", name, version, newVersion.String()), pr.Body)
+
 	// Validate the branch name
 	branchName, err := o.Git().Branch(devEnvDir)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	found := make([]*helm.Dependency, 0)
 	for _, d := range requirements.Dependencies {
 		if d.Name == name && d.Alias == alias {

@@ -892,7 +892,7 @@ func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
 
 func (o *PromoteOptions) verifyHelmConfigured() error {
 	helmHomeDir := filepath.Join(util.HomeDir(), ".helm")
-	exists, err := util.FileExists(helmHomeDir)
+	exists, err := util.DirExists(helmHomeDir)
 	if err != nil {
 		return err
 	}

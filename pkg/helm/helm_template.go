@@ -328,7 +328,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 
 	// check if we are installing a chart from the filesystem
 	chartDir := filepath.Join(h.CWD, chart)
-	exists, err := util.FileExists(chartDir)
+	exists, err := util.DirExists(chartDir)
 	if err != nil {
 		return err
 	}
