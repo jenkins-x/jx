@@ -406,18 +406,17 @@ func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, st
 		return nil, "", errors.Wrap(err, "getting the team setting from the cluster")
 	}
 
-	// TODO To stay backwards compatible with code after fixing #6653, we need to create a dummy RequirementsConfig here
-	// TODO This is a special case for static master and needs to be removed (HF)
-	if !teamSettings.IsJenkinsXPipelines() {
+	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting the requirements from team settings")
+	}
+	// TODO: Workaround for non-boot clusters. Remove when we get rid of jx install. (APB)
+	if requirements == nil {
 		requirements = config.NewRequirementsConfig()
 		requirementsFileName = config.RequirementsConfigFileName
 		return requirements, requirementsFileName, nil
 	}
 
-	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings)
-	if err != nil {
-		return nil, "", errors.Wrap(err, "getting the requirements from team settings")
-	}
 	return requirements, "", nil
 }
 
