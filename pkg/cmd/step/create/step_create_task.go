@@ -326,7 +326,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	log.Logger().Debug("Setting build version")
-	err = o.setBuildVersion(effectiveProjectConfig.PipelineConfig)
+	err = o.setBuildVersion(effectiveProjectConfig)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
@@ -1282,10 +1282,11 @@ func getVersionFromFile(dir string) (string, error) {
 	return "", errors.New("failed to read file " + versionFile)
 }
 
-func (o *StepCreateTaskOptions) setBuildVersion(pipelineConfig *jenkinsfile.PipelineConfig) error {
-	if o.NoReleasePrepare || o.ViewSteps || o.EffectivePipeline {
+func (o *StepCreateTaskOptions) setBuildVersion(projectConfig *config.ProjectConfig) error {
+	if o.NoReleasePrepare || o.ViewSteps || o.EffectivePipeline || projectConfig.NoReleasePrepare {
 		return nil
 	}
+	pipelineConfig := projectConfig.PipelineConfig
 	version := ""
 
 	if o.DryRun {
