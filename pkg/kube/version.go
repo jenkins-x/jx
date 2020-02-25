@@ -122,17 +122,18 @@ func GetAppName(name string, namespaces ...string) string {
 			prefix := ns + "-"
 			if strings.HasPrefix(name, prefix) {
 				name = strings.TrimPrefix(name, prefix)
-
-				// we often have the app name repeated twice!
-				l := len(name) / 2
-				if name[l] == '-' {
-					first := name[0:l]
-					if name[l+1:] == first {
-						return first
-					}
-				}
 			}
 		}
+
+		// we often have the app name repeated twice - particularly when using helm 3
+		l := len(name) / 2
+		if name[l] == '-' {
+			first := name[0:l]
+			if name[l+1:] == first {
+				return first
+			}
+		}
+
 		// The applications seems to be prefixed with jx regardless of the namespace
 		// where they are deployed. Let's remove this prefix.
 		prefix := "jx-"
