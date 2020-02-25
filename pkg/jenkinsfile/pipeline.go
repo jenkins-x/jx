@@ -933,6 +933,10 @@ func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments
 	// If agent.container is specified, use that for default container configuration for step images.
 	containerName := c.Agent.GetImage()
 	if containerName != "" {
+		gcrRemoved := strings.TrimPrefix(containerName, "gcr.io/jenkinsxio/builder-")
+		if containerName != gcrRemoved {
+			containerName = gcrRemoved
+		}
 		if args.PodTemplates != nil && args.PodTemplates[containerName] != nil {
 			podTemplate := args.PodTemplates[containerName]
 			container := podTemplate.Spec.Containers[0]

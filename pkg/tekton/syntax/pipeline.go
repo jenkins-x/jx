@@ -1728,8 +1728,10 @@ func generateSteps(params generateStepsParams) ([]tektonv1alpha1.Step, map[strin
 		if params.parentContainer != nil {
 			c = params.parentContainer.DeepCopy()
 		}
-		if params.stageParams.parentParams.PodTemplates != nil && params.stageParams.parentParams.PodTemplates[stepImage] != nil {
-			podTemplate := params.stageParams.parentParams.PodTemplates[stepImage]
+		gcrRemoved := strings.TrimPrefix(stepImage, "gcr.io/jenkinsxio/builder-")
+
+		if params.stageParams.parentParams.PodTemplates != nil && params.stageParams.parentParams.PodTemplates[gcrRemoved] != nil {
+			podTemplate := params.stageParams.parentParams.PodTemplates[gcrRemoved]
 			containers := podTemplate.Spec.Containers
 			for _, volume := range podTemplate.Spec.Volumes {
 				volumes[volume.Name] = volume
