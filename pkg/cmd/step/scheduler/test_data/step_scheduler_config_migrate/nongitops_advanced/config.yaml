@@ -20,7 +20,7 @@ periodics:
         Mark the issue as fresh with `/remove-lifecycle stale`.
         Stale issues rot after an additional 30d of inactivity and eventually close.
         If this issue is safe to close now please do so with `/close`.
-        Provide feedback via https://jenkins-x.io/community.
+        Provide feedback via https://jenkins-x.io/community/#slack.
         /lifecycle stale
       - --template
       - --ceiling=30
@@ -52,7 +52,7 @@ periodics:
         --comment=Rotten issues close after 30d of inactivity.
         Reopen the issue with `/reopen`.
         Mark the issue as fresh with `/remove-lifecycle rotten`.
-        Provide feedback via https://jenkins-x.io/community.
+        Provide feedback via https://jenkins-x.io/community/#slack.
         /close
       - --template
       - --ceiling=10
@@ -86,7 +86,7 @@ periodics:
         Mark the issue as fresh with `/remove-lifecycle rotten`.
         Rotten issues close after an additional 30d of inactivity.
         If this issue is safe to close now please do so with `/close`.
-        Provide feedback via https://jenkins-x.io/community.
+        Provide feedback via https://jenkins-x.io/community/#slack.
         /lifecycle rotten
       - --template
       - --ceiling=10
