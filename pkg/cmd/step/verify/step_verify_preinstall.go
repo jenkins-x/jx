@@ -281,25 +281,28 @@ func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 	log.Logger().Debug("Verifying Helm...")
 	// lets make sure we don't try use tiller
 	o.EnableRemoteKubeCluster()
-	_, err := o.Helm().Version(false)
+	v, err := o.Helm().Version(false)
 	if err != nil {
 		err = o.InstallHelm()
 		if err != nil {
 			return errors.Wrap(err, "failed to install Helm")
 		}
+		v, err = o.Helm().Version(false)
 	}
-	cfg := opts.InitHelmConfig{
-		Namespace:       ns,
-		OnlyHelmClient:  true,
-		Helm3:           false,
-		SkipTiller:      true,
-		GlobalTiller:    false,
-		TillerNamespace: "",
-		TillerRole:      "",
-	}
-	err = o.InitHelm(cfg)
-	if err != nil {
-		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
+	if util.StartsWith(v, "v2") {
+		cfg := opts.InitHelmConfig{
+			Namespace:       ns,
+			OnlyHelmClient:  true,
+			Helm3:           false,
+			SkipTiller:      true,
+			GlobalTiller:    false,
+			TillerNamespace: "",
+			TillerRole:      "",
+		}
+		err = o.InitHelm(cfg)
+		if err != nil {
+			return errors.Wrapf(err, "initializing helm with config: %v", cfg)
+		}
 	}
 
 	o.EnableRemoteKubeCluster()
