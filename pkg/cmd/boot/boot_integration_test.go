@@ -8,6 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
+
+	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/stretchr/testify/require"
+
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -23,6 +29,137 @@ const (
 
 	testFileName = "some-file"
 )
+
+func Test_createBootClone_into_empty_directory_succeeds(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(bootDir)
+	}()
+
+	factory := cmd_mocks.NewMockFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
+	commonOpts.BatchMode = true
+	o := BootOptions{
+		CommonOptions: &commonOpts,
+		Dir:           bootDir,
+	}
+
+	repoPath := filepath.Join(bootDir, "jenkins-x-boot-config")
+	cloneDir, err := o.createBootClone(config.DefaultBootRepository, config.DefaultVersionsRef, repoPath)
+	assert.NoError(t, err)
+	assert.Contains(t, cloneDir, repoPath)
+}
+
+func Test_createBootClone_with_custom_ref_succeeds(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(bootDir)
+	}()
+
+	factory := cmd_mocks.NewMockFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
+	commonOpts.BatchMode = true
+	o := BootOptions{
+		CommonOptions: &commonOpts,
+		Dir:           bootDir,
+	}
+
+	repoPath := filepath.Join(bootDir, "jenkins-x-boot-config")
+	cloneDir, err := o.createBootClone(config.DefaultBootRepository, "v1.0.70", repoPath)
+	assert.NoError(t, err)
+	assert.Contains(t, cloneDir, repoPath)
+
+	gitter := gits.NewGitCLI()
+	sha, err := gitter.GetLatestCommitSha(repoPath)
+	require.NoError(t, err)
+	assert.Equal(t, "424f97a9e1ad4a0b5e518cd492d2b16d8b8f6705", sha)
+}
+
+func Test_createBootClone_into_existing_git_repo_fails(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(bootDir)
+	}()
+
+	factory := cmd_mocks.NewMockFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
+	commonOpts.BatchMode = true
+	o := BootOptions{
+		CommonOptions: &commonOpts,
+		Dir:           bootDir,
+	}
+
+	repoPath := filepath.Join(bootDir, "my-repo")
+	err = os.MkdirAll(repoPath, 0700)
+	require.NoError(t, err)
+	gitter := gits.NewGitCLI()
+	err = gitter.Init(repoPath)
+	require.NoError(t, err)
+
+	cloneDir, err := o.createBootClone(config.DefaultBootRepository, config.DefaultVersionsRef, repoPath)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "dir already exists")
+	assert.Empty(t, cloneDir)
+}
+
+func Test_createBootClone_into_existing_directory_fails(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(bootDir)
+	}()
+
+	factory := cmd_mocks.NewMockFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
+	commonOpts.BatchMode = true
+	o := BootOptions{
+		CommonOptions: &commonOpts,
+		Dir:           bootDir,
+	}
+
+	cloneDir, err := o.createBootClone(config.DefaultBootRepository, config.DefaultVersionsRef, bootDir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "dir already exists")
+	assert.Empty(t, cloneDir)
+}
+
+func Test_jx_boot_in_non_boot_repo_fails(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+	bootDir, err := ioutil.TempDir("", "boot-test")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(bootDir)
+	}()
+
+	commonOpts := opts.NewCommonOptionsWithFactory(clients.NewFactory())
+	commonOpts.BatchMode = true
+	o := BootOptions{
+		CommonOptions: &commonOpts,
+		Dir:           bootDir,
+	}
+
+	// make the tmp directory a git repo
+	gitter := gits.NewGitCLI()
+	err = gitter.Init(bootDir)
+	require.NoError(t, err)
+	err = gitter.SetRemoteURL(bootDir, "origin", "https://github.com/johndoe/jx.git")
+	require.NoError(t, err)
+	_, err = os.Create(filepath.Join(bootDir, "foo"))
+	require.NoError(t, err)
+	err = gitter.AddCommit(bootDir, "adding foo")
+	require.NoError(t, err)
+
+	err = o.Run()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "trying to execute 'jx boot' from a non requirements repo")
+}
 
 func TestUpdateBootCloneIfOutOfDate_Conflicts(t *testing.T) {
 	gitter := gits.NewGitCLI()

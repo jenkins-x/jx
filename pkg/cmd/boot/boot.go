@@ -111,8 +111,6 @@ func NewCmdBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run runs this command
 func (o *BootOptions) Run() error {
-	info := util.ColorInfo
-
 	err := o.verifyClusterConnection()
 	if err != nil {
 		return err
@@ -123,8 +121,13 @@ func (o *BootOptions) Run() error {
 	if o.AttemptRestore {
 		err := o.restoreFromDevEnvRepo()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "unable tp restore dev environment repo")
 		}
+	}
+
+	gitURL, gitRef := o.determineGitURLAndRef()
+	if gitURL == "" {
+		return util.MissingOption("git-url")
 	}
 
 	isBootClone, err := existingBootClone(o.Dir)
@@ -132,28 +135,28 @@ func (o *BootOptions) Run() error {
 		return errors.Wrapf(err, "failed to check if this is an existing boot clone")
 	}
 
-	gitURL, gitRef, err := gits.GetGitInfoFromDirectory(o.Dir, o.Git())
+	isGitRepo := o.isGitRepo(o.Dir)
+	if isGitRepo && !isBootClone {
+		return errors.Errorf("trying to execute 'jx boot' from a non requirements repo")
+	}
+
+	if !isBootClone {
+		gitInfo, err := gits.ParseGitURL(gitURL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
+		}
+		dir := filepath.Join(o.Dir, gitInfo.Name)
+		cloneDir, err := o.createBootClone(gitURL, gitRef, dir)
+		if err != nil {
+			return errors.Wrapf(err, "unable to clone %s", gitURL)
+		}
+		o.Dir = cloneDir
+	}
+
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
 	if err != nil {
-		log.Logger().Info("Creating boot config with defaults, as not in an existing boot directory with a git repository.")
-		gitURL = config.DefaultBootRepository
-		gitRef = config.DefaultVersionsRef
+		return errors.Wrapf(err, "unable to load %s", config.RequirementsConfigFileName)
 	}
-
-	if o.GitURL != "" {
-		log.Logger().Infof("GitURL provided, overriding the current value: %s with %s", util.ColorInfo(gitURL), util.ColorInfo(o.GitURL))
-		gitURL = o.GitURL
-	}
-
-	if o.GitRef != "" {
-		log.Logger().Infof("GitRef provided, overriding the current value: %s with %s", util.ColorInfo(gitRef), util.ColorInfo(o.GitRef))
-		gitRef = o.GitRef
-	}
-
-	if gitURL == "" {
-		return util.MissingOption("git-url")
-	}
-
-	requirements, _, _ := config.LoadRequirementsConfig(o.Dir)
 
 	err = o.ConfigureCommonOptions(requirements)
 	if err != nil {
@@ -176,94 +179,6 @@ func (o *BootOptions) Run() error {
 		}
 	}
 
-	if !isBootClone {
-		log.Logger().Infof("No Jenkins X pipeline file %s or no jx boot requirements file %s found. You are not running this command from inside a "+
-			"Jenkins X Boot git clone", info(config.ProjectConfigFileName), info(config.RequirementsConfigFileName))
-
-		gitInfo, err := gits.ParseGitURL(gitURL)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
-		}
-
-		repo := gitInfo.Name
-		cloneDir := filepath.Join(o.Dir, repo)
-
-		if !o.BatchMode {
-			log.Logger().Infof("To continue we will clone %s @ %s to %s", info(gitURL), info(gitRef), info(cloneDir))
-
-			help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
-			message := "Do you want to clone the Jenkins X Boot Git repository?"
-			if answer, err := util.Confirm(message, true, help, o.GetIOFileHandles()); err != nil {
-				return err
-			} else if !answer {
-				return fmt.Errorf("Please run this command again inside a git clone from a Jenkins X Boot repository")
-			}
-		}
-
-		bootCloneExists, err := util.DirExists(cloneDir)
-		if err != nil {
-			return err
-		}
-		if bootCloneExists {
-			return fmt.Errorf("Cannot clone git repository to %s as the dir already exists. Maybe try 'cd %s' and re-run the 'jx boot' command?", repo, repo)
-		}
-
-		log.Logger().Infof("Cloning %s @ %s to %s\n", info(gitURL), info(gitRef), info(cloneDir))
-
-		err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create directory: %s", cloneDir)
-		}
-
-		err = o.Git().Clone(gitURL, cloneDir)
-		if err != nil {
-			return errors.Wrapf(err, "failed to clone git URL %s to directory: %s", gitURL, cloneDir)
-		}
-		commitish, err := gits.FindTagForVersion(cloneDir, gitRef, o.Git())
-		if err != nil {
-			log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", gitRef).Error())
-		}
-
-		if commitish != "" {
-			err = o.Git().Reset(cloneDir, commitish, true)
-			if err != nil {
-				return errors.Wrapf(err, "setting HEAD to %s", commitish)
-			}
-		} else {
-			log.Logger().Infof("fetching branch %s", gitRef)
-			err = o.Git().FetchBranch(cloneDir, "origin", gitRef)
-			if err != nil {
-				return errors.Wrapf(err, "fetching branch %s", gitRef)
-			}
-
-			branchName := fmt.Sprintf("pr-%s", uuid.New().String())
-
-			err = o.Git().CreateBranchFrom(cloneDir, branchName, gitRef)
-			if err != nil {
-				return errors.Wrapf(err, "create branch %s from %s", branchName, gitRef)
-			}
-
-			err = o.Git().Checkout(cloneDir, branchName)
-			if err != nil {
-				return errors.Wrapf(err, "checkout branch %s", branchName)
-			}
-		}
-		o.Dir, err = filepath.Abs(cloneDir)
-		if err != nil {
-			return err
-		}
-
-		pipelineFile := filepath.Join(o.Dir, config.RequirementsConfigFileName)
-		pipelineFileExists, err := util.FileExists(pipelineFile)
-		if err != nil {
-			return err
-		}
-
-		if !pipelineFileExists {
-			return fmt.Errorf("The cloned repository %s does not include a Jenkins X Pipeline file at %s", gitURL, pipelineFile)
-		}
-	}
-
 	projectConfig, pipelineFile, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
@@ -271,19 +186,6 @@ func (o *BootOptions) Run() error {
 
 	if err := o.overrideRequirements(gitURL); err != nil {
 		return errors.Wrap(err, "overwriting the default requirements")
-	}
-
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
-	if err != nil {
-		return errors.Wrap(err, "failed to load jx-requirements.yml file")
-	}
-
-	isBootClone, err = util.FileExists(requirementsFile)
-	if err != nil {
-		return err
-	}
-	if !isBootClone {
-		return fmt.Errorf("no requirements file %s are you sure you are running this command inside a GitOps clone?", requirementsFile)
 	}
 
 	// only update boot if the a GitRef has not been supplied
@@ -365,6 +267,108 @@ func (o *BootOptions) Run() error {
 	no.CommonOptions = o.CommonOptions
 	no.Args = []string{requirements.Cluster.Namespace}
 	return no.Run()
+}
+
+func (o *BootOptions) isGitRepo(dir string) bool {
+	_, _, err := gits.GetGitInfoFromDirectory(dir, o.Git())
+	if err == nil {
+		return true
+	}
+	return false
+}
+
+func (o *BootOptions) determineGitURLAndRef() (string, string) {
+	gitURL, gitRef, err := gits.GetGitInfoFromDirectory(o.Dir, o.Git())
+	if err != nil {
+		log.Logger().Info("Creating boot config with defaults, as not in an existing boot directory with a git repository.")
+		gitURL = config.DefaultBootRepository
+		gitRef = config.DefaultVersionsRef
+	}
+
+	if o.GitURL != "" {
+		log.Logger().Infof("GitURL provided, overriding the current value: %s with %s", util.ColorInfo(gitURL), util.ColorInfo(o.GitURL))
+		gitURL = o.GitURL
+	}
+
+	if o.GitRef != "" {
+		log.Logger().Infof("GitRef provided, overriding the current value: %s with %s", util.ColorInfo(gitRef), util.ColorInfo(o.GitRef))
+		gitRef = o.GitRef
+	}
+	return gitURL, gitRef
+}
+
+func (o *BootOptions) createBootClone(bootConfigGitURL string, bootConfigGitRef string, cloneDir string) (string, error) {
+	info := util.ColorInfo
+	log.Logger().Infof("No Jenkins X pipeline file %s or no jx boot requirements file %s found. You are not running this command from inside a "+
+		"Jenkins X Boot git clone", info(config.ProjectConfigFileName), info(config.RequirementsConfigFileName))
+
+	if !o.BatchMode {
+		log.Logger().Infof("To continue we will clone %s @ %s to %s", info(bootConfigGitURL), info(bootConfigGitRef), info(cloneDir))
+
+		help := "A git clone of a Jenkins X Boot source repository is required for 'jx boot'"
+		message := "Do you want to clone the Jenkins X Boot Git repository?"
+		if answer, err := util.Confirm(message, true, help, o.GetIOFileHandles()); err != nil {
+			return "", errors.Wrapf(err, "unable to process user input")
+		} else if !answer {
+			return "", fmt.Errorf("please run this command again inside a git clone from a Jenkins X Boot repository")
+		}
+	}
+
+	bootCloneExists, err := util.DirExists(cloneDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to check whether directory %s exists", cloneDir)
+	}
+	if bootCloneExists {
+		return "", fmt.Errorf("cannot clone git repository to %s as the dir already exists", cloneDir)
+	}
+
+	log.Logger().Infof("Cloning %s @ %s to %s\n", info(bootConfigGitURL), info(bootConfigGitRef), info(cloneDir))
+
+	err = os.MkdirAll(cloneDir, util.DefaultWritePermissions)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create directory: %s", cloneDir)
+	}
+
+	err = o.Git().Clone(bootConfigGitURL, cloneDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to clone git URL %s to directory: %s", bootConfigGitURL, cloneDir)
+	}
+
+	commitish, err := gits.FindTagForVersion(cloneDir, bootConfigGitRef, o.Git())
+	if err != nil {
+		log.Logger().Debugf(errors.Wrapf(err, "finding tag for %s", bootConfigGitRef).Error())
+	}
+
+	if commitish != "" {
+		err = o.Git().Reset(cloneDir, commitish, true)
+		if err != nil {
+			return "", errors.Wrapf(err, "setting HEAD to %s", commitish)
+		}
+	} else {
+		log.Logger().Infof("fetching branch %s", bootConfigGitRef)
+		err = o.Git().FetchBranch(cloneDir, "origin", bootConfigGitRef)
+		if err != nil {
+			return "", errors.Wrapf(err, "fetching branch %s", bootConfigGitRef)
+		}
+
+		branchName := uuid.New().String()
+
+		err = o.Git().CreateBranchFrom(cloneDir, branchName, bootConfigGitRef)
+		if err != nil {
+			return "", errors.Wrapf(err, "create branch %s from %s", branchName, bootConfigGitRef)
+		}
+
+		err = o.Git().Checkout(cloneDir, branchName)
+		if err != nil {
+			return "", errors.Wrapf(err, "checkout branch %s", branchName)
+		}
+	}
+
+	cloneDir, err = filepath.Abs(cloneDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to determine absolute path for %s", cloneDir)
+	}
+	return cloneDir, nil
 }
 
 func (o *BootOptions) restoreFromDevEnvRepo() error {
