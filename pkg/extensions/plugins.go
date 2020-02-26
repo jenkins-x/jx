@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -152,9 +151,8 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 			log.Logger().Infof("Deleted old plugin versions: %v", util.ColorInfo(deleted))
 		}
 
-		var httpClient = &http.Client{
-			Timeout: time.Second * 10,
-		}
+		httpClient := util.GetClientWithTimeout(time.Minute * 20)
+
 		// Get the file
 		pluginURL, err := url.Parse(u)
 		if err != nil {
