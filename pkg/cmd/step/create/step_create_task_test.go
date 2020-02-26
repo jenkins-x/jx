@@ -551,7 +551,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				t.Fatalf("Unexpected error generating effective pipeline: %s", err)
 			} else {
 				if effectiveProjectConfig != nil {
-					err = createTask.setBuildVersion(effectiveProjectConfig.PipelineConfig)
+					err = createTask.setBuildVersion(effectiveProjectConfig)
 					assert.NoError(t, err)
 				}
 
