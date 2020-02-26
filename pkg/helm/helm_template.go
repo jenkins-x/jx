@@ -221,7 +221,7 @@ func (h *HelmTemplate) PackageChart() error {
 
 // Version executes the helm version command and returns its output
 func (h *HelmTemplate) Version(tls bool) (string, error) {
-	return h.Client.VersionWithArgs(tls, "--client")
+	return h.Client.Version(tls)
 }
 
 // Template generates the YAML from the chart template to the given directory

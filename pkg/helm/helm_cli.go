@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -188,7 +189,7 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 	if err != nil {
 		// helm3 now returns an error if there are no repos
 		return repos, nil
-		//return nil, errors.Wrap(err, "failed to list repositories")
+		//return nil, shouldError.Wrap(err, "failed to list repositories")
 	}
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines[1:] {
@@ -667,12 +668,17 @@ func (h *HelmCLI) Env() map[string]string {
 
 // Version executes the helm version command and returns its output
 func (h *HelmCLI) Version(tls bool) (string, error) {
-	return h.VersionWithArgs(tls)
+	versionString, err := h.VersionWithArgs(tls)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to query helm version")
+	}
+
+	return h.extractSemanticVersion(versionString)
 }
 
 // VersionWithArgs executes the helm version command and returns its output
 func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error) {
-	args := []string{"version", "--short"}
+	args := []string{"version", "--short", "--client"}
 	if tls {
 		args = append(args, "--tls")
 	}
@@ -746,4 +752,21 @@ func (h *HelmCLI) setNamespace(namespace string) error {
 		return fmt.Errorf("failed to update the kube config %s", err)
 	}
 	return nil
+}
+
+// extractSemanticVersion tries to extract a semantic version string substring from the specified string
+func (h *HelmCLI) extractSemanticVersion(versionString string) (string, error) {
+	r := regexp.MustCompile(`.*v?(?P<SemVer>\d+\.\d+\.\d+).*`)
+	match := r.FindStringSubmatch(versionString)
+	if match == nil {
+		return "", errors.Errorf("unable to extract a semantic version from %s", versionString)
+	}
+
+	for i, name := range r.SubexpNames() {
+		if name == "SemVer" {
+			return match[i], nil
+		}
+	}
+
+	return "", errors.Errorf("unable to extract a semantic version from %s", versionString)
 }

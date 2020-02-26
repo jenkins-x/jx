@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blang/semver"
+
 	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"sigs.k8s.io/yaml"
@@ -288,8 +290,16 @@ func (o *StepVerifyPreInstallOptions) verifyHelm(ns string) error {
 			return errors.Wrap(err, "failed to install Helm")
 		}
 		v, err = o.Helm().Version(false)
+		if err != nil {
+			return errors.Wrap(err, "failed to get Helm version after install")
+		}
 	}
-	if util.StartsWith(v, "v2") {
+	currVersion, err := semver.Make(v)
+	if err != nil {
+		return errors.Wrapf(err, "unable to parse semantic version %s", v)
+	}
+	noInitRequiredVersion := semver.MustParse("3.0.0")
+	if currVersion.LT(noInitRequiredVersion) {
 		cfg := opts.InitHelmConfig{
 			Namespace:       ns,
 			OnlyHelmClient:  true,

@@ -324,15 +324,33 @@ func TestLint(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	expectedArgs := []string{"version", "--short"}
-	expectedOutput := "1.0.0"
-	helm, runner := createHelm(t, nil, expectedOutput)
+	var versionTests = []struct {
+		versionString           string
+		expectedSemanticVersion string
+		shouldError             bool
+	}{
+		{"Client: v2.16.3+g1ee0254", "2.16.3", false},
+		{"v3.0.3+gac925eb", "3.0.3", false},
+		{"3.0.3+gac925eb", "3.0.3", false},
+		{"", "", true},
+		{"foo", "", true},
+	}
 
-	output, err := helm.Version(false)
+	for _, versionTest := range versionTests {
+		t.Run(versionTest.versionString, func(t *testing.T) {
+			helm, runner := createHelm(t, nil, versionTest.versionString)
+			actualVersion, err := helm.Version(false)
 
-	assert.NoError(t, err, "should get the version without any error")
-	verifyArgs(t, helm, runner, expectedArgs...)
-	assert.Equal(t, expectedOutput, output)
+			if versionTest.shouldError {
+				assert.Error(t, err, "should not be able to get semantic version from version output")
+				assert.Equal(t, versionTest.expectedSemanticVersion, actualVersion)
+			} else {
+				assert.NoError(t, err, "should get the version without any error")
+				verifyArgs(t, helm, runner, "version", "--short", "--client")
+				assert.Equal(t, versionTest.expectedSemanticVersion, actualVersion)
+			}
+		})
+	}
 }
 
 func TestSearchChartVersions(t *testing.T) {
