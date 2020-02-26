@@ -73,5 +73,4 @@ jx step bdd \
     --no-delete-app \
     --no-delete-repo \
     --tests install \
-    --tests test-quickstart-golang-http \
-    --tests test-app-lifecycle
+    --tests test-quickstart-golang-http
