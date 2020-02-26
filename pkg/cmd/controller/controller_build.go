@@ -1291,6 +1291,11 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		description = fmt.Sprintf("Pipeline running stage(s): %s", strings.Join(runningStages, ", "))
 	}
 
+	gitRepoStatus := &gits.GitRepoStatus{
+		State:       status,
+		Context:     pipelineContext,
+		Description: description,
+	}
 	targetURL := CreateReportTargetURL(o.TargetURLTemplate, ReportParams{
 		Owner:      owner,
 		Repository: repo,
@@ -1300,11 +1305,8 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		BaseURL:    strings.TrimRight(o.JobURLBase, "/"),
 		Namespace:  ns,
 	})
-	gitRepoStatus := &gits.GitRepoStatus{
-		State:       status,
-		Context:     pipelineContext,
-		Description: description,
-		TargetURL:   targetURL,
+	if strings.HasPrefix(targetURL, "http://") || strings.HasPrefix(targetURL, "https://") {
+		gitRepoStatus.TargetURL = targetURL
 	}
 
 	gitProvider, err := o.GitProviderForURL(gitURL, "git provider")
