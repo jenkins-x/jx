@@ -90,7 +90,11 @@ func (h *HelmCLI) checkCompatibility() {
 		return
 	}
 
-	if os.Getenv("JX_HELM3") == "true" {
+	if h.BinVersion == V3 {
+		if v.Major != 3 {
+			log.Logger().Fatalf("Your current helm version v%d is not supported. Please upgrade to helm v3.", v.Major)
+		}
+	} else if os.Getenv("JX_HELM3") == "true" {
 		if v.Major != 3 {
 			log.Logger().Fatalf("You have set $JX_HELM3=true but your helm client version is %d", v.Major)
 		}
