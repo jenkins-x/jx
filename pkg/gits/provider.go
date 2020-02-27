@@ -563,3 +563,22 @@ func ToGitLabels(names []string) []GitLabel {
 	}
 	return answer
 }
+
+// IsRepoStatusUpToDate takes a provider, an owner, repo, sha, and GitRepoStatus, and checks if there's an existing commit
+// status for the owner/repo/sha/context (from the GitRepoStatus) with the GitRepoStatus's status, target URL, and description
+func IsRepoStatusUpToDate(provider GitProvider, owner string, repo string, sha string, commitStatus *GitRepoStatus) (bool, error) {
+	statuses, err := provider.ListCommitStatus(owner, repo, sha)
+	if err != nil {
+		return false, errors.Wrapf(err, "fetching commit statuses for %s/%s, sha %s", owner, repo, sha)
+	}
+	for _, existingStatus := range statuses {
+		if existingStatus != nil && existingStatus.Context == commitStatus.Context {
+			if existingStatus.State == commitStatus.State &&
+				existingStatus.TargetURL == commitStatus.TargetURL &&
+				existingStatus.Description == commitStatus.Description {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}

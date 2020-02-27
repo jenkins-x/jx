@@ -1223,7 +1223,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	repo := activity.Spec.GitRepository
 	gitURL := activity.Spec.GitURL
 	activityStatus := activity.Spec.Status
-	status, description := toScmStatusAndDescription(activityStatus)
+	status, description := toScmStatusAndDescription(activity)
 
 	fields := map[string]interface{}{
 		"name":        activity.Name,
@@ -1255,7 +1255,6 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		return
 	}
 
-	// lets only update the status if its actually changed status since we last reported it
 	if activity.Annotations == nil {
 		activity.Annotations = map[string]string{}
 	}
@@ -1263,10 +1262,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		return
 	}
 	switch activity.Annotations[kube.AnnotationGitReportState] {
-	// hasn't changed
-	case string(activityStatus):
-		return
-		// already completed - avoid reporting again if a promotion happens after a PR has merged and the pipeline updates status
+	// already completed - avoid reporting again if a promotion happens after a PR has merged and the pipeline updates status
 	case string(v1.ActivityStatusTypeSucceeded), string(v1.ActivityStatusTypeAborted), string(v1.ActivityStatusTypeFailed):
 		return
 	}
@@ -1276,19 +1272,6 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	pipelineContext := pri.Context
 	if pipelineContext == "" {
 		pipelineContext = "jenkins-x"
-	}
-
-	var runningStages []string
-	for _, stage := range activity.Spec.Steps {
-		if stage.Kind == v1.ActivityStepKindTypeStage {
-			if stage.Stage.Status == v1.ActivityStatusTypeRunning {
-				runningStages = append(runningStages, stage.Stage.Name)
-			}
-		}
-	}
-
-	if len(runningStages) > 0 {
-		description = fmt.Sprintf("Pipeline running stage(s): %s", strings.Join(runningStages, ", "))
 	}
 
 	gitRepoStatus := &gits.GitRepoStatus{
@@ -1315,11 +1298,18 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		return
 	}
 
-	_, err = gitProvider.UpdateCommitStatus(owner, repo, sha, gitRepoStatus)
+	// lets only update the status if its actually changed status, description, or URL since we last reported it
+	statusUpToDate, err := gits.IsRepoStatusUpToDate(gitProvider, owner, repo, sha, gitRepoStatus)
 	if err != nil {
-		log.Logger().WithFields(fields).WithError(err).Warnf("failed to report git status")
-	} else {
-		log.Logger().WithFields(fields).Info("reported git status")
+		log.Logger().WithFields(fields).WithError(err).Warnf("failed to query existing commit statuses")
+	}
+	if !statusUpToDate {
+		_, err = gitProvider.UpdateCommitStatus(owner, repo, sha, gitRepoStatus)
+		if err != nil {
+			log.Logger().WithFields(fields).WithError(err).Warnf("failed to report git status")
+		} else {
+			log.Logger().WithFields(fields).Info("reported git status")
+		}
 	}
 }
 
@@ -1352,17 +1342,29 @@ func CreateReportTargetURL(templateText string, params ReportParams) string {
 	return buf.String()
 }
 
-func toScmStatusAndDescription(status v1.ActivityStatusType) (string, string) {
-	switch status {
+func toScmStatusAndDescription(activity *v1.PipelineActivity) (string, string) {
+	scmStatus := ""
+	description := ""
+	switch activity.Spec.Status {
 	case v1.ActivityStatusTypeSucceeded:
-		return "success", "Pipeline successful"
+		scmStatus = "success"
+		description = "Pipeline successful"
 	case v1.ActivityStatusTypeRunning, v1.ActivityStatusTypePending:
-		return "pending", "Pipeline running"
+		scmStatus = "pending"
+		description = "Pipeline running"
 	case v1.ActivityStatusTypeError:
-		return "error", "Error executing pipeline"
+		scmStatus = "error"
+		description = "Error executing pipeline"
 	default:
-		return "failure", "Pipeline failed"
+		scmStatus = "failure"
+		description = "Pipeline failed"
 	}
+	stagesByStatus := activity.StagesByStatus()
+
+	if len(stagesByStatus[v1.ActivityStatusTypeRunning]) > 0 {
+		description = fmt.Sprintf("Pipeline running stage(s): %s", strings.Join(stagesByStatus[v1.ActivityStatusTypeRunning], ", "))
+	}
+	return scmStatus, description
 }
 
 // createStepDescription uses the spec of the container to return a description
