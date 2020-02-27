@@ -110,6 +110,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -231,6 +239,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -335,6 +351,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -439,6 +463,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -547,6 +579,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -656,6 +696,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -760,6 +808,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME
@@ -864,6 +920,14 @@ items:
         value: pr-build
       - name: PIPELINE_KIND
         value: pullrequest
+      - name: PULL_BASE_REF
+        value: master
+      - name: PULL_BASE_SHA
+        value: 441de50841eb31130c8a59ae0edc00d97f6b7b97
+      - name: PULL_NUMBER
+        value: "1"
+      - name: PULL_PULL_SHA
+        value: c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: PULL_REFS
         value: master:441de50841eb31130c8a59ae0edc00d97f6b7b97,1:c6bd3e0221a122dca3a00e87cb9188daed2e1d44
       - name: REPO_NAME

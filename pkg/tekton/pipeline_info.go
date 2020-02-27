@@ -135,6 +135,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	repo := ""
 	build := ""
 	pullRefs := ""
+	pullBaseSha := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
 		log.Logger().Warnf("Failed to compile regexp because %s", err)
@@ -199,7 +200,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 				}
 			}
 		}
-		var pullPullSha, pullBaseSha string
+		var pullPullSha string
 		for _, v := range container.Env {
 			if v.Value == "" {
 				continue
@@ -261,6 +262,8 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	if err != nil {
 		buildNumber = 1
 	}
+
+	pri.BaseSHA = pullBaseSha
 
 	if lastCommitSha == "" {
 		idx := strings.LastIndex(pullRefs, ":")
