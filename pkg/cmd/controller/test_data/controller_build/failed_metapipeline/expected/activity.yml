@@ -16,6 +16,7 @@ metadata:
   selfLink: /apis/jenkins.io/v1/namespaces/jx/pipelineactivities/cb-kubecd-bdd-spring-1568135191-master-1
   uid: 8461830a-d3f2-11e9-82fc-42010a840132
 spec:
+  baseSHA: 0708469b9e463bfd8df21af92dc4afe82ac0b581
   batchPipelineActivity: {}
   build: "1"
   completedTimestamp: "2019-09-10T17:08:20Z"

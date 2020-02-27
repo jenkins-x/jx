@@ -768,6 +768,11 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
+	// Set the base SHA if present in the run info
+	if pri.BaseSHA != "" && spec.BaseSHA != pri.BaseSHA {
+		spec.BaseSHA = pri.BaseSHA
+	}
+
 	// TODO this is a tactical approach until we move all the reporting of tekton pipelines into tekton outputs
 	o.reportStatus(kubeClient, ns, activity, pri, pod)
 
@@ -1213,11 +1218,6 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 			sha = activity.Labels[v1.LabelLastCommitSha]
 		}
 		activity.Spec.LastCommitSHA = sha
-	}
-	baseSHA := activity.Spec.BaseSHA
-	if baseSHA == "" {
-		baseSHA = pri.BaseSHA
-		activity.Spec.BaseSHA = baseSHA
 	}
 	owner := activity.Spec.GitOwner
 	repo := activity.Spec.GitRepository
