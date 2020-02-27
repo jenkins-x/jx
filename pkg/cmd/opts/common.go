@@ -102,7 +102,7 @@ var (
 
 	// UseHelm3 a conditional compilation flag which is false for jx 2.x builds but for alpha / 3.x builds
 	// is true to default to only using helm 3
-	UseHelm3 = false
+	UseHelm3 = true
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
