@@ -99,6 +99,10 @@ var (
 	QuickStartLocationCommandAliases = []string{
 		QuickStartLocationCommandName + "s", "quickstartloc", "qsloc",
 	}
+
+	// UseHelm3 a conditional compilation flag which is false for jx 2.x builds but for alpha / 3.x builds
+	// is true to default to only using helm 3
+	UseHelm3 = false
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -208,12 +212,16 @@ func (o *CommonOptions) NotifyProgress(level LogLevel, format string, args ...in
 
 // NewCommonOptionsWithTerm creates a new CommonOptions instance with given terminal input, output and error
 func NewCommonOptionsWithTerm(factory clients.Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *CommonOptions {
-	return &CommonOptions{
+	co := &CommonOptions{
 		factory: factory,
 		In:      in,
 		Out:     out,
 		Err:     err,
 	}
+	if UseHelm3 {
+		co.SetHelm(helm.NewHelmCLI("helm", helm.V3, "", false))
+	}
+	return co
 }
 
 // NewCommonOptionsWithFactory creates a new CommonOptions instance with the
