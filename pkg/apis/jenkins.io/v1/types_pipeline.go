@@ -246,3 +246,19 @@ func (p *PipelineActivity) BranchName() string {
 	p.Spec.GitBranch = branch
 	return branch
 }
+
+// StagesByStatus returns a map with statuses as keys and lists of stage names with that status as the values.
+func (p *PipelineActivity) StagesByStatus() map[ActivityStatusType][]string {
+	statusMap := make(map[ActivityStatusType][]string)
+
+	for _, stage := range p.Spec.Steps {
+		if stage.Kind == ActivityStepKindTypeStage && stage.Stage != nil {
+			if _, exists := statusMap[stage.Stage.Status]; !exists {
+				statusMap[stage.Stage.Status] = []string{}
+			}
+			statusMap[stage.Stage.Status] = append(statusMap[stage.Stage.Status], stage.Stage.Name)
+		}
+	}
+
+	return statusMap
+}
