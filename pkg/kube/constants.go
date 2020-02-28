@@ -284,6 +284,8 @@ const (
 	AnnotationGitURLs = "jenkins.io/git-urls"
 	// AnnotationGitReportState used to annotate what state has been reported to git
 	AnnotationGitReportState = "jenkins.io/git-report-state"
+	// AnnotationGitReportRunningStages used to annotate what stages were last reported to git as running
+	AnnotationGitReportRunningStages = "jenkins.io/git-report-running-stages"
 
 	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
 	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"

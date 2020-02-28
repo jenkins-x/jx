@@ -1223,7 +1223,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	repo := activity.Spec.GitRepository
 	gitURL := activity.Spec.GitURL
 	activityStatus := activity.Spec.Status
-	status, description := toScmStatusAndDescription(activity)
+	statusInfo := toScmStatusDescriptionRunningStages(activity)
 
 	fields := map[string]interface{}{
 		"name":        activity.Name,
@@ -1233,7 +1233,7 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		"gitSHA":      sha,
 		"gitURL":      gitURL,
 		"gitBranch":   activity.Spec.GitBranch,
-		"gitStatus":   status,
+		"gitStatus":   statusInfo.scmStatus,
 		"buildNumber": activity.Spec.Build,
 		"duration":    util.DurationString(activity.Spec.StartedTimestamp, activity.Spec.CompletedTimestamp),
 	}
@@ -1258,16 +1258,24 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	if activity.Annotations == nil {
 		activity.Annotations = map[string]string{}
 	}
-	if status == "" {
+	if statusInfo.scmStatus == "" {
 		return
 	}
+
 	switch activity.Annotations[kube.AnnotationGitReportState] {
 	// already completed - avoid reporting again if a promotion happens after a PR has merged and the pipeline updates status
 	case string(v1.ActivityStatusTypeSucceeded), string(v1.ActivityStatusTypeAborted), string(v1.ActivityStatusTypeFailed):
 		return
 	}
 
+	// Check if state and running stages haven't changed and return if they haven't
+	if activity.Annotations[kube.AnnotationGitReportState] == string(activityStatus) &&
+		activity.Annotations[kube.AnnotationGitReportRunningStages] == statusInfo.runningStages {
+		return
+	}
+
 	activity.Annotations[kube.AnnotationGitReportState] = string(activityStatus)
+	activity.Annotations[kube.AnnotationGitReportRunningStages] = statusInfo.runningStages
 
 	pipelineContext := pri.Context
 	if pipelineContext == "" {
@@ -1275,9 +1283,9 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 	}
 
 	gitRepoStatus := &gits.GitRepoStatus{
-		State:       status,
+		State:       statusInfo.scmStatus,
 		Context:     pipelineContext,
-		Description: description,
+		Description: statusInfo.description,
 	}
 	targetURL := CreateReportTargetURL(o.TargetURLTemplate, ReportParams{
 		Owner:      owner,
@@ -1298,18 +1306,11 @@ func (o *ControllerBuildOptions) reportStatus(kubeClient kubernetes.Interface, n
 		return
 	}
 
-	// lets only update the status if its actually changed status, description, or URL since we last reported it
-	statusUpToDate, err := gits.IsRepoStatusUpToDate(gitProvider, owner, repo, sha, gitRepoStatus)
+	_, err = gitProvider.UpdateCommitStatus(owner, repo, sha, gitRepoStatus)
 	if err != nil {
-		log.Logger().WithFields(fields).WithError(err).Warnf("failed to query existing commit statuses")
-	}
-	if !statusUpToDate {
-		_, err = gitProvider.UpdateCommitStatus(owner, repo, sha, gitRepoStatus)
-		if err != nil {
-			log.Logger().WithFields(fields).WithError(err).Warnf("failed to report git status")
-		} else {
-			log.Logger().WithFields(fields).Info("reported git status")
-		}
+		log.Logger().WithFields(fields).WithError(err).Warnf("failed to report git status")
+	} else {
+		log.Logger().WithFields(fields).Info("reported git status")
 	}
 }
 
@@ -1342,29 +1343,42 @@ func CreateReportTargetURL(templateText string, params ReportParams) string {
 	return buf.String()
 }
 
-func toScmStatusAndDescription(activity *v1.PipelineActivity) (string, string) {
-	scmStatus := ""
-	description := ""
+type reportStatusInfo struct {
+	scmStatus     string
+	description   string
+	runningStages string
+}
+
+func toScmStatusDescriptionRunningStages(activity *v1.PipelineActivity) reportStatusInfo {
+	info := reportStatusInfo{
+		description:   "",
+		runningStages: "",
+		scmStatus:     "",
+	}
 	switch activity.Spec.Status {
 	case v1.ActivityStatusTypeSucceeded:
-		scmStatus = "success"
-		description = "Pipeline successful"
+		info.scmStatus = "success"
+		info.description = "Pipeline successful"
 	case v1.ActivityStatusTypeRunning, v1.ActivityStatusTypePending:
-		scmStatus = "pending"
-		description = "Pipeline running"
+		info.scmStatus = "pending"
+		info.description = "Pipeline running"
 	case v1.ActivityStatusTypeError:
-		scmStatus = "error"
-		description = "Error executing pipeline"
+		info.scmStatus = "error"
+		info.description = "Error executing pipeline"
 	default:
-		scmStatus = "failure"
-		description = "Pipeline failed"
+		info.scmStatus = "failure"
+		info.description = "Pipeline failed"
 	}
 	stagesByStatus := activity.StagesByStatus()
 
 	if len(stagesByStatus[v1.ActivityStatusTypeRunning]) > 0 {
-		description = fmt.Sprintf("Pipeline running stage(s): %s", strings.Join(stagesByStatus[v1.ActivityStatusTypeRunning], ", "))
+		info.runningStages = strings.Join(stagesByStatus[v1.ActivityStatusTypeRunning], ",")
+		info.description = fmt.Sprintf("Pipeline running stage(s): %s", strings.Join(stagesByStatus[v1.ActivityStatusTypeRunning], ", "))
+		if len(info.description) > 63 {
+			info.description = info.description[:59] + "..."
+		}
 	}
-	return scmStatus, description
+	return info
 }
 
 // createStepDescription uses the spec of the container to return a description
