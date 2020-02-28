@@ -134,10 +134,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	}
 	environmentsCommands = append(environmentsCommands, findCommands("environment", createCommands, deleteCommands, editCommands, getCommands)...)
 
-	alphaCommand, err2 := alpha.NewCmdAlpha(commonOpts)
-	if err2 != nil {
-		log.Logger().Errorf("failed to load alpha commands: %s", err2.Error())
-	}
+	alphaCommand := alpha.NewCmdAlpha(commonOpts)
 
 	groups := templates.CommandGroups{
 		{

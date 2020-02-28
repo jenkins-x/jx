@@ -37,7 +37,7 @@ var (
 )
 
 // NewCmdAlpha creates the "jx alpha" command
-func NewCmdAlpha(commonOpts *opts.CommonOptions) (*cobra.Command, error) {
+func NewCmdAlpha(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &Options{
 		CommonOptions: commonOpts,
 	}
@@ -56,7 +56,7 @@ func NewCmdAlpha(commonOpts *opts.CommonOptions) (*cobra.Command, error) {
 
 	plugins, err := options.getPluginSpecs()
 	if err != nil {
-		return cmd, err
+		log.Logger().Warnf("failed to discover alpha commands from github: %s", err.Error())
 	}
 	for i := range plugins {
 		c := plugins[i]
@@ -71,7 +71,7 @@ func NewCmdAlpha(commonOpts *opts.CommonOptions) (*cobra.Command, error) {
 		}
 		cmd.AddCommand(subCmd)
 	}
-	return cmd, err
+	return cmd
 }
 
 // Run implements this command
