@@ -1,7 +1,12 @@
 package kustomize
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -48,4 +53,32 @@ func extractSemanticVersion(version string) (string, error) {
 		return "", errors.Wrapf(err, "not able to extract a semantic version of kustomize version output")
 	}
 	return regex.FindString(version), nil
+}
+
+// ContainsKustomizeConfig finds out if there is any kustomize resource in the cwd or subdirectories
+func (k *KustomizeCLI) ContainsKustomizeConfig(dir string) bool {
+	if len(k.FindKustomizationYamlPaths(dir)) != 0 {
+		return true
+	}
+
+	return false
+}
+
+// FindKustomizationYamlPaths looks for the kustomization.yaml i.e. kustomize resources in present and sub-directories
+func (k *KustomizeCLI) FindKustomizationYamlPaths(dir string) []string {
+	fp, err := filepath.Abs(dir)
+	var resources []string
+	err = filepath.Walk(fp, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if strings.Contains(path, "kustomization.yaml") {
+			resources = append(resources, path)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Logger().Errorf("problem finding kustomize resources %s ", err)
+	}
+	return resources
 }
