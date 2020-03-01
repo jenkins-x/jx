@@ -65,6 +65,7 @@ type StepVerifyPreInstallOptions struct {
 	TestKanikoSecretData   string
 	TestVeleroSecretData   string
 	WorkloadIdentity       bool
+	NoSecretYAMLValidate   bool
 }
 
 // NewCmdStepVerifyPreInstall creates the `jx step verify pod` command
@@ -110,7 +111,7 @@ func (o *StepVerifyPreInstallOptions) Run() error {
 		return err
 	}
 
-	if requirements.Helmfile {
+	if requirements.Helmfile && !o.NoSecretYAMLValidate {
 		err = o.validateSecretsYAML()
 		if err != nil {
 			return err
