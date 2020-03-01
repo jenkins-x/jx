@@ -181,7 +181,6 @@ func (o *StepCreateValuesOptions) Run() error {
 		return err
 	}
 
-	fmt.Println()
 	err = o.CreateValuesFile(secretURLClient)
 	if err != nil {
 		return errors.WithStack(err)
@@ -197,7 +196,6 @@ func (o *StepCreateValuesOptions) Run() error {
 		return errors.Wrap(err, "error creating the secret for local secret scheme")
 	}
 
-	fmt.Println()
 	return nil
 }
 
@@ -263,6 +261,9 @@ func (o *StepCreateValuesOptions) verifyRegistryConfig(requirements *config.Requ
 				return errors.Wrap(err, "getting cluster from Azure")
 			}
 			registryID := ""
+			if requirements.Cluster.AzureConfig == nil {
+				return errors.New("no azure registry subscription specified in 'jx-requirements.yml' at cluster.azure")
+			}
 			azureRegistrySubscription := requirements.Cluster.AzureConfig.RegistrySubscription
 			if azureRegistrySubscription == "" {
 				log.Logger().Info("no azure registry subscription is specified in 'jx-requirements.yml' at cluster.azure.registrySubscription")
