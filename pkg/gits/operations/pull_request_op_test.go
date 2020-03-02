@@ -103,6 +103,87 @@ func TestCreatePullRequest(t *testing.T) {
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
 }
 
+func TestCreatePullRequestsWithLabels(t *testing.T) {
+
+	_, _, _, commonOpts, _ := getFakeClientsAndNs(t)
+
+	testOrgName := "testowner"
+	testRepoName := "testrepo"
+
+	commonOpts.SetGit(gits.NewGitFake())
+
+	gitter := gits_test.NewMockGitter()
+
+	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
+	fakeGitProvider.User.Username = testOrgName
+
+	o := operations.PullRequestOperation{
+		CommonOptions: &commonOpts,
+	}
+
+	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
+		[]runtime.Object{},
+		[]runtime.Object{},
+		gitter,
+		fakeGitProvider,
+		nil,
+		resources_test.NewMockInstaller(),
+	)
+
+	err := testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
+	assert.NoError(t, err)
+
+	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
+
+	o.GitURLs = []string{"testowner/testrepo"}
+	o.SrcGitURL = "testowner/testrepo"
+	o.Version = "3.0.0"
+
+	var results *gits.PullRequestInfo
+
+	logOutput := log.CaptureOutput(func() {
+		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, results)
+	})
+
+	prNumber := "1"
+	assert.Contains(t, logOutput, fmt.Sprintf("Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/%s", prNumber),
+		"Updatebot label should be added to the PR")
+
+	assert.NotNil(t, results, "we must have results coming out of the PR creation")
+	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
+		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
+
+	o = operations.PullRequestOperation{
+		CommonOptions: &commonOpts,
+	}
+
+	o.GitURLs = []string{"testowner/testrepo"}
+	o.SrcGitURL = "testowner/testrepo"
+	o.Version = "4.0.0"
+	o.Labels = []string{"test-label"}
+
+	logOutput = log.CaptureOutput(func() {
+		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+			return []string{"1.0.0"}, nil
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, results)
+	})
+
+	prNumber = "2"
+	assert.Contains(t, logOutput, fmt.Sprintf("Added label updatebot, test-label to Pull Request https://fake.git/testowner/testrepo/pulls/%s", prNumber),
+		"Updatebot and test-label label should be added to the PR")
+
+	assert.NotNil(t, results, "we must have results coming out of the second PR creation")
+	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0 to 4.0.0",
+		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
+}
+
 func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
 
 	_, _, _, commonOpts, _ := getFakeClientsAndNs(t)
