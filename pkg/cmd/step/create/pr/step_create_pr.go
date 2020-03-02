@@ -31,6 +31,7 @@ type StepCreatePrOptions struct {
 	DryRun        bool
 	SkipCommit    bool
 	SkipAutoMerge bool
+	Labels        []string
 }
 
 // NewCmdStepCreatePr Steps a command object for the "step" command
@@ -81,6 +82,7 @@ func AddStepCreatePrFlags(cmd *cobra.Command, o *StepCreatePrOptions) {
 	cmd.Flags().StringVarP(&o.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	cmd.Flags().BoolVarP(&o.DryRun, "dry-run", "", false, "Perform a dry run, the change will be generated and committed, but not pushed or have a PR created")
 	cmd.Flags().BoolVarP(&o.SkipAutoMerge, "skip-auto-merge", "", false, "Disable auto merge of the PR if status checks pass")
+	cmd.Flags().StringArrayVarP(&o.Labels, "repo", "", []string{}, "Labels to add to the created PR")
 }
 
 // ValidateOptions validates the common options for all PR creation steps
@@ -144,6 +146,7 @@ func (o *StepCreatePrOptions) createPullRequestOperation() operations.PullReques
 		DryRun:        o.DryRun,
 		SkipCommit:    o.SkipCommit,
 		SkipAutoMerge: o.SkipAutoMerge,
+		Labels:        o.Labels,
 	}
 	authorName, authorEmail, err := gits.EnsureUserAndEmailSetup(o.Git())
 	if err != nil {

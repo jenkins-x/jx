@@ -48,6 +48,7 @@ type PullRequestOperation struct {
 	AuthorName    string
 	AuthorEmail   string
 	SkipAutoMerge bool
+	Labels        []string
 }
 
 // ChangeFilesFn is the function called to create the pull request
@@ -84,6 +85,9 @@ func (o *PullRequestOperation) CreatePullRequest(kind string, update ChangeFiles
 		labels := []string{}
 		if !o.SkipAutoMerge {
 			labels = append(labels, "updatebot")
+		}
+		if len(o.Labels) > 0 {
+			labels = append(labels, o.Labels...)
 		}
 		filter := &gits.PullRequestFilter{
 			Labels: labels,
