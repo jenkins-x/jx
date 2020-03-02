@@ -20,9 +20,9 @@ pipelineConfig:
                     name: whitesource
                     key: user-key
               - name: WHITESOURCE_PRODUCT_TOKEN
-                value: "UPDATE_ME"
+                value: "499f35ebde4642b2ac550b9a331c2bb86c2deb1bcd5a4b9282f6879a0f2ab225"
               - name: WHITESOURCE_PROJECT_TOKEN
-                value: "UPDATE_ME"
+                value: "ee80483f83af44aa86c7a2458e30d0f6d22ea2769c7b44b3a2c2220cb7335b42"
             options: 
               containerOptions:
                 resources:
