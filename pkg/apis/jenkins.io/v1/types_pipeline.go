@@ -71,10 +71,13 @@ type BatchPipelineActivity struct {
 	ComprisingPulLRequests []PullRequestInfo `json:"pullRequestInfo,omitempty" protobuf:"bytes,3,opt,name=pullRequestInfo"`
 }
 
-// PullRequestInfo contains information about a PR, like its PR and Build numbers
+// PullRequestInfo contains information about a PR included in a batch, like its PR number, the last build number, and SHA
 type PullRequestInfo struct {
-	PullRequestNumber        string `json:"pullRequestNumber,omitempty" protobuf:"bytes,1,opt,name=pullRequestNumber"`
+	PullRequestNumber string `json:"pullRequestNumber,omitempty" protobuf:"bytes,1,opt,name=pullRequestNumber"`
+	// LastBuildNumberForCommit is the number of the last successful build of this PR outside of a batch
 	LastBuildNumberForCommit string `json:"lastBuildNumberForCommit,omitempty" protobuf:"bytes,2,opt,name=lastBuildNumberForCommit"`
+	// LastBuildSHA is the commit SHA in the last successful build of this PR outside of a batch.
+	LastBuildSHA string `json:"lastBuildSHA,omitempty" protobuf:"bytes,3,opt,name=lastBuildSHA"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity

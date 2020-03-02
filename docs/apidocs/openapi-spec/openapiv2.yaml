@@ -1828,10 +1828,16 @@ definitions:
         description: Restrictions limits who can merge
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PullRequestInfo:
-    description: PullRequestInfo contains information about a PR, like its PR and
-      Build numbers
+    description: PullRequestInfo contains information about a PR included in a batch,
+      like its PR number, the last build number, and SHA
     properties:
       lastBuildNumberForCommit:
+        description: LastBuildNumberForCommit is the number of the last successful
+          build of this PR outside of a batch
+        type: string
+      lastBuildSHA:
+        description: LastBuildSHA is the commit SHA in the last successful build of
+          this PR outside of a batch.
         type: string
       pullRequestNumber:
         type: string

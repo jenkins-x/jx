@@ -4655,7 +4655,7 @@ func schema_pkg_apis_jenkinsio_v1_PullRequestInfo(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "PullRequestInfo contains information about a PR, like its PR and Build numbers",
+				Description: "PullRequestInfo contains information about a PR included in a batch, like its PR number, the last build number, and SHA",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pullRequestNumber": {
@@ -4666,8 +4666,16 @@ func schema_pkg_apis_jenkinsio_v1_PullRequestInfo(ref common.ReferenceCallback) 
 					},
 					"lastBuildNumberForCommit": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "LastBuildNumberForCommit is the number of the last successful build of this PR outside of a batch",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lastBuildSHA": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastBuildSHA is the commit SHA in the last successful build of this PR outside of a batch.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
