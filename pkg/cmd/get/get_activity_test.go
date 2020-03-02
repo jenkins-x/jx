@@ -94,7 +94,7 @@ var _ = Describe("get activity", func() {
 
 			It("Prints a list of activities", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout.GetOutput()).To(HavePrefix(`STEP                         STARTED AGO DURATION STATUS
+				Expect(stdout.GetOutput()).To(ContainSubstring(`STARTED AGO DURATION STATUS
 jx-testing/jx-testing/job #1`))
 			})
 		})
@@ -106,7 +106,7 @@ jx-testing/jx-testing/job #1`))
 
 			It("Prints a sorted list of activities", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout.GetOutput()).To(HavePrefix(`STEP                         STARTED AGO DURATION STATUS
+				Expect(stdout.GetOutput()).To(ContainSubstring(`STARTED AGO DURATION STATUS
 jx-testing/jx-testing/job #2`))
 			})
 		})
