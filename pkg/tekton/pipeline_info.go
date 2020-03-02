@@ -136,6 +136,8 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	build := ""
 	pullRefs := ""
 	pullBaseSha := ""
+	pullPullSha := ""
+	shaFromGitInit := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
 		log.Logger().Warnf("Failed to compile regexp because %s", err)
@@ -182,6 +184,11 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	}
 	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
 	for _, container := range containers {
+		// We historically used the git source step automatically injected by Tekton to get the git URL and the sha or
+		// branch being built, but that is no longer going to always be accurate due to our bespoke git merge step
+		// handling checkout/merging of PR branches into the target branch.
+		// The Prow/Lighthouse provided environment variables are a better source of truth, but we preserve this logic
+		// for now in case of edge cases, as a fallback.
 		if strings.HasPrefix(container.Name, "build-step-git-source") || strings.HasPrefix(container.Name, "step-git-source") {
 			_, args := kube.GetCommandAndArgs(&container, isInit)
 			for i := 0; i <= len(args)-2; i += 2 {
@@ -193,45 +200,60 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 					gitURL = value
 				case "-revision":
 					if shaRegexp.MatchString(value) {
-						lastCommitSha = value
+						shaFromGitInit = value
 					} else {
 						branch = value
 					}
 				}
 			}
 		}
-		var pullPullSha string
 		for _, v := range container.Env {
 			if v.Value == "" {
 				continue
 			}
+			// PULL_PULL_SHA is set by Prow/Lighthouse with the HEAD SHA of the PR being built, or the HEAD SHA of the
+			// first PR in a batch. It will be empty for non-PR builds.
 			if v.Name == "PULL_PULL_SHA" {
 				pullPullSha = v.Value
 			}
+			// PULL_BASE_SHA is set by Prow/Lighthouse with the target SHA for a PR build, or with just the HEAD SHA for
+			// master. It is always set.
 			if v.Name == "PULL_BASE_SHA" {
 				pullBaseSha = v.Value
 			}
+			// BRANCH_NAME is set by Prow/Lighthouse with the branch name being built - either PR-123 or master in almost
+			// all cases. It is always set.
 			if v.Name == util.EnvVarBranchName {
 				branch = v.Value
 			}
+			// REPO_OWNER is set by Prow/Lighthouse with the org or user the repo is under on the SCM provider. It is
+			// always set.
 			if v.Name == "REPO_OWNER" {
 				owner = v.Value
 			}
+			// REPO_NAME is set by Prow/Lighthouse with the repo name. It is always set.
 			if v.Name == "REPO_NAME" {
 				repo = v.Value
 			}
+			// Deprecated - this is only set for static masters.
 			if v.Name == "JX_BUILD_NUMBER" {
 				build = v.Value
 			}
+			// SOURCE_URL is set by Prow/Lighthouse with the clone URL for the repo. It is always set.
 			if v.Name == "SOURCE_URL" && gitURL == "" {
 				gitURL = v.Value
 			}
+			// PULL_REFS is set by Prow/Lighthouse with a comma-separated list of colon-delimited pairs of branch:ref
+			// involved in the build. For PRs, it will be "master:...,1:...", for batch builds, it will be "master:...,1:...,2:...",
+			// and for release builds, it will be "master:...". It is always set.
 			if v.Name == "PULL_REFS" && pullRefs == "" {
 				pullRefs = v.Value
 			}
 		}
 		if branch == "" {
 			for _, v := range container.Env {
+				// PULL_BASE_REF is set by Prow/Lighthouse to the branch or ref name the PR is targeting, like "master".
+				// It is only set for PR and batch builds.
 				if v.Name == "PULL_BASE_REF" {
 					build = v.Value
 				}
@@ -239,17 +261,44 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		}
 		if build == "" {
 			for _, v := range container.Env {
-				if v.Name == "BUILD_NUMBER" || v.Name == "BUILD_ID" {
+				// BUILD_NUMBER is set by the metapipeline. This used to also look at BUILD_ID, but we don't set that
+				// any more.
+				if v.Name == "BUILD_NUMBER" {
 					build = v.Value
 				}
 			}
 		}
-		if lastCommitSha == "" && pullPullSha != "" {
-			lastCommitSha = pullPullSha
+	}
+
+	if pullBaseSha != "" {
+		pri.BaseSHA = pullBaseSha
+	}
+
+	if pullPullSha != "" {
+		lastCommitSha = pullPullSha
+	}
+
+	// If we have the PULL_REFS env var, fall back on it for the lastCommitSha and base sha.
+	if pullRefs != "" {
+		splitRefs := strings.Split(pullRefs, ",")
+		// If there's at least one entry, use the first entry for the base sha.
+		if len(splitRefs) > 0 {
+			if pri.BaseSHA == "" {
+				pri.BaseSHA = shaFromPullRefEntry(splitRefs[0])
+			}
 		}
-		if lastCommitSha == "" && pullBaseSha != "" {
-			lastCommitSha = pullBaseSha
+		// If there are at least two entries, use the second entry for the lastCommitSha
+		if len(splitRefs) > 1 {
+			if lastCommitSha == "" {
+				// If we don't have a lastCommitSha, use the second ref
+				lastCommitSha = shaFromPullRefEntry(splitRefs[1])
+			}
 		}
+	}
+
+	// Fall back on git checkout if for some reason the last commit sha wasn't set based on env vars.
+	if lastCommitSha == "" {
+		lastCommitSha = shaFromGitInit
 	}
 
 	if build == "" {
@@ -261,24 +310,6 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	buildNumber, err := strconv.Atoi(build)
 	if err != nil {
 		buildNumber = 1
-	}
-
-	pri.BaseSHA = pullBaseSha
-
-	if lastCommitSha == "" {
-		idx := strings.LastIndex(pullRefs, ":")
-		if idx > 0 {
-			lastCommitSha = pullRefs[idx+1:]
-			if pri.BaseSHA == "" {
-				paths := strings.Split(pullRefs, ":")
-				if len(paths) > 2 {
-					expressions := strings.Split(paths[1], ",")
-					if len(expressions) > 0 {
-						pri.BaseSHA = expressions[0]
-					}
-				}
-			}
-		}
 	}
 
 	pri.Build = build
@@ -306,6 +337,16 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		pri.LastCommitURL = lastCommitURL
 	}
 	return pri, nil
+}
+
+// shaFromPullRefEntry returns the sha from "some-ref-name-or-pr-number:01234567890abcdef...", returning an empty string
+// if the entry isn't in that format.
+func shaFromPullRefEntry(refEntry string) string {
+	idx := strings.LastIndex(refEntry, ":")
+	if idx > 0 {
+		return refEntry[idx+1:]
+	}
+	return ""
 }
 
 // SetPodsForPipelineRun populates the pods for all stages within its PipelineRunInfo

@@ -298,6 +298,7 @@ func TestCreateOrUpdateActivityForBatchBuild(t *testing.T) {
 		if i.PullRequestNumber == "PR-2" {
 			exists = true
 			assert.Equal(t, "3", i.LastBuildNumberForCommit)
+			assert.Equal(t, "sha2", i.LastBuildSHA)
 		}
 	}
 	assert.True(t, exists, "There should be a Pull Request called PR-2 within the ComprisingPullRequests property")

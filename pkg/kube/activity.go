@@ -343,7 +343,7 @@ func (k *PipelineActivityKey) addBatchBuildData(activitiesClient typev1.Pipeline
 		listOptions.LabelSelector = selector
 		list, err := activitiesClient.List(listOptions)
 		if err != nil {
-			return errors.Wrapf(err, "there was a problem listing all PipelineActivities for PR-%s with lastCommitSha %s", sha, prNumber)
+			return errors.Wrapf(err, "there was a problem listing all PipelineActivities for PR-%s with lastCommitSha %s", prNumber, sha)
 		}
 
 		// Only proceed if there are existing PipelineActivitys for this commit/branch - it's entirely possible they've
@@ -382,6 +382,7 @@ func (k *PipelineActivityKey) addBatchBuildData(activitiesClient typev1.Pipeline
 			prInfos = append(prInfos, v1.PullRequestInfo{
 				PullRequestNumber:        selectedPipeline.Labels[v1.LabelBranch],
 				LastBuildNumberForCommit: selectedPipeline.Spec.Build,
+				LastBuildSHA:             sha,
 			})
 		}
 	}
