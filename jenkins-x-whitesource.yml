@@ -5,7 +5,7 @@ pipelineConfig:
     release:
       pipeline:
         agent:
-          image: cloudbees/whitesource-agent-jx@sha256:defe08ef29cfa765c9e32bcc653fa1f643237bb99893402f06660aa9730fb583
+          image: cloudbees/whitesource-agent-jx
         stages:
           - name: dependencies-scanning
             environment:
@@ -34,7 +34,7 @@ pipelineConfig:
                     memory: 1Gi
             steps:
               - name: whitesource
-                image: cloudbees/whitesource-agent-jx@sha256:defe08ef29cfa765c9e32bcc653fa1f643237bb99893402f06660aa9730fb583
+                image: cloudbees/whitesource-agent-jx
                 command: /app/entrypoint-jx.sh
                 args:
                   - -c
