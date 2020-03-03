@@ -48,8 +48,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func TestCreatePullRequest(t *testing.T) {
 
+func setupTestPullRequestOperation(t *testing.T) (operations.PullRequestOperation) {
 	_, _, _, commonOpts, _ := getFakeClientsAndNs(t)
 
 	testOrgName := "testowner"
@@ -79,109 +79,81 @@ func TestCreatePullRequest(t *testing.T) {
 	err := testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
-	o.GitURLs = []string{"testowner/testrepo"}
-	o.SrcGitURL = "testowner/testrepo"
-	o.Version = "3.0.0"
-
 	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
 
+	return o
+}
+
+func TestCreatePullRequest(t *testing.T) {
+	prOpts := setupTestPullRequestOperation(t)
+
+	prOpts.GitURLs = []string{"testowner/testrepo"}
+	prOpts.SrcGitURL = "testowner/testrepo"
+	prOpts.Version = "3.0.0"
+
 	var results *gits.PullRequestInfo
+	var err error
 
 	logOutput := log.CaptureOutput(func() {
-		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+		results, err = prOpts.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
 			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
 		})
 		assert.NoError(t, err)
-		assert.NotNil(t, results)
+		assert.NotNil(t, results, "we must have results coming out of the PR creation")
 	})
 
 	assert.Contains(t, logOutput, "Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/1",
 		"Updatebot label should be added to the PR")
 
-	assert.NotNil(t, results, "we must have results coming out of the PR creation")
 	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
 }
 
 func TestCreatePullRequestsWithLabels(t *testing.T) {
+	prOpts := setupTestPullRequestOperation(t)
 
-	_, _, _, commonOpts, _ := getFakeClientsAndNs(t)
+	prOpts.GitURLs = []string{"testowner/testrepo"}
+	prOpts.SrcGitURL = "testowner/testrepo"
+	prOpts.Version = "2.0.0"
+	fromVersion := "1.0.0"
 
-	testOrgName := "testowner"
-	testRepoName := "testrepo"
-
-	commonOpts.SetGit(gits.NewGitFake())
-
-	gitter := gits_test.NewMockGitter()
-
-	fakeRepo, _ := gits.NewFakeRepository(testOrgName, testRepoName, nil, nil)
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
-	fakeGitProvider.User.Username = testOrgName
-
-	o := operations.PullRequestOperation{
-		CommonOptions: &commonOpts,
-	}
-
-	testhelpers.ConfigureTestOptionsWithResources(o.CommonOptions,
-		[]runtime.Object{},
-		[]runtime.Object{},
-		gitter,
-		fakeGitProvider,
-		nil,
-		resources_test.NewMockInstaller(),
-	)
-
-	err := testhelpers.CreateTestEnvironmentDir(o.CommonOptions)
+	results, err := prOpts.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+		return []string{fromVersion}, nil
+	})
 	assert.NoError(t, err)
-
-	pegomock.When(gitter.HasChanges(pegomock.AnyString())).ThenReturn(true, nil)
-
-	o.GitURLs = []string{"testowner/testrepo"}
-	o.SrcGitURL = "testowner/testrepo"
-	o.Version = "3.0.0"
-
-	var results *gits.PullRequestInfo
-
-	logOutput := log.CaptureOutput(func() {
-		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
-			return []string{"1.0.0", "v1.0.1", "2.0.0"}, nil
-		})
-		assert.NoError(t, err)
-		assert.NotNil(t, results)
-	})
-
-	prNumber := "1"
-	assert.Contains(t, logOutput, fmt.Sprintf("Added label updatebot to Pull Request https://fake.git/testowner/testrepo/pulls/%s", prNumber),
-		"Updatebot label should be added to the PR")
-
 	assert.NotNil(t, results, "we must have results coming out of the PR creation")
-	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0, 2.0.0 and v1.0.1 to 3.0.0",
+
+	prNumber := 1
+	assert.Equal(t, prNumber, *results.PullRequest.Number,"This should be PR number %d", prNumber)
+
+	assert.Equal(t, fmt.Sprintf("chore(deps): bump %s from %s to %s", prOpts.SrcGitURL, fromVersion, prOpts.Version),
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
 
-	o = operations.PullRequestOperation{
-		CommonOptions: &commonOpts,
-	}
+	assert.Equal(t, 1, len(results.PullRequest.Labels),"One label expected")
 
-	o.GitURLs = []string{"testowner/testrepo"}
-	o.SrcGitURL = "testowner/testrepo"
-	o.Version = "4.0.0"
-	o.Labels = []string{"test-label"}
+	//create second PR with additional label
+	prOpts.GitURLs = []string{"testowner/testrepo"}
+	prOpts.Version = "4.0.0"
+	prOpts.Labels = []string{"test-label"}
 
-	logOutput = log.CaptureOutput(func() {
-		results, err = o.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
-			return []string{"1.0.0"}, nil
+	results, err = prOpts.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+			return []string{fromVersion}, nil
 		})
-		assert.NoError(t, err)
-		assert.NotNil(t, results)
-	})
-
-	prNumber = "2"
-	assert.Contains(t, logOutput, fmt.Sprintf("Added label updatebot, test-label to Pull Request https://fake.git/testowner/testrepo/pulls/%s", prNumber),
-		"Updatebot and test-label label should be added to the PR")
-
+	assert.NoError(t, err)
 	assert.NotNil(t, results, "we must have results coming out of the second PR creation")
-	assert.Equal(t, "chore(deps): bump testowner/testrepo from 1.0.0 to 4.0.0",
+
+	prNumber = 2
+	assert.Equal(t, prNumber, *results.PullRequest.Number,"This should be PR number %d", prNumber)
+
+	assert.Equal(t, fmt.Sprintf("chore(deps): bump %s from %s to %s", prOpts.SrcGitURL, fromVersion, prOpts.Version),
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
+
+	assert.Equal(t, 2, len(results.PullRequest.Labels),"Two labels expected")
+	prLabels := []string{}
+	for _, label := range *results.PullRequest.Labels {
+		prLabels = append(prLabels, label.Name)
+	}
+	assert.Contains(t, prLabels, prOpts.Labels)
 }
 
 func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
