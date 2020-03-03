@@ -5,7 +5,7 @@ pipelineConfig:
     release:
       pipeline:
         agent:
-          image: cloudbees/whitesource-agent-jx@sha256:6e5154bb93c5027aa05ec2f7173b7b42037b424c11680e482b60e78672dbdf07
+          image: cloudbees/whitesource-agent-jx@sha256:defe08ef29cfa765c9e32bcc653fa1f643237bb99893402f06660aa9730fb583
         stages:
           - name: dependencies-scanning
             environment:
@@ -34,8 +34,10 @@ pipelineConfig:
                     memory: 1Gi
             steps:
               - name: whitesource
-                image: cloudbees/whitesource-agent-jx@sha256:6e5154bb93c5027aa05ec2f7173b7b42037b424c11680e482b60e78672dbdf07
+                image: cloudbees/whitesource-agent-jx@sha256:defe08ef29cfa765c9e32bcc653fa1f643237bb99893402f06660aa9730fb583
                 command: /app/entrypoint-jx.sh
                 args:
+                  - -c
+                  - /workspace/source/.whitesource.config
                   - regular
                 dir: /app/
