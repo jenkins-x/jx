@@ -112,6 +112,8 @@ const (
 	RequirementGitAppURL = "JX_REQUIREMENT_GITHUB_APP_URL"
 	// RequirementDevEnvApprovers contains the optional list of users to populate the dev env's OWNERS with
 	RequirementDevEnvApprovers = "JX_REQUIREMENT_DEV_ENV_APPROVERS"
+	// RequirementVersionsGitRef contains the git ref of the version stream
+	RequirementVersionsGitRef = "JX_REQUIREMENT_VERSIONS_GIT_REF"
 )
 
 const (
@@ -995,6 +997,11 @@ func (c *RequirementsConfig) OverrideRequirementsFromEnvironment(gcloudFn func()
 			}
 		}
 	}
+
+	if "" != os.Getenv(RequirementVersionsGitRef) {
+		c.VersionStream.Ref = os.Getenv(RequirementVersionsGitRef)
+	}
+
 }
 
 func envVarBoolean(value string) bool {
