@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var localURIRegex = regexp.MustCompile(`:[\s"]*local:[-_\w\/:]*`)
+var localURIRegex = regexp.MustCompile(`:[\s"]*local:[-_.\w\/:]*`)
 
 // CanonicalClusterPath this is the path where the client will fall back when secrets are not found at the standard path
 const CanonicalClusterPath = "currentCluster"

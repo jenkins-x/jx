@@ -16,7 +16,7 @@ const (
 	yamlDataKey = "yaml"
 )
 
-var vaultURIRegex = regexp.MustCompile(`vault:[-_\w\/:]*`)
+var vaultURIRegex = regexp.MustCompile(`vault:[-_.\w\/:]*`)
 
 // FakeVaultClient is an in memory implementation of vault, useful for testing
 type FakeVaultClient struct {
