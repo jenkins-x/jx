@@ -48,8 +48,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-
-func setupTestPullRequestOperation(t *testing.T) (operations.PullRequestOperation) {
+func setupTestPullRequestOperation(t *testing.T) operations.PullRequestOperation {
 	_, _, _, commonOpts, _ := getFakeClientsAndNs(t)
 
 	testOrgName := "testowner"
@@ -124,36 +123,38 @@ func TestCreatePullRequestsWithLabels(t *testing.T) {
 	assert.NotNil(t, results, "we must have results coming out of the PR creation")
 
 	prNumber := 1
-	assert.Equal(t, prNumber, *results.PullRequest.Number,"This should be PR number %d", prNumber)
+	assert.Equal(t, prNumber, *results.PullRequest.Number, "This should be PR number %d", prNumber)
 
 	assert.Equal(t, fmt.Sprintf("chore(deps): bump %s from %s to %s", prOpts.SrcGitURL, fromVersion, prOpts.Version),
 		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
 
-	assert.Equal(t, 1, len(results.PullRequest.Labels),"One label expected")
+	assert.Equal(t, 1, len(results.PullRequest.Labels), "One label expected")
+	assert.Equal(t, "updatebot", *results.PullRequest.Labels[0].Name, "updatebot label should exist")
 
 	//create second PR with additional label
 	prOpts.GitURLs = []string{"testowner/testrepo"}
 	prOpts.Version = "4.0.0"
 	prOpts.Labels = []string{"test-label"}
 
-	results, err = prOpts.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
-			return []string{fromVersion}, nil
-		})
+	labelResults, err := prOpts.CreatePullRequest("test", func(dir string, gitInfo *gits.GitRepository) (strings []string, e error) {
+		return []string{fromVersion}, nil
+	})
 	assert.NoError(t, err)
-	assert.NotNil(t, results, "we must have results coming out of the second PR creation")
+	assert.NotNil(t, labelResults, "we must have results coming out of the second PR creation")
 
 	prNumber = 2
-	assert.Equal(t, prNumber, *results.PullRequest.Number,"This should be PR number %d", prNumber)
+	assert.Equal(t, prNumber, *labelResults.PullRequest.Number, "This should be PR number %d", prNumber)
 
 	assert.Equal(t, fmt.Sprintf("chore(deps): bump %s from %s to %s", prOpts.SrcGitURL, fromVersion, prOpts.Version),
-		results.PullRequestArguments.Title, "The PR title should contain the old and new versions")
+		labelResults.PullRequestArguments.Title, "The PR title should contain the old and new versions")
 
-	assert.Equal(t, 2, len(results.PullRequest.Labels),"Two labels expected")
+	assert.Equal(t, 2, len(labelResults.PullRequest.Labels), "Two labels expected")
 	prLabels := []string{}
-	for _, label := range *results.PullRequest.Labels {
-		prLabels = append(prLabels, label.Name)
+	for _, label := range labelResults.PullRequest.Labels {
+		prLabels = append(prLabels, *label.Name)
 	}
-	assert.Contains(t, prLabels, prOpts.Labels)
+	assert.Contains(t, prLabels, "updatebot", "updatebot label should exist")
+	assert.Contains(t, prLabels, prOpts.Labels[0], fmt.Sprintf("%s label should exist", prOpts.Labels[0]))
 }
 
 func TestCreatePullRequestWithMatrixUpdatePaths(t *testing.T) {
