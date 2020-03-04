@@ -383,14 +383,10 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 
 	err = addLabelsToPullRequest(prInfo, prDetails.Labels)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to add labels %+v to PR %s", prDetails.Labels, prInfo.PullRequest.URL)
+		return nil, errors.Wrapf(err, "failed to add labels %+v to PR %s", prDetails.Labels, pr.URL)
 	}
 
-	return &PullRequestInfo{
-		GitProvider:          provider,
-		PullRequest:          pr,
-		PullRequestArguments: gha,
-	}, nil
+	return prInfo, nil
 }
 
 // addLabelsToPullRequest adds the provided labels, if not already present, to the provided pull request

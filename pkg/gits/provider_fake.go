@@ -234,11 +234,13 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 	repo.issueCount += 1
 	number := repo.issueCount
 	labels := make([]*Label, 0)
+
 	for _, l := range data.Labels {
+		labelName := l
 		labels = append(labels, &Label{
 			ID:          nil,
 			URL:         nil,
-			Name:        &l,
+			Name:        &labelName,
 			Color:       nil,
 			Description: nil,
 			Default:     nil,
@@ -976,8 +978,9 @@ func (f *FakeProvider) AddLabelsToIssue(owner, repo string, number int, labels [
 				if util.DereferenceInt(pr.PullRequest.Number) == number {
 					ls := make([]*Label, 0)
 					for _, l := range labels {
+						labelName := l
 						ls = append(ls, &Label{
-							Name: &l,
+							Name: &labelName,
 						})
 					}
 					pr.PullRequest.Labels = ls
