@@ -309,22 +309,12 @@ func (h *HelmCLI) BuildDependency() error {
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
 	var err error
-	currentNamespace := ""
-	if h.Binary == "helm3" {
-		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
-		currentNamespace, err = h.getCurrentNamespace()
-		if err != nil {
-			return err
-		}
-
-		err = h.setNamespace(ns)
-		if err != nil {
-			return err
-		}
-	}
-
 	args := []string{}
-	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
+	if h.Binary == "helm3" {
+		args = append(args, "install", "--wait", releaseName, "--namespace", ns, chart)
+	} else {
+		args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
+	}
 	repo, err = addUsernamePasswordToURL(repo, username, password)
 	if err != nil {
 		return err
@@ -369,13 +359,6 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	err = h.runHelm(args...)
 	if err != nil {
 		return err
-	}
-
-	if h.Binary == "helm3" {
-		err = h.setNamespace(currentNamespace)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -423,7 +406,12 @@ func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir 
 // Template generates the YAML from the chart template to the given directory
 func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir string, upgrade bool,
 	values []string, valueStrings []string, valueFiles []string) error {
-	args := []string{"template", "--name", releaseName, "--namespace", ns, chart, "--output-dir", outDir, "--debug"}
+	args := []string{}
+	if h.Binary == "helm3" {
+		args = append(args, "template", releaseName, "--namespace", ns, chart, "--output-dir", outDir, "--debug")
+	} else {
+		args = append(args, "template", "--name", releaseName, "--namespace", ns, chart, "--output-dir", outDir, "--debug")
+	}
 	if upgrade {
 		args = append(args, "--is-upgrade")
 	}
