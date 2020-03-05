@@ -179,25 +179,25 @@ func ShouldInstallBinary(name string) (fileName string, download bool, err error
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
 		log.Logger().Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
-		return
+		return fileName, download, nil
 	}
 
 	binDir, err := util.JXBinLocation()
 	if err != nil {
-		return
+		return fileName, download, err
 	}
 
 	// lets see if its been installed but just is not on the PATH
 	exists, err := util.FileExists(filepath.Join(binDir, fileName))
 	if err != nil {
-		return
+		return fileName, download, err
 	}
 	if exists {
 		log.Logger().Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
-		return
+		return fileName, download, err
 	}
 	download = true
-	return
+	return fileName, download, err
 }
 
 // BinaryShouldBeInstalled appends the binary to the deps array if it cannot be found on the $PATH
