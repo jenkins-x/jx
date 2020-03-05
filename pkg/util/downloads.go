@@ -189,19 +189,19 @@ func getLatestReleaseFromHostUsingHttpRedirect(host, githubOwner, githubRepo str
 
 // GetLatestFullTagFromGithub gets the latest 'full' tag from a specific github repo. This (at present) ignores releases
 // with a hyphen in it, usually used with -SNAPSHOT, or -RC1 or -beta
-func GetLatestFullTagFromGithub(githubOwner, githubRepo string) (string, error) {
+func GetLatestFullTagFromGithub(githubOwner, githubRepo string) (*github.RepositoryTag, error) {
 	tags, err := GetTagsFromGithub(githubOwner, githubRepo)
 	if err == nil {
 		// Iterate over the tags to find the first that doesn't contain any hyphens in it (so is just x.y.z)
 		for _, tag := range tags {
 			name := *tag.Name
 			if !strings.ContainsRune(name, '-') {
-				return name, nil
+				return tag, nil
 			}
 		}
-		return "", errors.Errorf("No Full releases found for %s/%s", githubOwner, githubRepo)
+		return nil, errors.Errorf("No Full releases found for %s/%s", githubOwner, githubRepo)
 	}
-	return "", err
+	return nil, err
 }
 
 // GetLatestTagFromGithub gets the latest (in github order) tag from a specific github repo
@@ -234,7 +234,7 @@ func preamble() (*github.Client, *github.RepositoryRelease, *github.Response, er
 			ts := oauth2.StaticTokenSource(
 				&oauth2.Token{AccessToken: token},
 			)
-			tc = oauth2.NewClient(oauth2.NoContext, ts)
+			tc = oauth2.NewClient(context.TODO(), ts)
 		}
 		githubClient = github.NewClient(tc)
 	}
