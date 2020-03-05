@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -101,6 +102,9 @@ func (k *KubeAuthConfigHandler) LoadConfig() (*AuthConfig, error) {
 				}
 			}
 		}
+	}
+	if reflect.DeepEqual(*config, AuthConfig{}) {
+		return nil, fmt.Errorf("no appropriately annotated and labeled secrets found for server kind %q and service kind %q", k.kind, k.serviceKind)
 	}
 	return config, nil
 }
