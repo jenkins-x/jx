@@ -661,7 +661,7 @@ func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string,
 	// lets stick with helm2 for this step
 	//
 	helmBinary := o.Helm().HelmBinary()
-	o.Helm().SetHelmBinary("helm")
+	o.Helm().SetHelmBinary(helmBinary)
 	o.Helm().SetCWD(dir)
 	err = o.Helm().BuildDependency()
 	if err != nil {
@@ -684,7 +684,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 	}
 
 	helmBinary := o.Helm().HelmBinary()
-	o.Helm().SetHelmBinary("helm")
+	o.Helm().SetHelmBinary(helmBinary)
 	o.Helm().SetCWD(dir)
 	err = o.Helm().BuildDependency()
 	if err != nil {
