@@ -49,7 +49,7 @@ var (
 		jx gc gke
 `)
 
-	ServiceAccountSuffixes = []string{"-vt", "-ko", "-tf", "-dn"}
+	ServiceAccountSuffixes = []string{"-vt", "-ko", "-tf", "-dn", "-ex", "-jb", "-st", "-tk", "-vo"}
 )
 
 type Rules struct {
