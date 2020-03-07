@@ -18,6 +18,10 @@ debug
 .idea/
 *.iml
 
+**/.settings/
+.project
+.classpath
+
 .vscode/
 
 #Various temporary created while building/running jx.
