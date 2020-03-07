@@ -22,6 +22,8 @@ debug
 .project
 .classpath
 
+**/target/
+
 .vscode/
 
 #Various temporary created while building/running jx.
