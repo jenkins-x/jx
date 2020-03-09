@@ -60,7 +60,6 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateBranchPattern(commonOpts))
 	cmd.AddCommand(NewCmdCreateCamel(commonOpts))
 	cmd.AddCommand(NewCmdCreateChat(commonOpts))
-	cmd.AddCommand(NewCmdCreateCodeship(commonOpts))
 	cmd.AddCommand(NewCmdCreateCluster(commonOpts))
 	cmd.AddCommand(NewCmdCreateDevPod(commonOpts))
 	cmd.AddCommand(NewCmdCreateDockerAuth(commonOpts))
