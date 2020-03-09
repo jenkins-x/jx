@@ -835,7 +835,7 @@ func (c *PipelineConfig) createPipelineSteps(step *syntax.Step, prefixPath strin
 		}
 
 		s.Dir = dir
-
+		s.Env = step.Env
 		steps = append(steps, s)
 	} else if step.Loop != nil {
 		// Just copy in the loop step without altering it.

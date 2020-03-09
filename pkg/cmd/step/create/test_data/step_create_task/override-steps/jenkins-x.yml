@@ -27,6 +27,9 @@ pipelineConfig:
         step:
           command: echo
           args: ['goodbye']
+          env:
+            - name: DOCKER_REGISTRY
+              value: overriden.docker.io
       # Add a step before the mvn-deploy step
       - pipeline: release
         name: mvn-deploy

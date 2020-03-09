@@ -332,10 +332,7 @@ items:
       - name: DOCKER_CONFIG
         value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
-        valueFrom:
-          configMapKeyRef:
-            key: docker.registry
-            name: jenkins-x-docker-registry
+        value: overriden.docker.io
       - name: FRUIT
         value: BANANA
       - name: GIT_AUTHOR_EMAIL
