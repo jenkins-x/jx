@@ -285,7 +285,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/abayer/js-test-repo:$(inputs.params.version) --cache-repo=gcr.io//cache
+      - /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=$DOCKER_REGISTRY/$ORG/$APP_NAME:$(inputs.params.version) --cache-repo=$DOCKER_REGISTRY//cache
       command:
       - /busybox/sh
       - -c

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -1212,16 +1211,14 @@ func (s *Step) modifyStep(params StepPlaceholderReplacementArgs) {
 			sourceDir := params.WorkspaceDir
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")
 			localRepo := params.DockerRegistry
-			destination := params.DockerRegistry + "/" + params.DockerRegistryOrg + "/" + naming.ToValidName(params.GitName)
-
 			args := []string{"--cache=true", "--cache-dir=/workspace",
 				"--context=" + sourceDir,
 				"--dockerfile=" + dockerfile,
-				"--destination=" + destination + ":${inputs.params.version}",
-				"--cache-repo=" + localRepo + "/" + params.ProjectID + "/cache",
+				"--destination=$DOCKER_REGISTRY/$ORG/$APP_NAME:${inputs.params.version}",
+				"--cache-repo=$DOCKER_REGISTRY/" + params.ProjectID + "/cache",
 			}
 			if localRepo != "gcr.io" {
-				args = append(args, "--skip-tls-verify-registry="+localRepo)
+				args = append(args, "--skip-tls-verify-registry=true")
 			}
 
 			if ipAddressRegistryRegex.MatchString(localRepo) {
