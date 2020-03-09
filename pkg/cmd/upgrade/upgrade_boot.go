@@ -30,6 +30,7 @@ type UpgradeBootOptions struct {
 	Dir                     string
 	UpgradeVersionStreamRef string
 	LatestRelease           bool
+	Labels                  []string
 }
 
 var (
@@ -74,6 +75,7 @@ func NewCmdUpgradeBoot(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "the directory to look for the Jenkins X Pipeline and requirements")
 	cmd.Flags().StringVarP(&options.UpgradeVersionStreamRef, "upgrade-version-stream-ref", "", config.DefaultVersionsRef, "a version stream ref to use to upgrade to")
 	cmd.Flags().BoolVarP(&options.LatestRelease, "latest-release", "", false, "upgrade to latest release tag")
+	cmd.Flags().StringArrayVarP(&options.Labels, "labels", "", []string{}, "Labels to add to the generated upgrade PR")
 
 	return cmd
 }
@@ -480,7 +482,7 @@ func (o *UpgradeBootOptions) raisePR() error {
 		return errors.Wrapf(err, "getting repository %s/%s", gitInfo.Organisation, gitInfo.Name)
 	}
 
-	details, filter, err := prDetailsAndFilter()
+	details, filter, err := o.prDetailsAndFilter()
 	if err != nil {
 		return errors.Wrapf(err, "failed to get PR details and filter")
 	}
@@ -492,13 +494,17 @@ func (o *UpgradeBootOptions) raisePR() error {
 	return nil
 }
 
-func prDetailsAndFilter() (gits.PullRequestDetails, gits.PullRequestFilter, error) {
+func (o *UpgradeBootOptions) prDetailsAndFilter() (gits.PullRequestDetails, gits.PullRequestFilter, error) {
 	details := gits.PullRequestDetails{
 		BranchName: fmt.Sprintf("jx_boot_upgrade"),
 		Title:      "feat(config): upgrade configuration",
 		Message:    "Upgrade configuration",
 	}
+
 	labels := []string{}
+	if len(o.Labels) > 0 {
+		labels = append(labels, o.Labels...)
+	}
 	filter := gits.PullRequestFilter{
 		Labels: []string{
 			boot.PullRequestLabel,
