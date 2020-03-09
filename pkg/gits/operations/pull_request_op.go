@@ -3,6 +3,7 @@ package operations
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/secreturl"
@@ -32,6 +33,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
+)
+
+const (
+	// timeout controls the amount of time to wait when attempting to retrieve dependency information
+	timeout = 1 * time.Minute
 )
 
 // PullRequestOperation provides a way to execute a PullRequest operation using Git
@@ -220,24 +226,34 @@ func (o *PullRequestOperation) updateAndGenerateMessagesAndDependencyMatrix(dir 
 func AddDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsset, updateDependency *v1.DependencyUpdate) ([]*v1.DependencyUpdate, error) {
 	var upstreamUpdates dependencymatrix.DependencyUpdates
 	var updates []*v1.DependencyUpdate
-	resp, err := http.Get(upstreamDependencyAsset.BrowserDownloadURL)
-	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
-	}
-	defer resp.Body.Close()
 
-	// Write the body
-	var b bytes.Buffer
-	_, err = io.Copy(&b, resp.Body)
+	log.Logger().Infof("Attempting to retrieve dependency asset information from %q", upstreamDependencyAsset.BrowserDownloadURL)
+
+	err := util.Retry(timeout, func() error {
+		resp, err := http.Get(upstreamDependencyAsset.BrowserDownloadURL)
+		if err != nil {
+			return errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+		}
+		defer resp.Body.Close()
+		// Write the body
+		var b bytes.Buffer
+		_, err = io.Copy(&b, resp.Body)
+		if err != nil {
+			return errors.Wrapf(err, "copying response body after retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+		}
+		bytes := b.Bytes()
+		err = yaml.Unmarshal(bytes, &upstreamUpdates)
+		if err != nil {
+			log.Logger().Errorf("unable to unmarshall from %s", string(bytes))
+			return errors.Wrapf(err, "unmarshaling dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+		}
+		return nil
+	})
+
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
+		return nil, errors.Wrapf(err, "getting dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
 	}
-	bytes := b.Bytes()
-	err = yaml.Unmarshal(bytes, &upstreamUpdates)
-	if err != nil {
-		log.Logger().Errorf("unable to unmarshall from %s", string(bytes))
-		return nil, errors.Wrapf(err, "unmarshaling dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
-	}
+
 	for _, d := range upstreamUpdates.Updates {
 		// Need to prepend a path element
 		if d.Paths == nil {
