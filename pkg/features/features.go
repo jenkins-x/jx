@@ -35,7 +35,6 @@ type Features struct {
 	OKE        server.RoxFlag
 	Kubernetes server.RoxFlag
 	Minikube   server.RoxFlag
-	Minishift  server.RoxFlag
 	Openshift  server.RoxFlag
 
 	// Supported build packs
@@ -56,7 +55,6 @@ var features = &Features{
 	OKE:           server.NewRoxFlag(false),
 	Kubernetes:    server.NewRoxFlag(false),
 	Minikube:      server.NewRoxFlag(false),
-	Minishift:     server.NewRoxFlag(false),
 	Openshift:     server.NewRoxFlag(false),
 	Java:          server.NewRoxFlag(false),
 	Go:            server.NewRoxFlag(false),

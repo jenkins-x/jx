@@ -50,7 +50,6 @@ const (
     * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
-	* minishift (single-node OpenShift cluster inside a VM on your laptop)
 	* openshift for installing on 3.9.x or later clusters of OpenShift
 `
 )
@@ -72,7 +71,6 @@ var (
 		- helm (package manager for Kubernetes)
 		- draft (CLI that makes it easy to build applications that run on Kubernetes)
 		- minikube (single-node Kubernetes cluster inside a VM on your laptop )
-		- minishift (single-node OpenShift cluster inside a VM on your laptop)
 		- virtualisation drivers (to run Minikube in a VM)
 		- gcloud (Google Cloud CLI)
 		- oci (Oracle Cloud Infrastructure CLI)
@@ -116,7 +114,6 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateClusterEKS(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterGKE(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterMinikube(commonOpts))
-	cmd.AddCommand(NewCmdCreateClusterMinishift(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterOKE(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterIKS(commonOpts))
 

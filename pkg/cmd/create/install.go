@@ -1985,8 +1985,6 @@ func (options *InstallOptions) configureCloudProviderPreInit(client kubernetes.I
 
 func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.Interface, namespace string) error {
 	switch options.Flags.Provider {
-	case cloud.MINISHIFT:
-		fallthrough
 	case cloud.OPENSHIFT:
 		err := options.enableOpenShiftSCC(namespace)
 		if err != nil {
@@ -2072,8 +2070,6 @@ func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.
 			return "", "", errors.Wrap(err, "getting IKS registry configuration")
 		}
 		return config, dockerRegistry, nil
-	case cloud.MINISHIFT:
-		fallthrough
 	case cloud.OPENSHIFT:
 		if dockerRegistry == "docker-registry.default.svc:5000" {
 			config, err := options.enableOpenShiftRegistryPermissions(namespace, dockerRegistry)
@@ -2992,7 +2988,7 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 
 func isOpenShiftProvider(provider string) bool {
 	switch provider {
-	case cloud.OPENSHIFT, cloud.MINISHIFT:
+	case cloud.OPENSHIFT:
 		return true
 	default:
 		return false
@@ -3318,7 +3314,7 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
 		return amazon.GetContainerRegistryHost()
 	}
-	if options.Flags.Provider == cloud.OPENSHIFT || options.Flags.Provider == cloud.MINISHIFT {
+	if options.Flags.Provider == cloud.OPENSHIFT {
 		return "docker-registry.default.svc:5000", nil
 	}
 	if options.Flags.Provider == cloud.GKE {
