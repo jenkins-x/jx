@@ -70,6 +70,8 @@ helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
 
 # We need to use the image from the Pull Request instead of the versions stream, otherwise we are not testing the PR itself
 sed -i "s/builder-go.*/&:$VERSION/g" jenkins-x.yml
+# Just run the node-http import test here
+export BDD_TEST_SINGLE_IMPORT="node-http"
 
 jx step bdd \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
@@ -82,5 +84,4 @@ jx step bdd \
     --default-admin-password $JENKINS_PASSWORD \
     --no-delete-app \
     --no-delete-repo \
-    --tests test-quickstart-golang-http \
-    --tests test-app-lifecycle
+    --tests test-single-import
