@@ -75,17 +75,6 @@ func (o *CreateEtcHostsOptions) Run() error {
 	if name == "" {
 		return util.MissingOption(name)
 	}
-	if o.IP == "" {
-		// lets find a node ip
-		ip, err := o.GetCommandOutput("", "minikube", "ip")
-		if err != nil {
-			return err
-		}
-		o.IP = ip
-	}
-	if o.IP == "" {
-		return fmt.Errorf("Could not discover a node IP address")
-	}
 	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err

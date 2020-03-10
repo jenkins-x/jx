@@ -24,31 +24,23 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	address := externalIP
 	if address == "" {
-		if provider == cloud.MINIKUBE {
-			ip, err := o.GetCommandOutput("", "minikube", "ip")
-			if err != nil {
-				return "", err
-			}
-			address = ip
-		} else {
-			info := util.ColorInfo
-			log.Logger().Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s",
-				info(ingressNamespace), info(ingressService))
-			if provider == cloud.KUBERNETES {
-				log.Logger().Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s",
-					info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
-			}
-			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, metav1.GetOptions{})
-			if err != nil {
-				return "", err
-			}
-			if svc != nil {
-				for _, v := range svc.Status.LoadBalancer.Ingress {
-					if v.IP != "" {
-						address = v.IP
-					} else if v.Hostname != "" {
-						address = v.Hostname
-					}
+		info := util.ColorInfo
+		log.Logger().Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s",
+			info(ingressNamespace), info(ingressService))
+		if provider == cloud.KUBERNETES {
+			log.Logger().Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s",
+				info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
+		}
+		svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		if svc != nil {
+			for _, v := range svc.Status.LoadBalancer.Ingress {
+				if v.IP != "" {
+					address = v.IP
+				} else if v.Hostname != "" {
+					address = v.Hostname
 				}
 			}
 		}

@@ -35,10 +35,7 @@ var (
 		jx ctx
 
 		# view the current context
-		jx ctx -b
-
-		# Change the current namespace to 'minikube'
-		jx ctx minikube`)
+		jx ctx -b`)
 )
 
 func NewCmdContext(commonOpts *opts.CommonOptions) *cobra.Command {
