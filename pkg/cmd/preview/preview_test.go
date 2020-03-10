@@ -30,10 +30,10 @@ func TestGetPreviewValuesConfig(t *testing.T) {
 				},
 			},
 			env: map[string]string{
-				preview.DOCKER_REGISTRY: "my.registry",
-				preview.ORG:             "my-org",
-				preview.APP_NAME:        "my-app",
-				preview.PREVIEW_VERSION: "1.0.0",
+				preview.DOCKER_REGISTRY:     "my.registry",
+				preview.DOCKER_REGISTRY_ORG: "my-org",
+				preview.APP_NAME:            "my-app",
+				preview.PREVIEW_VERSION:     "1.0.0",
 			},
 			expectedYAMLConfig: `expose:
   config: {}
@@ -55,10 +55,10 @@ preview:
 				},
 			},
 			env: map[string]string{
-				preview.DOCKER_REGISTRY: "my.registry",
-				preview.ORG:             "my-org",
-				preview.APP_NAME:        "my-app",
-				preview.PREVIEW_VERSION: "1.0.0",
+				preview.DOCKER_REGISTRY:     "my.registry",
+				preview.DOCKER_REGISTRY_ORG: "my-org",
+				preview.APP_NAME:            "my-app",
+				preview.PREVIEW_VERSION:     "1.0.0",
 			},
 			domain: "jenkinsx.io",
 			expectedYAMLConfig: `expose:

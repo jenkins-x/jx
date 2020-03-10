@@ -868,6 +868,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			Value: o.DockerRegistry,
 		})
 	}
+	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY_ORG") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "DOCKER_REGISTRY_ORG",
+			Value: o.DockerRegistryOrg,
+		})
+	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "BUILD_NUMBER",

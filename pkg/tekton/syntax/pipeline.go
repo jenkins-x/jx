@@ -1214,7 +1214,7 @@ func (s *Step) modifyStep(params StepPlaceholderReplacementArgs) {
 			args := []string{"--cache=true", "--cache-dir=/workspace",
 				"--context=" + sourceDir,
 				"--dockerfile=" + dockerfile,
-				"--destination=$DOCKER_REGISTRY/$ORG/$APP_NAME:${inputs.params.version}",
+				"--destination=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/$APP_NAME:${inputs.params.version}",
 				"--cache-repo=$DOCKER_REGISTRY/" + params.ProjectID + "/cache",
 			}
 			if localRepo != "gcr.io" {

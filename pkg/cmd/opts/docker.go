@@ -29,6 +29,12 @@ func (o *CommonOptions) GetDockerRegistryOrg(projectConfig *config.ProjectConfig
 		if answer == "" && repository != nil {
 			answer = repository.Organisation
 		}
+		if answer == "" {
+			answer = os.Getenv("ORG")
+		}
+		if answer == "" {
+			answer = os.Getenv("REPO_OWNER")
+		}
 	}
 	return strings.ToLower(answer)
 }

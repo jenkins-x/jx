@@ -247,7 +247,7 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 	dockerRegistry := o.GetDockerRegistry(projectConfig)
 	dockerRegistryOrg := o.GetDockerRegistryOrg(projectConfig, gitInfo)
 	if dockerRegistryOrg == "" {
-		dockerRegistryOrg = os.Getenv("ORG")
+		dockerRegistryOrg = os.Getenv("DOCKER_REGISTRY_ORG")
 	}
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("REPO_OWNER")

@@ -63,11 +63,11 @@ const (
 	DOCKER_REGISTRY                        = "DOCKER_REGISTRY"
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST = "JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST"
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT = "JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
+	DOCKER_REGISTRY_ORG                    = "DOCKER_REGISTRY_ORG"
 	ORG                                    = "ORG"
 	REPO_OWNER                             = "REPO_OWNER"
 	REPO_NAME                              = "REPO_NAME"
 	APP_NAME                               = "APP_NAME"
-	DOCKER_REGISTRY_ORG                    = "DOCKER_REGISTRY_ORG"
 	PREVIEW_VERSION                        = "PREVIEW_VERSION"
 
 	optionPostPreviewJobTimeout  = "post-preview-job-timeout"
@@ -1001,16 +1001,10 @@ func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfi
 
 func (o *PreviewOptions) getImageName(projectConfig *config.ProjectConfig) (string, error) {
 	containerRegistry, err := o.getContainerRegistry(projectConfig)
+	dockerRegistryOrg := o.GetDockerRegistryOrg(projectConfig, o.GitInfo)
+
 	if err != nil {
 		return "", err
-	}
-
-	organisation := os.Getenv(ORG)
-	if organisation == "" {
-		organisation = os.Getenv(REPO_OWNER)
-	}
-	if organisation == "" {
-		return "", fmt.Errorf("no %s environment variable found", ORG)
 	}
 
 	app := os.Getenv(APP_NAME)
@@ -1019,11 +1013,6 @@ func (o *PreviewOptions) getImageName(projectConfig *config.ProjectConfig) (stri
 	}
 	if app == "" {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
-	}
-
-	dockerRegistryOrg := o.GetDockerRegistryOrg(projectConfig, o.GitInfo)
-	if dockerRegistryOrg == "" {
-		dockerRegistryOrg = organisation
 	}
 
 	return fmt.Sprintf("%s/%s/%s", containerRegistry, dockerRegistryOrg, app), nil

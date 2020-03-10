@@ -691,7 +691,7 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       - name: ENTRYPOINT_OPTIONS
-        value: '{"args":["/bin/sh","-c","jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$(cat
+        value: '{"args":["/bin/sh","-c","jx step post build --image $DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/$APP_NAME:$(cat
           VERSION)"],"process_log":"/tools/process-log.txt","marker_file":"/tools/marker-file.txt"}'
       image: jenkinsxio/builder-maven-java11:0.1.235
       imagePullPolicy: IfNotPresent

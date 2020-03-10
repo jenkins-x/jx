@@ -58,6 +58,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -132,6 +133,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -206,6 +208,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -280,6 +283,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -354,6 +358,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -428,6 +433,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -502,6 +508,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -576,6 +583,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -650,6 +658,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -725,6 +734,7 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND

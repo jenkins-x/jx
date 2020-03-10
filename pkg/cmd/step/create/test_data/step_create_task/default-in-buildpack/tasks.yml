@@ -34,6 +34,7 @@ items:
       - jx
       env:
       - name: DOCKER_REGISTRY
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -95,6 +96,7 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -159,6 +161,7 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND

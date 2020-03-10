@@ -41,13 +41,14 @@ items:
       - name: FIRST_KEY
         valueFrom:
           secretKeyRef:
-            name: some-secret
             key: FIRST_KEY
+            name: some-secret
       - name: FRUIT
         value: BANANA
       - name: GIT_AUTHOR_NAME
         value: somebodyelse
       - name: DOCKER_REGISTRY
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -101,8 +102,8 @@ items:
       - name: FIRST_KEY
         valueFrom:
           secretKeyRef:
-            name: some-secret
             key: FIRST_KEY
+            name: some-secret
       - name: FRUIT
         value: BANANA
       - name: GIT_AUTHOR_EMAIL
@@ -117,6 +118,7 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -174,8 +176,8 @@ items:
       - name: FIRST_KEY
         valueFrom:
           secretKeyRef:
-            name: some-secret
             key: FIRST_KEY
+            name: some-secret
       - name: FRUIT
         value: BANANA
       - name: GIT_AUTHOR_EMAIL
@@ -190,6 +192,7 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -286,8 +289,8 @@ items:
       - name: FIRST_KEY
         valueFrom:
           secretKeyRef:
-            name: some-secret
             key: FIRST_KEY
+            name: some-secret
       - name: FRUIT
         value: BANANA
       - name: GIT_AUTHOR_EMAIL
@@ -302,6 +305,7 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND

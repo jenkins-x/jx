@@ -26,15 +26,15 @@ import (
 type StepReleaseOptions struct {
 	step.StepOptions
 
-	DockerRegistry string
-	Organisation   string
-	Application    string
-	Version        string
-	GitUsername    string
-	GitEmail       string
-	Dir            string
-	XdgConfigHome  string
-	NoBatch        bool
+	DockerRegistry    string
+	DockerRegistryOrg string
+	Application       string
+	Version           string
+	GitUsername       string
+	GitEmail          string
+	Dir               string
+	XdgConfigHome     string
+	NoBatch           bool
 
 	// promote flags
 	Build               string
@@ -68,7 +68,7 @@ func NewCmdStepRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "r", "", "the Docker registry host or host:port to use. If not specified it is loaded from the `docker-registry` ConfigMap")
-	cmd.Flags().StringVarP(&options.Organisation, "organisation", "o", "", "the Docker organisation for the generated Docker image")
+	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "organisation", "o", "", "the Docker organisation for the generated Docker image")
 	cmd.Flags().StringVarP(&options.Application, "application", "a", "", "the Docker application image name")
 	cmd.Flags().StringVarP(&options.GitUsername, "git-username", "u", "", "The Git username to configure if there is none already setup")
 	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The Git email address to configure if there is none already setup")
@@ -136,8 +136,11 @@ func (o *StepReleaseOptions) Run() error {
 	if o.DockerRegistry == "" {
 		o.DockerRegistry = os.Getenv("DOCKER_REGISTRY")
 	}
-	if o.Organisation == "" {
-		o.Organisation = os.Getenv("ORG")
+	if o.DockerRegistryOrg == "" {
+		o.DockerRegistryOrg = os.Getenv("DOCKER_REGISTRY_ORG")
+	}
+	if o.DockerRegistryOrg == "" {
+		o.DockerRegistryOrg = os.Getenv("ORG")
 	}
 	if o.Application == "" {
 		o.Application = os.Getenv("APP_NAME")
@@ -148,13 +151,13 @@ func (o *StepReleaseOptions) Run() error {
 			return err
 		}
 	}
-	if o.Organisation == "" || o.Application == "" {
+	if o.DockerRegistryOrg == "" || o.Application == "" {
 		gitInfo, err := o.FindGitInfo("")
 		if err != nil {
 			return err
 		}
-		if o.Organisation == "" {
-			o.Organisation = gitInfo.Organisation
+		if o.DockerRegistryOrg == "" {
+			o.DockerRegistryOrg = gitInfo.Organisation
 		}
 		if o.Application == "" {
 			o.Application = gitInfo.Name
@@ -164,7 +167,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.Setenv("ORG", o.Organisation)
+	err = o.Setenv("DOCKER_REGISTRY_ORG", o.DockerRegistryOrg)
 	if err != nil {
 		return err
 	}
@@ -211,7 +214,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 	if chartExists {
 		stepTagOptions.Flags.ChartsDir = chartsDir
-		stepTagOptions.Flags.ChartValueRepository = fmt.Sprintf("%s/%s/%s", o.DockerRegistry, o.Organisation, o.Application)
+		stepTagOptions.Flags.ChartValueRepository = fmt.Sprintf("%s/%s/%s", o.DockerRegistry, o.DockerRegistryOrg, o.Application)
 	}
 	stepTagOptions.Flags.Version = o.Version
 	err = stepTagOptions.Run()
@@ -227,7 +230,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to run skaffold: %s", err)
 	}
-	imageName := fmt.Sprintf("%s/%s/%s:%s", o.DockerRegistry, o.Organisation, o.Application, o.Version)
+	imageName := fmt.Sprintf("%s/%s/%s:%s", o.DockerRegistry, o.DockerRegistryOrg, o.Application, o.Version)
 
 	stepPostBuildOptions := &post.StepPostBuildOptions{
 		StepOptions:   o.StepOptions,
