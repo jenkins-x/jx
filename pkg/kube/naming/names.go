@@ -6,6 +6,8 @@ import (
 	"math"
 	"strings"
 	"unicode"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // ToValidImageName converts the given string into a valid docker image name
@@ -32,6 +34,16 @@ func ToValidNameWithDots(name string) string {
 // truncating the result if it is more than maxLength characters.
 func ToValidNameTruncated(name string, maxLength int) string {
 	return toValidName(name, false, maxLength)
+}
+
+// ToValidGCPServiceAccount converts the given string into a valid GCP service account name,
+// truncating the result if it is more than 30 characters.
+func ToValidGCPServiceAccount(name string) string {
+	if len(name) < 6 {
+		uuid4, _ := uuid.NewV4()
+		name = fmt.Sprintf("%s-jx-%s", name, uuid4.String()[:1])
+	}
+	return toValidName(name, false, 30)
 }
 
 func toValidName(name string, allowDots bool, maxLength int) string {
