@@ -2240,7 +2240,7 @@ func (options *InstallOptions) ConfigureKaniko() error {
 			}
 		}
 
-		serviceAccountName := naming.ToValidNameTruncated(fmt.Sprintf("%s-ko", clusterName), 30)
+		serviceAccountName := naming.ToValidGCPServiceAccount(fmt.Sprintf("%s-ko", clusterName))
 		log.Logger().Infof("Configuring Kaniko service account %s for project %s", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := options.GCloud().GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
 		if err != nil {
