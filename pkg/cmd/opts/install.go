@@ -87,15 +87,6 @@ const (
 
 // DoInstallMissingDependencies install missing dependencies from the given list
 func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
-	// install package managers first
-	for _, i := range install {
-		if i == "brew" {
-			log.Logger().Infof("Installing %s", util.ColorInfo(i))
-			o.InstallBrew()
-			break
-		}
-	}
-
 	for _, i := range install {
 		log.Logger().Infof("Installing %s", util.ColorInfo(i))
 		var err error
@@ -164,19 +155,6 @@ func (o *CommonOptions) InstallBrew() error {
 	return o.RunCommand("sh", "-c", "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
 }
 
-// InstallBrewIfRequired installs brew if required
-func (o *CommonOptions) InstallBrewIfRequired() error {
-	if runtime.GOOS != "darwin" || o.NoBrew {
-		return nil
-	}
-
-	_, flag, err := packages.ShouldInstallBinary("brew")
-	if err != nil || !flag {
-		return err
-	}
-	return o.InstallBrew()
-}
-
 // InstallGlooctl Installs glooctl tool
 func (o *CommonOptions) InstallGlooctl() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
@@ -186,7 +164,8 @@ func (o *CommonOptions) InstallGlooctl() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := packages.ShouldInstallBinary("glooctl")
+	fileName := "glooctl"
+	flag, err := packages.ShouldInstallBinary("glooctl")
 	if err != nil || !flag {
 		return err
 	}
@@ -373,7 +352,7 @@ func (o *CommonOptions) InstallHelm() error {
 		return err
 	}
 
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -389,13 +368,13 @@ func (o *CommonOptions) InstallHelm() error {
 	}
 
 	clientURL := fmt.Sprintf("https://get.helm.sh/helm-v%s-%s-%s.tar.gz", stableVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
+	fullPath := filepath.Join(binDir, binary)
 	tarFile := fullPath + ".tgz"
 	err = packages.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	err = util.UnTargz(tarFile, binDir, []string{binary, binary})
 	if err != nil {
 		return err
 	}
@@ -463,7 +442,7 @@ func (o *CommonOptions) InstallHelm3() error {
 		return err
 	}
 	binary := "helm3"
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -478,7 +457,7 @@ func (o *CommonOptions) InstallHelm3() error {
 		return err
 	}
 	fullPath := filepath.Join(binDir, binary)
-	tarFile := filepath.Join(tmpDir, fileName+".tgz")
+	tarFile := filepath.Join(tmpDir, binary+".tgz")
 	err = packages.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
@@ -547,7 +526,7 @@ func (o *CommonOptions) InstallTerraform() error {
 		return err
 	}
 	binary := "terraform"
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -557,7 +536,7 @@ func (o *CommonOptions) InstallTerraform() error {
 	}
 
 	clientURL := fmt.Sprintf("https://releases.hashicorp.com/terraform/%s/terraform_%s_%s_%s.zip", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
+	fullPath := filepath.Join(binDir, binary)
 	zipFile := fullPath + ".zip"
 	err = packages.DownloadFile(clientURL, zipFile)
 	if err != nil {
@@ -655,11 +634,10 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 	binary := "jx"
 	fileName := binary
 	if !upgrade {
-		f, flag, err := packages.ShouldInstallBinary(binary)
+		flag, err := packages.ShouldInstallBinary(binary)
 		if err != nil || !flag {
 			return err
 		}
-		fileName = f
 	}
 	org := "jenkins-x"
 	repo := "jx"

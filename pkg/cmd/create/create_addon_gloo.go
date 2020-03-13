@@ -97,7 +97,7 @@ func (o *CreateAddonGlooOptions) Run() error {
 	}
 
 	// lets ensure glooctl is installed
-	_, shouldInstall, err := packages.ShouldInstallBinary("glooctl")
+	shouldInstall, err := packages.ShouldInstallBinary("glooctl")
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if we need to install glooctl")
 	}
