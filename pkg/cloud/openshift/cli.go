@@ -22,7 +22,7 @@ func InstallOc() error {
 		return err
 	}
 	binary := "oc"
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -47,7 +47,7 @@ func InstallOc() error {
 		clientURL += fmt.Sprintf("-%s-%s.tar.gz", runtime.GOOS, arch)
 	}
 
-	fullPath := filepath.Join(binDir, fileName)
+	fullPath := filepath.Join(binDir, binary)
 	tarFile := filepath.Join(binDir, "oc.tgz")
 	if extension == ".zip" {
 		tarFile = filepath.Join(binDir, "oc.zip")
@@ -67,7 +67,7 @@ func InstallOc() error {
 		if err != nil {
 			return err
 		}
-		f := filepath.Join(zipDir, fileName)
+		f := filepath.Join(zipDir, binary)
 		exists, err := util.FileExists(f)
 		if err != nil {
 			return err
@@ -81,7 +81,7 @@ func InstallOc() error {
 		}
 		err = os.RemoveAll(zipDir)
 	} else {
-		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+		err = util.UnTargz(tarFile, binDir, []string{binary, binary})
 	}
 	if err != nil {
 		return err

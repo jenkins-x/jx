@@ -18,11 +18,11 @@ func InstallKSync() (string, error) {
 		return "", err
 	}
 	binary := "ksync"
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		// Exec `ksync` to find the version
 		ksyncCmd := util.Command{
-			Name: fileName,
+			Name: binary,
 			Args: []string{
 				"version",
 			},
@@ -47,7 +47,7 @@ func InstallKSync() (string, error) {
 	if runtime.GOOS == "windows" {
 		clientURL += ".exe"
 	}
-	fullPath := filepath.Join(binDir, fileName)
+	fullPath := filepath.Join(binDir, binary)
 	tmpFile := fullPath + ".tmp"
 	err = packages.DownloadFile(clientURL, tmpFile)
 	if err != nil {
