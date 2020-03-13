@@ -52,7 +52,7 @@ func InstallKops() error {
 		return err
 	}
 	binary := "kops"
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -61,7 +61,7 @@ func InstallKops() error {
 		return err
 	}
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
+	fullPath := filepath.Join(binDir, binary)
 	tmpFile := fullPath + ".tmp"
 	err = packages.DownloadFile(clientURL, tmpFile)
 	if err != nil {
