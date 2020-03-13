@@ -1872,7 +1872,7 @@ func (options *InstallOptions) installHelmBinaries() error {
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
 		}
-		_, install, err := packages.ShouldInstallBinary("tiller")
+		install, err := packages.ShouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling existing tiller binary:",
@@ -1890,7 +1890,7 @@ func (options *InstallOptions) installHelmBinaries() error {
 			}
 		}
 
-		_, install, err = packages.ShouldInstallBinary(helmBinary)
+		install, err = packages.ShouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling existing helm binary:",

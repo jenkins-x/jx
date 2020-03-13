@@ -10,6 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -41,8 +43,8 @@ func InstallOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
 	}
 	fileName := options.Binary
 	if !options.SkipPathScan {
-		installFilename, flag, err := ShouldInstallBinary(options.Binary)
-		fileName = installFilename
+		flag, err := ShouldInstallBinary(options.Binary)
+		fileName = options.Binary
 		if err != nil || !flag {
 			return err
 		}
@@ -173,36 +175,31 @@ type InstallOrUpdateBinaryOptions struct {
 }
 
 // ShouldInstallBinary checks if the given binary should be installed
-func ShouldInstallBinary(name string) (fileName string, download bool, err error) {
-	fileName = BinaryWithExtension(name)
-	download = false
-	pgmPath, err := exec.LookPath(fileName)
-	if err == nil {
-		log.Logger().Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
-		return
-	}
+func ShouldInstallBinary(name string) (bool, error) {
+	fileName := BinaryWithExtension(name)
+	download := false
 
 	binDir, err := util.JXBinLocation()
 	if err != nil {
-		return
+		return download, errors.Wrapf(err, "unable to find JXBinLocation at %s", binDir)
 	}
 
-	// lets see if its been installed but just is not on the PATH
 	exists, err := util.FileExists(filepath.Join(binDir, fileName))
-	if err != nil {
-		return
-	}
 	if exists {
-		log.Logger().Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
-		return
+		log.Logger().Debugf("%s is already available in your JXBIN at %s", util.ColorInfo(fileName), util.ColorInfo(binDir))
+		return download, nil
 	}
+	if err != nil {
+		return download, errors.Wrapf(err, "unable to check files on %s", binDir)
+	}
+
 	download = true
-	return
+	return download, nil
 }
 
 // BinaryShouldBeInstalled appends the binary to the deps array if it cannot be found on the $PATH
 func BinaryShouldBeInstalled(d string) string {
-	_, shouldInstall, err := ShouldInstallBinary(d)
+	shouldInstall, err := ShouldInstallBinary(d)
 	if err != nil {
 		log.Logger().Warnf("Error detecting if binary should be installed: %s", err.Error())
 		return ""
