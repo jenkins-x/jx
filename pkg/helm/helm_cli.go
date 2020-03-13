@@ -309,19 +309,6 @@ func (h *HelmCLI) BuildDependency() error {
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
 	var err error
-	currentNamespace := ""
-	if h.Binary == "helm3" {
-		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
-		currentNamespace, err = h.getCurrentNamespace()
-		if err != nil {
-			return err
-		}
-
-		err = h.setNamespace(ns)
-		if err != nil {
-			return err
-		}
-	}
 
 	args := []string{}
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
@@ -369,13 +356,6 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	err = h.runHelm(args...)
 	if err != nil {
 		return err
-	}
-
-	if h.Binary == "helm3" {
-		err = h.setNamespace(currentNamespace)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -450,19 +430,6 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
 	var err error
-	currentNamespace := ""
-	if h.Binary == "helm3" {
-		log.Logger().Warnf("Manually switching namespace to for helm3 alpha - %s, this code should be removed once --namespaces is implemented", ns)
-		currentNamespace, err = h.getCurrentNamespace()
-		if err != nil {
-			return err
-		}
-
-		err = h.setNamespace(ns)
-		if err != nil {
-			return err
-		}
-	}
 	args := []string{}
 	args = append(args, "upgrade")
 	args = append(args, "--namespace", ns)
@@ -521,13 +488,6 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	err = h.runHelm(args...)
 	if err != nil {
 		return err
-	}
-
-	if h.Binary == "helm3" {
-		err = h.setNamespace(currentNamespace)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
