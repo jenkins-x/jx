@@ -36,7 +36,7 @@ func NewCLI() (*CLI, error) {
 
 // isInstalled checks if the binary is installed
 func isInstalled(binary string) (bool, error) {
-	_, flag, err := packages.ShouldInstallBinary(binary)
+	flag, err := packages.ShouldInstallBinary(binary)
 	return flag, err
 }
 
