@@ -2,20 +2,13 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/cmd/get"
-
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-
-	"github.com/jenkins-x/jx/pkg/kube"
-
-	"github.com/spf13/cobra"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
+	"github.com/spf13/cobra"
 )
 
 type ConsoleOptions struct {
@@ -29,44 +22,6 @@ type ConsoleOptions struct {
 const (
 	BlueOceanPath = "/blue"
 )
-
-var (
-	console_long = templates.LongDesc(`
-		Opens the Jenkins X console in a browser.`)
-	console_example = templates.Examples(`
-		# Open the Jenkins X console in a browser
-		jx console
-
-		# Print the Jenkins X console URL but do not open a browser
-		jx console -u
-		
-		# Open the Jenkins X console in a browser using the classic skin
-		jx console --classic`)
-)
-
-func NewCmdConsole(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &ConsoleOptions{
-		GetURLOptions: get.GetURLOptions{
-			GetOptions: get.GetOptions{
-				CommonOptions: commonOpts,
-			},
-		},
-	}
-	cmd := &cobra.Command{
-		Use:     "console",
-		Short:   "Opens the Jenkins console",
-		Long:    console_long,
-		Example: console_example,
-		Run: func(cmd *cobra.Command, args []string) {
-			options.Cmd = cmd
-			options.Args = args
-			err := options.Run()
-			helper.CheckErr(err)
-		},
-	}
-	options.addConsoleFlags(cmd)
-	return cmd
-}
 
 func (o *ConsoleOptions) addConsoleFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
