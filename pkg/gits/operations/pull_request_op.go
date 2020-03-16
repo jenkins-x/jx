@@ -209,13 +209,13 @@ func (o *PullRequestOperation) updateAndGenerateMessagesAndDependencyMatrix(dir 
 	if upstreamDependencyAsset != nil {
 		updatedPaths, err := AddDependencyMatrixUpdatePaths(upstreamDependencyAsset, updateDependency)
 		if err != nil {
-			return "", nil, errors.Wrap(err, "adding dependency updates")
-		}
-
-		for _, d := range updatedPaths {
-			err = dependencymatrix.UpdateDependencyMatrix(dir, d)
-			if err != nil {
-				return "", nil, errors.Wrapf(err, "updating dependency matrix with upstream dependency %+v", d)
+			log.Logger().Warnf("adding dependency updates: %q", err)
+		} else {
+			for _, d := range updatedPaths {
+				err = dependencymatrix.UpdateDependencyMatrix(dir, d)
+				if err != nil {
+					return "", nil, errors.Wrapf(err, "updating dependency matrix with upstream dependency %+v", d)
+				}
 			}
 		}
 	}
