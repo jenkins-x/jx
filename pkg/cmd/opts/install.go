@@ -777,6 +777,22 @@ func (o *CommonOptions) InstallMinishift() error {
 
 // InstallGcloud installs gcloud cli
 func (o *CommonOptions) InstallGcloud() error {
+	binDir, err := util.JXBinLocation()
+	binary := "gcloud"
+	if err != nil {
+		return err
+	}
+	// Check is binary exists in JX_HOME/bin
+	fullBinaryPath := filepath.Join(binDir, "gcloud")
+	exists, err := util.FileExists(fullBinaryPath)
+	if err != nil {
+		return errors.Wrapf(err, "unable to verify if binary exists")
+	}
+	if exists {
+		log.Logger().Debugf("binary %s already exists", fullBinaryPath)
+		return nil
+	}
+	// get the stable jx supported version of gcloud to be installed
 	versionResolver, err := o.GetVersionResolver()
 	if err != nil {
 		return err
@@ -789,11 +805,7 @@ func (o *CommonOptions) InstallGcloud() error {
 	if strings.Contains(runtime.GOARCH, "64") {
 		clientURL = fmt.Sprintf("https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-%s-%s-x86_64.tar.gz", stableVersion, runtime.GOOS)
 	}
-	binDir, err := util.JXBinLocation()
-	binary := "gcloud"
-	if err != nil {
-		return err
-	}
+	
 	fileName, flag, err := packages.ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
@@ -808,6 +820,11 @@ func (o *CommonOptions) InstallGcloud() error {
 	if err != nil {
 		return err
 	}
+	err = util.CopyFile(fileName + "/bin/gcloud",binDir)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tarFile)
 	return os.Chmod(fullPath, 0755)
 }
 
