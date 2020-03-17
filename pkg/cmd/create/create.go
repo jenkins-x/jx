@@ -23,7 +23,6 @@ type CreateProjectOptions struct {
 var (
 	create_resources = `Valid resource types include:
 
-	* archetype
 	* cluster
 	* env
 	* git
@@ -56,9 +55,7 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdCreateAddon(commonOpts))
-	cmd.AddCommand(NewCmdCreateArchetype(commonOpts))
 	cmd.AddCommand(NewCmdCreateBranchPattern(commonOpts))
-	cmd.AddCommand(NewCmdCreateCamel(commonOpts))
 	cmd.AddCommand(NewCmdCreateChat(commonOpts))
 	cmd.AddCommand(NewCmdCreateCodeship(commonOpts))
 	cmd.AddCommand(NewCmdCreateCluster(commonOpts))
