@@ -216,6 +216,8 @@ type EnvironmentConfig struct {
 	RemoteCluster bool `json:"remoteCluster,omitempty"`
 	// PromotionStrategy what kind of promotion strategy to use
 	PromotionStrategy v1.PromotionStrategyType `json:"promotionStrategy,omitempty"`
+	// URLTemplate is the template to use for your environment's exposecontroller generated URLs
+	URLTemplate string `json:"urlTemplate,omitempty"`
 }
 
 // IngressConfig contains dns specific requirements
