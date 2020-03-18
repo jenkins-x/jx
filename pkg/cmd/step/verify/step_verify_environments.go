@@ -541,7 +541,7 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 				Exposer:     exposer,
 				HTTP:        useHTTP,
 				TLSAcme:     tlsAcme,
-				URLTemplate: config.ExposeDefaultURLTemplate,
+				URLTemplate: getEnvironmentURLTemplate(envCfg),
 			},
 			Production: envCfg.Ingress.TLS.Production,
 		},
@@ -561,6 +561,13 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 	}
 
 	return helmValues, nil
+}
+
+func getEnvironmentURLTemplate(envCfg *config.EnvironmentConfig) string {
+	if envCfg.URLTemplate != "" {
+		return envCfg.URLTemplate
+	}
+	return config.ExposeDefaultURLTemplate
 }
 
 func (o *StepVerifyEnvironmentsOptions) updateEnvironmentIngressConfig(requirements *config.RequirementsConfig, requirementsFileName string, env *v1.Environment) error {

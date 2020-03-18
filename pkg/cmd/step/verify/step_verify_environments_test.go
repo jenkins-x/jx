@@ -250,6 +250,23 @@ func Test_ModifyPipelineGitEnvVars(t *testing.T) {
 	assert.Equal(t, expectedEmail, pipelineEnvValueForKey(pipelineEnv, gitCommitterEmailEnvKey))
 }
 
+func Test_getEnvironmentURLTemplate(t *testing.T) {
+	var tests = []struct {
+		name             string
+		cfg              *config.EnvironmentConfig
+		expectedTemplate string
+	}{
+		{"Default Template Test", &config.EnvironmentConfig{}, config.ExposeDefaultURLTemplate},
+		{"Custom Template Test", &config.EnvironmentConfig{URLTemplate: "NewTemplate"}, "NewTemplate"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expectedTemplate, getEnvironmentURLTemplate(test.cfg), "The returned template should be the expected based on input")
+		})
+	}
+}
+
 func pipelineEnvValueForKey(envVars []corev1.EnvVar, key string) string {
 	for _, entry := range envVars {
 		if entry.Name == key {
