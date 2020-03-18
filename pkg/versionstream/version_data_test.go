@@ -80,6 +80,7 @@ func TestExactPackageVersionRange(t *testing.T) {
 
 	AssertPackageVersion(t, resolver, "git", "2.1.1 (Apple Git-117)", false)
 	AssertPackageVersion(t, resolver, "git", "2.20.1 (Apple Git-117)", true)
+	AssertPackageVersion(t, resolver, "git", "2.23.0.windows.1", true)
 }
 
 func AssertPackageVersion(t *testing.T, resolver *versionstream.VersionResolver, name string, version string, expectedValid bool) {

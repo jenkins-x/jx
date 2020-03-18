@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -130,7 +131,7 @@ func verifyError(name string, err error) error {
 	return err
 }
 
-// removes any whitespace and `v` prefix from a version string
+// removes any whitespace, `v` prefix and other suffix from a version string
 func convertToVersion(text string) string {
 	answer := strings.TrimSpace(text)
 	answer = strings.TrimPrefix(answer, "v")
@@ -138,6 +139,11 @@ func convertToVersion(text string) string {
 	if len(words) > 1 {
 		answer = words[0]
 	}
+	// Some apps might not exactly follow semver, like for example Git for Windows: 2.23.0.windows.1
+	// we're trimming everything after a semver from the answer
+	// to avoid error described in issue #6825
+	r := regexp.MustCompile(`^([0-9]+\.[0-9]+\.[0-9]+)(.*)`)
+	answer = r.ReplaceAllString(answer, "$1")
 	return answer
 }
 
