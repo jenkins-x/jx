@@ -36,8 +36,8 @@ import (
 )
 
 const (
-	// timeout controls the amount of time to wait when attempting to retrieve dependency information
-	timeout = 1 * time.Minute
+	// assetRetrievalTimeout controls the amount of time to wait when attempting to retrieve dependency information
+	assetRetrievalTimeout = 3 * time.Minute
 )
 
 // PullRequestOperation provides a way to execute a PullRequest operation using Git
@@ -229,7 +229,7 @@ func AddDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsse
 
 	log.Logger().Infof("Attempting to retrieve dependency asset information from %q", upstreamDependencyAsset.BrowserDownloadURL)
 
-	err := util.Retry(timeout, func() error {
+	err := util.Retry(assetRetrievalTimeout, func() error {
 		resp, err := http.Get(upstreamDependencyAsset.BrowserDownloadURL)
 		if err != nil {
 			return errors.Wrapf(err, "retrieving dependency updates from %s", upstreamDependencyAsset.BrowserDownloadURL)
