@@ -408,3 +408,14 @@ func Test_LoadRequirementsConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadRequirementsConfig_load_invalid_yaml(t *testing.T) {
+	testDir := path.Join(testDataDir, "jx-requirements-syntax-error")
+
+	absolute, err := filepath.Abs(testDir)
+	assert.NoError(t, err, "could not find absolute path of dir %s", testDataDir)
+
+	_, _, err = config.LoadRequirementsConfig(testDir)
+	requirementsConfigPath := path.Join(absolute, config.RequirementsConfigFileName)
+	assert.EqualError(t, err, fmt.Sprintf("validation failures in YAML file %s:\nenvironments.0: Additional property namespace is not allowed", requirementsConfigPath))
+}
