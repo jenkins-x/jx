@@ -521,11 +521,19 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 	}
 	for absolute != "" && absolute != "." && absolute != "/" {
 		fileName := filepath.Join(absolute, RequirementsConfigFileName)
-		config, err := LoadRequirementsConfigFile(fileName)
-		if err == nil {
-			return config, fileName, nil
-		}
 		absolute = filepath.Dir(absolute)
+
+		exists, err := util.FileExists(fileName)
+		if err != nil {
+			return nil, "", err
+		}
+
+		if !exists {
+			continue
+		}
+
+		config, err := LoadRequirementsConfigFile(fileName)
+		return config, fileName, err
 	}
 	return nil, "", errors.New("jx-requirements.yml file not found")
 }
