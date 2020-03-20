@@ -131,20 +131,17 @@ func verifyError(name string, err error) error {
 	return err
 }
 
-// removes any whitespace, `v` prefix and other suffix from a version string
+// convertToVersion extracts a semantic version from the specified string.
+// If no semantic version is contained in the specified string the string is returned unmodified.
 func convertToVersion(text string) string {
-	answer := strings.TrimSpace(text)
-	answer = strings.TrimPrefix(answer, "v")
-	words := strings.Fields(answer)
-	if len(words) > 1 {
-		answer = words[0]
-	}
 	// Some apps might not exactly follow semver, like for example Git for Windows: 2.23.0.windows.1
 	// we're trimming everything after a semver from the answer
 	// to avoid error described in issue #6825
-	r := regexp.MustCompile(`^([0-9]+\.[0-9]+\.[0-9]+)(.*)`)
-	answer = r.ReplaceAllString(answer, "$1")
-	return answer
+	r := regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+`)
+	if !r.Match([]byte(text)) {
+		return text
+	}
+	return r.FindString(text)
 }
 
 // LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is

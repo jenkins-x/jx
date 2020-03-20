@@ -1,14 +1,12 @@
 // +build unit
 
-package versionstream_test
+package versionstream
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/jenkins-x/jx/pkg/versionstream"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -23,14 +21,14 @@ const (
 
 // TODO refactor to encapsulate
 func TestLoadVersionData(t *testing.T) {
-	AssertLoadTestData(t, dataDir, versionstream.KindChart, "jenkins-x/knative-build", "0.1.13")
-	AssertLoadTestData(t, dataDir, versionstream.KindChart, "doesNotExist", "")
-	AssertLoadTestData(t, dataDir, versionstream.KindPackage, "helm", "2.12.2")
+	AssertLoadTestData(t, dataDir, KindChart, "jenkins-x/knative-build", "0.1.13")
+	AssertLoadTestData(t, dataDir, KindChart, "doesNotExist", "")
+	AssertLoadTestData(t, dataDir, KindPackage, "helm", "2.12.2")
 }
 
 // AssertLoadTestData asserts that the StableVersion can be loaded/created for the given kind
-func AssertLoadTestData(t *testing.T, dataDir string, kind versionstream.VersionKind, name string, expectedValue string) {
-	data, err := versionstream.LoadStableVersion(dataDir, kind, name)
+func AssertLoadTestData(t *testing.T, dataDir string, kind VersionKind, name string, expectedValue string) {
+	data, err := LoadStableVersion(dataDir, kind, name)
 	require.NoError(t, err, "failed to load StableVersion for dir %s kind %s name %s", dataDir, string(kind), name)
 
 	assert.Equal(t, expectedValue, data.Version, "wrong version for kind %s name %s", string(kind), name)
@@ -38,7 +36,7 @@ func AssertLoadTestData(t *testing.T, dataDir string, kind versionstream.Version
 
 // TestExactPackage tests an exact package version
 func TestExactPackage(t *testing.T) {
-	resolver := &versionstream.VersionResolver{
+	resolver := &VersionResolver{
 		VersionsDir: dataDir,
 	}
 
@@ -49,7 +47,7 @@ func TestExactPackage(t *testing.T) {
 // TestRepositories tests we can load the repository prefix -> URL maps
 func TestRepositories(t *testing.T) {
 
-	prefixes, err := versionstream.GetRepositoryPrefixes(dataDir)
+	prefixes, err := GetRepositoryPrefixes(dataDir)
 	require.NoError(t, err, "GetRepositoryPrefixes() failed on dir %s", dataDir)
 
 	data := map[string]string{
@@ -64,7 +62,7 @@ func TestRepositories(t *testing.T) {
 
 // TestExactPackageVersionRange tests ranges of packages
 func TestExactPackageVersionRange(t *testing.T) {
-	resolver := &versionstream.VersionResolver{
+	resolver := &VersionResolver{
 		VersionsDir: dataDir,
 	}
 
@@ -83,7 +81,7 @@ func TestExactPackageVersionRange(t *testing.T) {
 	AssertPackageVersion(t, resolver, "git", "2.23.0.windows.1", true)
 }
 
-func AssertPackageVersion(t *testing.T, resolver *versionstream.VersionResolver, name string, version string, expectedValid bool) {
+func AssertPackageVersion(t *testing.T, resolver *VersionResolver, name string, version string, expectedValid bool) {
 	err := resolver.VerifyPackage(name, version)
 	if expectedValid {
 		assert.NoError(t, err, "expected a valid version %s for package %s", version, name)
@@ -116,7 +114,7 @@ func TestResolveDockerImage(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(fmt.Sprintf("test_resolve_%s", testCase.resolveImage), func(t *testing.T) {
-			actualResolvedImage, err := versionstream.ResolveDockerImage(dataDir, testCase.resolveImage)
+			actualResolvedImage, err := ResolveDockerImage(dataDir, testCase.resolveImage)
 			if testCase.expectError {
 				assert.Error(t, err, "expected call to ResolveDockerImage to fail")
 				assert.Contains(t, err.Error(), testCase.errorMessage, "error message does not match")
@@ -136,7 +134,27 @@ func TestGitURLToName(t *testing.T) {
 		"http://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes/":     "github.com/jenkins-x-buildpacks/jenkins-x-kubernetes",
 	}
 	for gitURL, expected := range data {
-		actual := versionstream.GitURLToName(gitURL)
+		actual := GitURLToName(gitURL)
 		assert.Equal(t, expected, actual, "GitURLToName for %s", gitURL)
+	}
+}
+
+// TestGitURLToName tests version.GitURLToName()
+func TestConvertToVersion(t *testing.T) {
+	var testCases = []struct {
+		text            string
+		expectedVersion string
+	}{
+		{"", ""},
+		{"foo", "foo"},
+		{"1.8.3.1", "1.8.3"},
+		{"v1.13.1", "1.13.1"},
+		{"2.23.0.windows.1", "2.23.0"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.text, func(t *testing.T) {
+			actualVersion := convertToVersion(testCase.text)
+			assert.Equal(t, testCase.expectedVersion, actualVersion, "Unexpected version")
+		})
 	}
 }
