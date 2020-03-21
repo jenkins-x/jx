@@ -555,7 +555,7 @@ func (b *BitbucketServerProvider) toPullRequest(bPR bitbucket.PullRequest) *GitP
 		URL:   bPR.Author.User.Links.Self[0].Href,
 		Login: bPR.Author.User.Slug,
 		Name:  bPR.Author.User.Name,
-		Email: bPR.Author.User.Email,
+		Email: bPR.Author.User.EmailAddress,
 	}
 	answer := &GitPullRequest{
 		URL:           bPR.Links.Self[0].Href,
@@ -633,13 +633,13 @@ func convertBitBucketCommitToGitCommit(bCommit *bitbucket.Commit, repo *GitRepos
 		Author: &GitUser{
 			Login: bCommit.Author.Name,
 			Name:  bCommit.Author.DisplayName,
-			Email: bCommit.Author.Email,
+			Email: bCommit.Author.EmailAddress,
 		},
 		URL: repo.URL + "/commits/" + bCommit.ID,
 		Committer: &GitUser{
 			Login: bCommit.Committer.Name,
 			Name:  bCommit.Committer.DisplayName,
-			Email: bCommit.Committer.Email,
+			Email: bCommit.Committer.EmailAddress,
 		},
 	}
 }
@@ -1080,7 +1080,7 @@ func (b *BitbucketServerProvider) UserInfo(username string) *GitUser {
 	return &GitUser{
 		Login: username,
 		Name:  user.DisplayName,
-		Email: user.Email,
+		Email: user.EmailAddress,
 		URL:   user.Links.Self[0].Href,
 	}
 }
