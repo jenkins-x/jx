@@ -705,7 +705,10 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	if stashed {
 		err = gitter.StashPop(dir)
 		if err != nil && !IsNoStashEntriesError(err) { // Ignore no stashes as that's just because there was nothing to stash
-			return "", "", nil, nil, errors.Wrapf(err, "unable to pop the stash")
+			err2 := gitter.Status(dir)
+			out, err3 := gitter.Diff(dir)
+			log.Logger().Infof("Got diff %s", out)
+			return "", "", nil, nil, errors.Wrapf(util.CombineErrors(err, err2, err3), "unable to pop the stash")
 		}
 	}
 
