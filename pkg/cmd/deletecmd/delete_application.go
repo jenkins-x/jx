@@ -432,11 +432,11 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	duration := *o.TimeoutDuration
 	end := time.Now().Add(duration)
 
-	return o.waitForGitOpsPullRequest(env, info, options.GitProvider, end, duration)
+	return o.waitForGitOpsPullRequest(env, info, end, duration)
 }
 
 func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
-	pullRequestInfo *gits.PullRequestInfo, gitProvider gits.GitProvider, end time.Time,
+	pullRequestInfo *gits.PullRequestInfo, end time.Time,
 	duration time.Duration) error {
 	if pullRequestInfo != nil {
 		logMergeFailure := false
@@ -444,7 +444,11 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 		log.Logger().Infof("Waiting for pull request %s to merge", pr.URL)
 
 		for {
-			err := gitProvider.UpdatePullRequestStatus(pr)
+			gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(env.Spec.Source.URL)
+			if err != nil {
+				return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
+			}
+			err = gitProvider.UpdatePullRequestStatus(pr)
 			if err != nil {
 				return fmt.Errorf("Failed to query the Pull Request status for %s %s", pr.URL, err)
 			}
