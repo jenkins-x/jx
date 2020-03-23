@@ -687,8 +687,11 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 	if pullRequestInfo != nil {
 		for {
 			pr := pullRequestInfo.PullRequest
-			gitProvider := pullRequestInfo.GitProvider
-			err := gitProvider.UpdatePullRequestStatus(pr)
+			gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(env.Spec.Source.URL)
+			if err != nil {
+				return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
+			}
+			err = gitProvider.UpdatePullRequestStatus(pr)
 			if err != nil {
 				log.Logger().Warnf("Failed to query the Pull Request status for %s %s", pr.URL, err)
 			} else {
