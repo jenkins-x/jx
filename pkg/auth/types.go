@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/secreturl"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"k8s.io/client-go/kubernetes"
@@ -25,6 +27,9 @@ type UserAuth struct {
 	// GithubAppOwner if using GitHub Apps this represents the owner organisation/user which owns this token.
 	// we need to maintain a different token per owner
 	GithubAppOwner string `json:"appOwner,omitempty"`
+
+	// ExpiresAt can be set to the time at which the authorisation information for this user expires. Can be nil.
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 }
 
 type AuthConfig struct {

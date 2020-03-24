@@ -5,6 +5,7 @@ package auth
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -13,8 +14,12 @@ import (
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
+const (
+	expirationTimeString = "2019-03-05T15:06:13-05:00"
+)
+
 func secret(name string, kind string, serviceKind string, githubAppOwner string, createLabels bool,
-	serviceName string, url string, username string, password string) *corev1.Secret {
+	serviceName string, url string, username string, password string, expirationTime string) *corev1.Secret {
 	labels := map[string]string{}
 	if kind != "" || createLabels {
 		labels[labelKind] = kind
@@ -30,6 +35,9 @@ func secret(name string, kind string, serviceKind string, githubAppOwner string,
 	}
 	if url != "" {
 		annotations[annotationURL] = url
+	}
+	if expirationTime != "" {
+		annotations[annotationExpiresAt] = expirationTime
 	}
 	data := map[string][]byte{}
 	if username != "" {
@@ -52,6 +60,8 @@ func secret(name string, kind string, serviceKind string, githubAppOwner string,
 func TestLoadConfig(t *testing.T) {
 	t.Parallel()
 
+	expirationTime, _ := time.Parse(time.RFC3339, expirationTimeString)
+
 	tests := map[string]struct {
 		name           string
 		namespace      string
@@ -62,6 +72,7 @@ func TestLoadConfig(t *testing.T) {
 		url            string
 		username       string
 		password       string
+		expirationTime string
 		want           AuthConfig
 		err            bool
 		secrets        []*corev1.Secret
@@ -127,6 +138,38 @@ func TestLoadConfig(t *testing.T) {
 			},
 			err: false,
 		},
+		"load config from k8s secret with GitHub app owner and expiration time": {
+			name:           "GitHub",
+			namespace:      "test",
+			serverKind:     "git",
+			serviceKind:    "github",
+			gitHubAppOwner: "test-app-owner",
+			createLabels:   true,
+			url:            "https://github.com",
+			username:       "test",
+			password:       "test",
+			expirationTime: expirationTimeString,
+			want: AuthConfig{
+				Servers: []*AuthServer{
+					{
+						URL: "https://github.com",
+						Users: []*UserAuth{
+							{
+								Username:       "test",
+								ApiToken:       "test",
+								GithubAppOwner: "test-app-owner",
+								ExpiresAt:      &expirationTime,
+							},
+						},
+						Name: "GitHub",
+						Kind: "github",
+					},
+				},
+				CurrentServer:  "https://github.com",
+				PipeLineServer: "https://github.com",
+			},
+			err: false,
+		},
 		"load config from multiple GitHub App secrets for the same server": {
 			name:           "GitHub",
 			namespace:      "test",
@@ -168,9 +211,9 @@ func TestLoadConfig(t *testing.T) {
 			err: false,
 			secrets: []*corev1.Secret{
 				secret("gha-1", "git", "github", "app-owner-1", true,
-					"GitHub", "https://github.com", "github-app[bot]", "password-1"),
+					"GitHub", "https://github.com", "github-app[bot]", "password-1", ""),
 				secret("gha-2", "git", "github", "app-owner-2", true,
-					"GitHub", "https://github.com", "github-app[bot]", "password-2"),
+					"GitHub", "https://github.com", "github-app[bot]", "password-2", ""),
 			},
 		},
 		"load config from k8s secret without service kind": {
@@ -376,7 +419,7 @@ func TestLoadConfig(t *testing.T) {
 			client := k8sfake.NewSimpleClientset()
 			const secretName = "config-test"
 			secrets := append(tc.secrets, secret(secretName, tc.serverKind, tc.serviceKind, tc.gitHubAppOwner, tc.createLabels,
-				tc.name, tc.url, tc.username, tc.password))
+				tc.name, tc.url, tc.username, tc.password, tc.expirationTime))
 
 			for _, secret := range secrets {
 				_, err := client.CoreV1().Secrets(tc.namespace).Create(secret)

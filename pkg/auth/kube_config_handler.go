@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -32,6 +33,8 @@ const (
 	annotationName = "jenkins.io/name"
 	// annotationCredentialsDescription the description text for a Credential on a Secret
 	annotationCredentialsDescription = "jenkins.io/credentials-description"
+	// annotationExpiresAt the time at which a Secret will expire, if set.
+	annotationExpiresAt = "jenkins.io/expires-at"
 	// secretDataUsername the username in a Secret/Credentials
 	usernameKey = "username"
 	// secretDataPassword the password in a Secret/Credentials
@@ -222,10 +225,21 @@ func (k *KubeAuthConfigHandler) userFromSecret(secret corev1.Secret) (UserAuth, 
 		return UserAuth{}, fmt.Errorf("no password found in secret '%s'", secret.Name)
 	}
 
-	return UserAuth{
+	ua := UserAuth{
 		Username: string(username),
 		ApiToken: string(password),
-	}, nil
+	}
+
+	if expiresStr, ok := secret.Annotations[annotationExpiresAt]; ok {
+		var expiresAt time.Time
+		err := expiresAt.UnmarshalText([]byte(expiresStr))
+		if err != nil {
+			return UserAuth{}, errors.Wrapf(err, "parsing expiration time %s", expiresStr)
+		}
+		ua.ExpiresAt = &expiresAt
+	}
+
+	return ua, nil
 }
 
 // NewKubeAuthConfigHandler creates a handler which loads/stores the auth config from/into Kubernetes secrets
