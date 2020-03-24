@@ -33,9 +33,9 @@ var (
 	}
 
 	createProjectLong = templates.LongDesc(`
-		Create a new Project by importing code, using a Quickstart or custom wizard for Spring or Camel.
+		Create a new Project by importing code, using a Quickstart or custom wizard for Spring.
 
-` + helper.SeeAlsoText("jx create quickstart", "jx create spring", "jx create jhipster", "jx import"))
+` + helper.SeeAlsoText("jx create quickstart", "jx create spring", "jx import"))
 
 	createProjectExample = templates.Examples(`
 		# Create a project
