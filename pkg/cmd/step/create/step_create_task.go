@@ -48,6 +48,11 @@ const (
 	kanikoSecretName  = kube.SecretKaniko
 	kanikoSecretKey   = kube.SecretKaniko
 
+	gitCredsSecretMountDir   = "/var/build-secrets/tekton-git-credentials" // #nosec
+	gitCredsSecretFilename   = ".git-credentials"
+	gitCredsSecretVolumeName = "tekton-git-credentials" // #nosec
+	gitCredsSecretKey        = "git-credentials"
+
 	noApplyOptionName = "no-apply"
 	outputOptionName  = "output"
 )
@@ -129,6 +134,7 @@ type StepCreateTaskOptions struct {
 	previewVersionPrefix string
 	VersionResolver      *versionstream.VersionResolver
 	CloneDir             string
+	gitCredsSecret       *corev1.Secret
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -332,7 +338,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	log.Logger().Debug("Creating Tekton CRDs")
-	tektonCRDs, err := o.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
+	tektonCRDs, err := o.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, kubeClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRDs")
 	}
@@ -626,7 +632,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfig(packsDir string, pr
 }
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
-func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *config.ProjectConfig, ns string, pipelineName string) (*tekton.CRDWrapper, error) {
+func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *config.ProjectConfig, ns string, pipelineName string, kubeClient kubeclient.Interface) (*tekton.CRDWrapper, error) {
 	if effectiveProjectConfig == nil {
 		return nil, errors.New("effective project config cannot be nil")
 	}
@@ -653,6 +659,12 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
 	}
 
+	if !o.InterpretMode {
+		o.gitCredsSecret, err = o.getGitCredentialsFileSecretForSA(kubeClient, ns, o.ServiceAccount)
+		if err != nil {
+			return nil, err
+		}
+	}
 	tasks, pipeline = o.enhanceTasksAndPipeline(tasks, pipeline, effectiveProjectConfig.PipelineConfig.Env)
 	resources := []*pipelineapi.PipelineResource{tekton.GenerateSourceRepoResource(pipelineName, o.GitInfo, o.Revision)}
 
@@ -734,6 +746,30 @@ func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelin
 		volumes = o.modifyVolumes(&step.Container, volumes)
 		o.modifyEnvVars(&step.Container, env)
 		task.Spec.Steps[i] = step
+	}
+
+	if o.gitCredsSecret != nil {
+		task.Spec.StepTemplate = &corev1.Container{
+			VolumeMounts: []corev1.VolumeMount{{
+				Name:      gitCredsSecretVolumeName,
+				MountPath: gitCredsSecretMountDir,
+				ReadOnly:  true,
+			}},
+		}
+		volumes = append(volumes, corev1.Volume{
+			Name: gitCredsSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: o.gitCredsSecret.Name,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  gitCredsSecretKey,
+							Path: gitCredsSecretFilename,
+						},
+					},
+				},
+			},
+		})
 	}
 
 	task.Spec.Volumes = volumes
@@ -1613,4 +1649,38 @@ func createEnvMapForInterpretExecution(envVars []corev1.EnvVar) map[string]strin
 func isKanikoExecutorStep(container *corev1.Container) bool {
 	return strings.HasPrefix(strings.Join(container.Command, " "), "/kaniko/executor") ||
 		(len(container.Args) > 0 && strings.HasPrefix(strings.Join(container.Args, " "), "/kaniko/executor"))
+}
+
+func (o *StepCreateTaskOptions) getGitCredentialsFileSecretForSA(kubeClient kubeclient.Interface, ns string, saName string) (*corev1.Secret, error) {
+	if saName == "" {
+		return nil, nil
+	}
+	sa, err := kubeClient.CoreV1().ServiceAccounts(ns).Get(saName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting ServiceAccount details for %s", saName)
+	}
+	for _, secretEntry := range sa.Secrets {
+		secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretEntry.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting secret %s for SA %s", secretEntry.Name, saName)
+		}
+		isSecretFile := false
+		isGitKind := false
+		matchesOwner := false
+		for k, v := range secret.Labels {
+			if k == kube.LabelCredentialsType && v == kube.ValueCredentialTypeSecretFile {
+				isSecretFile = true
+			}
+			if k == kube.LabelKind && v == kube.ValueKindGit {
+				isGitKind = true
+			}
+			if k == kube.LabelGithubAppOwner && v == o.GitInfo.Organisation {
+				matchesOwner = true
+			}
+		}
+		if secret.Type == corev1.SecretTypeOpaque && isSecretFile && isGitKind && matchesOwner {
+			return secret, nil
+		}
+	}
+	return nil, nil
 }

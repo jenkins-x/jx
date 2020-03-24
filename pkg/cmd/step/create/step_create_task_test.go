@@ -56,6 +56,7 @@ type testCase struct {
 	pipelineUserName      string
 	pipelineUserEmail     string
 	branchAsRevision      bool
+	serviceAccount        string
 }
 
 func TestGenerateTektonCRDs(t *testing.T) {
@@ -397,62 +398,17 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "really-long",
 			kind:         "release",
 		},
+		{
+			name:           "git-creds-secret",
+			language:       "none",
+			repoName:       "js-test-repo",
+			organization:   "abayer",
+			branch:         "really-long",
+			kind:           "release",
+			serviceAccount: "other-sa",
+		},
 	}
 
-	k8sObjects := []runtime.Object{
-		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      kube.ConfigMapJenkinsDockerRegistry,
-				Namespace: "jx",
-			},
-			Data: map[string]string{
-				"docker.registry": "gcr.io",
-			},
-		},
-		// Dummy secrets created for validation purposes
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "jenkins-docker-cfg",
-				Namespace: "jx",
-			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "jenkins-maven-settings",
-				Namespace: "jx",
-			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "jenkins-release-gpg",
-				Namespace: "jx",
-			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "some-secret",
-				Namespace: "jx",
-			},
-			Data: map[string][]byte{
-				"FIRST_KEY":  []byte("first value"),
-				"SECOND_KEY": []byte("second value"),
-			},
-			Type: corev1.SecretTypeOpaque,
-		},
-		// Dummy PVCs created for validation purposes
-		&corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "top-level-volume",
-				Namespace: "jx",
-			},
-		},
-		&corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "stage-level-volume",
-				Namespace: "jx",
-			},
-		},
-	}
 	repoOwnerUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	repoOwner := repoOwnerUUID.String()
@@ -466,6 +422,96 @@ func TestGenerateTektonCRDs(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
+			k8sObjects := []runtime.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      kube.ConfigMapJenkinsDockerRegistry,
+						Namespace: "jx",
+					},
+					Data: map[string]string{
+						"docker.registry": "gcr.io",
+					},
+				},
+				// Dummy secrets created for validation purposes
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "jenkins-docker-cfg",
+						Namespace: "jx",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "jenkins-maven-settings",
+						Namespace: "jx",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "jenkins-release-gpg",
+						Namespace: "jx",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "some-secret",
+						Namespace: "jx",
+					},
+					Data: map[string][]byte{
+						"FIRST_KEY":  []byte("first value"),
+						"SECOND_KEY": []byte("second value"),
+					},
+					Type: corev1.SecretTypeOpaque,
+				},
+				// Dummy PVCs created for validation purposes
+				&corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "top-level-volume",
+						Namespace: "jx",
+					},
+				},
+				&corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "stage-level-volume",
+						Namespace: "jx",
+					},
+				},
+				// Dummy SA for most test cases
+				&corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tekton-bot",
+						Namespace: "jx",
+					},
+				},
+				// Secret and SA for .git-credentials test
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "other-sa-git-creds-secret",
+						Namespace: "jx",
+						Labels: map[string]string{
+							kube.LabelCredentialsType: kube.ValueCredentialTypeSecretFile,
+							kube.LabelKind:            kube.ValueKindGit,
+							kube.LabelGithubAppOwner:  "abayer",
+						},
+					},
+					Data: map[string][]byte{
+						"git-credentials": []byte("https://foo:bar@github.com"),
+					},
+					Type: corev1.SecretTypeOpaque,
+				},
+				&corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "other-sa",
+						Namespace: "jx",
+					},
+					Secrets: []corev1.ObjectReference{{
+						Kind:       "Secret",
+						Namespace:  "jx",
+						Name:       "other-sa-git-creds-secret",
+						APIVersion: "v1",
+					}},
+				},
+			}
+
 			devEnv := v1.Environment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      kube.LabelValueDevEnvironment,
@@ -502,6 +548,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
 			}
 
+			sa := "tekton-bot"
+			if tt.serviceAccount != "" {
+				sa = tt.serviceAccount
+			}
 			createTask := &StepCreateTaskOptions{
 				Pack:         tt.language,
 				DryRun:       true,
@@ -518,7 +568,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				NoKaniko:            tt.noKaniko,
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
-						ServiceAccount: "tekton-bot",
+						ServiceAccount: sa,
 					},
 				},
 				BuildNumber: "1",
@@ -555,8 +605,12 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
+				kubeClient, err := createTask.KubeClient()
+				if err != nil {
+					t.Fatalf("Could not get kube client: %s", err)
+				}
 				pipelineName := tekton.PipelineResourceNameFromGitInfo(createTask.GitInfo, createTask.Branch, createTask.Context, tekton.BuildPipeline.String())
-				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName)
+				crds, err := createTask.generateTektonCRDs(effectiveProjectConfig, ns, pipelineName, kubeClient)
 				if tt.generateError != nil {
 					if err == nil {
 						t.Fatalf("Expected an error %s generating CRDs, did not see it", tt.generateError)
