@@ -45,7 +45,6 @@ const (
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
     # icp (IBM Cloud Private) - https://www.ibm.com/cloud/private
     * iks (IBM Cloud Kubernetes Service - https://console.bluemix.net/docs/containers)
-    * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
 	* minishift (single-node OpenShift cluster inside a VM on your laptop)
@@ -115,7 +114,6 @@ func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateClusterGKE(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterMinikube(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterMinishift(commonOpts))
-	cmd.AddCommand(NewCmdCreateClusterOKE(commonOpts))
 	cmd.AddCommand(NewCmdCreateClusterIKS(commonOpts))
 
 	return cmd
