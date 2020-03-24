@@ -46,7 +46,6 @@ var (
 		"kvm2",
 		"ksync",
 		"minikube",
-		"minishift",
 		"oc",
 		"virtualbox",
 		"xhyve",

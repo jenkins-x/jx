@@ -285,7 +285,7 @@ func (o *StepCreateValuesOptions) verifyRegistryConfig(requirements *config.Requ
 				return errors.Wrap(err, "getting IKS registry configuration")
 			}
 
-		case cloud.OPENSHIFT, cloud.MINISHIFT:
+		case cloud.OPENSHIFT:
 			registry = "docker-registry.default.svc:5000"
 			_, err := o.enableOpenShiftRegistryPermissions(requirements.Cluster.Namespace, registry)
 			if err != nil {

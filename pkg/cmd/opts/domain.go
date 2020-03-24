@@ -30,12 +30,6 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				return "", err
 			}
 			address = ip
-		} else if provider == cloud.MINISHIFT {
-			ip, err := o.GetCommandOutput("", "minishift", "ip")
-			if err != nil {
-				return "", err
-			}
-			address = ip
 		} else {
 			info := util.ColorInfo
 			log.Logger().Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s",
