@@ -29,6 +29,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	optionZones = "zones"
+)
+
 // CreateClusterEKSOptions contains the CLI flags
 type CreateClusterEKSOptions struct {
 	CreateClusterOptions
