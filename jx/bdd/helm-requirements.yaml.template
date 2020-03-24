@@ -4,7 +4,7 @@ dependencies:
   - alias: tekton
     name: tekton
     repository: http://chartmuseum.jenkins-x.io
-    version: 0.0.3-SNAPSHOT-git-creds-secret
+    version: 0.0.4-SNAPSHOT-git-creds-secret
   - alias: prow
     condition: prow.enabled
     name: prow
