@@ -130,8 +130,6 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 			_, err = ksync.InstallKSync()
 		case "minikube":
 			err = o.InstallMinikube()
-		case "minishift":
-			err = o.InstallMinishift()
 		case "oc":
 			err = openshift.InstallOc()
 		case "virtualbox":
@@ -775,39 +773,6 @@ func (o *CommonOptions) InstallMinikube() error {
 		return err
 	}
 	err = util.RenameFile(tmpFile, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
-}
-
-// InstallMinishift installs minishift
-func (o *CommonOptions) InstallMinishift() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "cask", "install", "minishift")
-	}
-
-	binDir, err := util.JXBinLocation()
-	binary := "minishift"
-	if err != nil {
-		return err
-	}
-	fileName, flag, err := packages.ShouldInstallBinary(binary)
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestVersionFromGitHub(binary, binary)
-	if err != nil {
-		return err
-	}
-	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minishift-%s-%s-%s.tgz", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + ".tgz"
-	err = packages.DownloadFile(clientURL, tarFile)
-	if err != nil {
-		return err
-	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
 	if err != nil {
 		return err
 	}

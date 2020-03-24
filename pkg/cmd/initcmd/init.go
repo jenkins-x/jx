@@ -580,7 +580,7 @@ controller:
 		log.Logger().Info("existing ingress controller found, no need to install a new one")
 	}
 
-	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.MINISHIFT && o.Flags.Provider != cloud.OPENSHIFT {
+	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.OPENSHIFT {
 		if o.Flags.Provider == cloud.OKE {
 			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account")
 		}
@@ -696,7 +696,7 @@ func (o *InitOptions) HelmBinary() string {
 
 func isOpenShiftProvider(provider string) bool {
 	switch provider {
-	case cloud.OPENSHIFT, cloud.MINISHIFT:
+	case cloud.OPENSHIFT:
 		return true
 	default:
 		return false
