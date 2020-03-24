@@ -77,7 +77,6 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateSpring(commonOpts))
 	cmd.AddCommand(NewCmdCreateStep(commonOpts))
 	cmd.AddCommand(NewCmdCreateTeam(commonOpts))
-	cmd.AddCommand(NewCmdCreateTerraform(commonOpts))
 	cmd.AddCommand(NewCmdCreateToken(commonOpts))
 	cmd.AddCommand(NewCmdCreateTracker(commonOpts))
 	cmd.AddCommand(NewCmdCreateUser(commonOpts))

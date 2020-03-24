@@ -32,9 +32,7 @@ type CreateClusterOptions struct {
 const (
 	optionKubernetesVersion = "kubernetes-version"
 	optionNodes             = "nodes"
-	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
-	optionCloudProvider     = "cloud-provider"
 	optionSkipInstallation  = "skip-installation"
 )
 
