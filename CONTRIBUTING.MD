@@ -279,6 +279,5 @@ If you wish to find out more:
 [go]: https://golang.org/
 [Homebrew]: https://brew.sh/
 [Kubernetes]: https://github.com/kubernetes/kubernetes
-[Minikube]: https://github.com/kubernetes/minikube
 [upstream]: https://help.github.com/articles/fork-a-repo/
 [upx]: https://upx.github.io

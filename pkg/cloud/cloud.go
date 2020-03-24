@@ -13,7 +13,6 @@ const (
 	AWS        = "aws"
 	PKS        = "pks"
 	IKS        = "iks"
-	MINIKUBE   = "minikube"
 	KUBERNETES = "kubernetes"
 	OPENSHIFT  = "openshift"
 	ICP        = "icp"
@@ -22,7 +21,7 @@ const (
 )
 
 // KubernetesProviders list of all available Kubernetes providers
-var KubernetesProviders = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, JX_INFRA, PKS, ICP, ALIBABA}
+var KubernetesProviders = []string{GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, JX_INFRA, PKS, ICP, ALIBABA}
 
 // KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {

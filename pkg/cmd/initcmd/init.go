@@ -446,31 +446,6 @@ func (o *InitOptions) InitIngress() error {
 		return fmt.Errorf("Failed to ensure the ingress namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ingressNamespace, err)
 	}
 
-	currentContext, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return err
-	}
-	if currentContext == "minikube" {
-		if o.Flags.Provider == "" {
-			o.Flags.Provider = cloud.MINIKUBE
-		}
-		addons, err := o.GetCommandOutput("", "minikube", "addons", "list")
-		if err != nil {
-			return err
-		}
-		if strings.Contains(addons, "- ingress: enabled") {
-			log.Logger().Info("nginx ingress controller already enabled")
-			return nil
-		}
-		err = o.RunCommand("minikube", "addons", "enable", "ingress")
-		if err != nil {
-			return err
-		}
-		log.Logger().Info("nginx ingress controller now enabled on Minikube")
-		return nil
-
-	}
-
 	if isOpenShiftProvider(o.Flags.Provider) {
 		log.Logger().Info("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
@@ -580,7 +555,7 @@ controller:
 		log.Logger().Info("existing ingress controller found, no need to install a new one")
 	}
 
-	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.OPENSHIFT {
+	if o.Flags.Provider != cloud.OPENSHIFT {
 		if o.Flags.Provider == cloud.OKE {
 			log.Logger().Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account")
 		}

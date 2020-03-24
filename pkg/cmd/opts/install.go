@@ -12,8 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/openshift"
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
 
-	"github.com/jenkins-x/jx/pkg/virtualmachines/hyperkit"
-
 	"github.com/jenkins-x/jx/pkg/virtualmachines/kvm"
 
 	"github.com/jenkins-x/jx/pkg/virtualmachines/kvm2"
@@ -118,8 +116,6 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 			err = o.InstallTiller()
 		case "helm3":
 			err = o.InstallHelm3()
-		case "hyperkit":
-			err = hyperkit.InstallHyperkit()
 		case "kops":
 			err = amazon.InstallKops()
 		case "kvm":
@@ -128,8 +124,6 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 			err = kvm2.InstallKvm2()
 		case "ksync":
 			_, err = ksync.InstallKSync()
-		case "minikube":
-			err = o.InstallMinikube()
 		case "oc":
 			err = openshift.InstallOc()
 		case "virtualbox":
@@ -744,41 +738,6 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 	return os.Chmod(fullPath, 0755)
 }
 
-// InstallMinikube installs minikube
-func (o *CommonOptions) InstallMinikube() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "cask", "install", "minikube")
-	}
-
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	fileName, flag, err := packages.ShouldInstallBinary("minikube")
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "minikube")
-	if err != nil {
-		return err
-	}
-	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
-		clientURL += ".exe"
-	}
-	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = packages.DownloadFile(clientURL, tmpFile)
-	if err != nil {
-		return err
-	}
-	err = util.RenameFile(tmpFile, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
-}
-
 // InstallGcloud installs gcloud cli
 func (o *CommonOptions) InstallGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
@@ -815,13 +774,6 @@ func (o *CommonOptions) InstallOciCli() error {
 // GetCloudProvider returns the cloud provider
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	if p == "" {
-		// lets detect Minikube
-		currentContext, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
-		if err == nil && currentContext == "minikube" {
-			p = cloud.MINIKUBE
-		}
-	}
 	if p != "" {
 		if !util.Contains(cloud.KubernetesProviders, p) {
 			return "", util.InvalidArg(p, cloud.KubernetesProviders)
@@ -832,8 +784,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 		prompt := &survey.Select{
 			Message: "Cloud Provider",
 			Options: cloud.KubernetesProviders,
-			Default: cloud.MINIKUBE,
-			Help:    "Cloud service providing the Kubernetes cluster, local VM (Minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
+			Help:    "Cloud service providing the Kubernetes cluster, Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
 		survey.AskOne(prompt, &p, nil, surveyOpts)
@@ -911,8 +862,6 @@ func (o *CommonOptions) InstallRequirements(cloudProvider string, extraDependenc
 		deps = packages.AddRequiredBinary("gcloud", deps)
 	case cloud.OKE:
 		deps = packages.AddRequiredBinary("oci", deps)
-	case cloud.MINIKUBE:
-		deps = packages.AddRequiredBinary("minikube", deps)
 	}
 
 	for _, dep := range extraDependencies {
