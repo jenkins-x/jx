@@ -56,6 +56,7 @@ git checkout tags/v${BOOT_CONFIG_VERSION} -b latest-boot-config
 
 cp ../jx/bdd/boot-vault/jx-requirements.yml .
 cp ../jx/bdd/boot-vault/parameters.yaml env
+cp ../jx/bdd/helm-requirements.yaml.template env/requirements.yaml
 cp env/jenkins-x-platform/values.tmpl.yaml tmp.yaml
 cat tmp.yaml ../jx/bdd/boot-vault.platform.yaml > env/jenkins-x-platform/values.tmpl.yaml
 rm tmp.yaml
