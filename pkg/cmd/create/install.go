@@ -593,11 +593,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrapf(err, "retrieving cloud provider '%s'", options.Flags.Provider)
 	}
 
-	err = options.setMinikubeFromContext()
-	if err != nil {
-		return errors.Wrap(err, "configuring minikube from kubectl context")
-	}
-
 	err = options.configureTeamSettings()
 	if err != nil {
 		return errors.Wrap(err, "configuring the team settings in the dev environment")
@@ -1969,14 +1964,6 @@ func (options *InstallOptions) configureCloudProviderPreInit(client kubernetes.I
 		if err != nil {
 			return errors.Wrap(err, "ensuring default storage for EKS/AWS cloud provider")
 		}
-	case cloud.MINIKUBE:
-		if options.Flags.Domain == "" {
-			ip, err := options.GetCommandOutput("", "minikube", "ip")
-			if err != nil {
-				return errors.Wrap(err, "failed to get the IP from Minikube")
-			}
-			options.Flags.Domain = ip + ".nip.io"
-		}
 	default:
 		return nil
 	}
@@ -2082,23 +2069,6 @@ func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.
 
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	return helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, nil
-}
-
-func (options *InstallOptions) setMinikubeFromContext() error {
-	currentContext := ""
-	var err error
-	if !options.Flags.DisableSetKubeContext {
-		currentContext, err = options.GetCommandOutput("", "kubectl", "config", "current-context")
-		if err != nil {
-			return errors.Wrap(err, "failed to get the current context")
-		}
-	}
-	if currentContext == "minikube" {
-		if options.Flags.Provider == "" {
-			options.Flags.Provider = cloud.MINIKUBE
-		}
-	}
-	return nil
 }
 
 func (options *InstallOptions) registerAllCRDs() error {

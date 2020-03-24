@@ -1,4 +1,4 @@
-# JX 
+# JX
 
 JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.io/).
 
@@ -192,14 +192,10 @@ or
 
 ## Switching Clusters
 
-If you have multiple Kubernetes clusters (e.g. you are using GKE and Minikube together) then you can switch between them via:
+If you have multiple Kubernetes clusters then you can switch between them via:
 
     jx ctx
-    
-In the same way. Or via
 
-    jx ctx minikube
-            
 **Note** that changing the namespace ,environment or cluster changes the current context for **ALL** shells!
 
 ### Sub shells
@@ -249,92 +245,21 @@ For example to add the [Gitea Git server](https://gitea.io/en-US/) to your Jenki
 
     jx create addon gitea
 
-This will: 
+This will:
 
 * install the Gitea Helm chart.
 * add Gitea as a Git server (via the `jx create git server gitea` command).
 * create a new user in Gitea (via the `jx create git user -n gitea` command).
 * create a new Git API token in Gitea (via the `jx create git token -n gitea -p password username` command).
-     
+
 ## Troubleshooting
 
 We have tried to collate common issues here with work arounds. If your issue isn't listed here please [let us know](https://github.com/jenkins-x/jx/issues/new).
- 
-### Cannot create cluster Minikube
-If you are using a Mac then `hyperkit` is the best VM driver to use - but does require you to install a recent [Docker for Mac](https://docs.docker.com/docker-for-mac/install/) first. Maybe try that then retry `jx create cluster minikube`?
 
-If your Minikube is failing to startup then you could try:
- 
-    minikube delete
-    rm -rf ~/.minikube
-
-If the `rm` fails you may need to do:
-
-    sudo rm -rf ~/.minikube
-
-Now try `jx create cluster minikube` again - did that help? Sometimes there are stale certs or files hanging around from old installations of minikube that can break things.
-
-Sometimes a reboot can help in cases where virtualisation goes wrong ;)
-
-Otherwise you could try follow the Minikube instructions:
-
-* [install Minikube](https://github.com/kubernetes/minikube#installation)
-* [run Minikube start](https://github.com/kubernetes/minikube#quickstart) 
-
-### Minikube and hyperkit: Could not find an IP address
-
-If you are using Minikube on a mac with hyperkit and find Minikube fails to start with a log like:
-
-```
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-```
-
-It could be you have hit [this issue in Minikube and hyperkit](https://github.com/kubernetes/minikube/issues/1926#issuecomment-356378525).
-
-The work around is to try the following:
-
-```
-rm ~/.minikube/machines/minikube/hyperkit.pid
-``` 
-
-Then try again. Hopefully this time it will work!
-
-### Cannot access services on Minikube
-
-When running Minikube locally `jx` defaults to using [nip.io](http://nip.io/) as a way of using nice-isn DNS names for services and working around the fact that most laptops can't do wildcard DNS. However sometimes [nip.io](http://nip.io/) has issues and does not work.
-
-To avoid using [nip.io](http://nip.io/) you can do the following:
-
-Edit the file `~/.jx/cloud-environments/env-minikube/myvalues.yaml` and add the following content:
-
-```yaml
-expose:
-  Args:
-    - --exposer
-    - NodePort
-    - --http
-    - "true"
-```
-
-Then re-run `jx install` and this will switch the services to be exposed on `node ports` instead of using ingress and DNS.
-
-So if you type:
-
-```
-jx open
-```
-
-You'll see all the URLs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
-
-
- 
 ### Other issues
 
-Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we can help? Good luck! 
-	
+Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we can help? Good luck!
+
 ## Contributing
 
 We welcome your contributions.
