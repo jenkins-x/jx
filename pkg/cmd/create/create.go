@@ -69,7 +69,6 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateGit(commonOpts))
 	cmd.AddCommand(NewCmdCreateIssue(commonOpts))
 	cmd.AddCommand(NewCmdCreateJenkins(commonOpts))
-	cmd.AddCommand(NewCmdCreateLile(commonOpts))
 	cmd.AddCommand(NewCmdCreateMicro(commonOpts))
 	cmd.AddCommand(NewCmdCreatePostPreviewJob(commonOpts))
 	cmd.AddCommand(NewCmdCreateProject(commonOpts))
