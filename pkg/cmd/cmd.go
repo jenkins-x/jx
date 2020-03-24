@@ -115,7 +115,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		importcmd.NewCmdImport(commonOpts),
 	}
 	addProjectCommands = append(addProjectCommands, findCommands("create spring", createCommands, deleteCommands)...)
-	addProjectCommands = append(addProjectCommands, findCommands("create micro", createCommands, deleteCommands)...)
 	addProjectCommands = append(addProjectCommands, findCommands("create quickstart", createCommands, deleteCommands)...)
 
 	gitCommands := []*cobra.Command{}
