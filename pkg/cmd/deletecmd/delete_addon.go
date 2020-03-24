@@ -44,7 +44,6 @@ func NewCmdDeleteAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdDeleteAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonGitea(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonIstio(commonOpts))
-	cmd.AddCommand(NewCmdDeleteAddonKnativeBuild(commonOpts))
 	options.addFlags(cmd)
 	return cmd
 }

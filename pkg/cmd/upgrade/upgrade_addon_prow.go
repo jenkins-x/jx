@@ -7,14 +7,12 @@ import (
 
 	"github.com/hashicorp/go-version"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/versionstream"
@@ -118,19 +116,6 @@ func (o *UpgradeAddonProwOptions) Run() error {
 					"install the latest, any existing builds or custom changes to BuildTemplate resources will be lost"
 
 				if answer, err := util.Confirm(message, false, "", o.GetIOFileHandles()); !answer {
-					return err
-				}
-
-				// delete knative build
-				deleteKnativeBuildOpts := &deletecmd.DeleteKnativeBuildOptions{
-					DeleteAddonOptions: deletecmd.DeleteAddonOptions{
-						CommonOptions: o.CommonOptions,
-					},
-				}
-				deleteKnativeBuildOpts.ReleaseName = kube.DefaultKnativeBuildReleaseName
-
-				err = deleteKnativeBuildOpts.Run()
-				if err != nil {
 					return err
 				}
 
