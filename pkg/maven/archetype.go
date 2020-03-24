@@ -1,11 +1,6 @@
 package maven
 
 import (
-	"bytes"
-	"encoding/xml"
-	"io/ioutil"
-	"net/http"
-	"path/filepath"
 	"strings"
 
 	"fmt"
@@ -145,71 +140,6 @@ func (m *ArchetypeModel) AddArtifact(a *ArtifactData) *ArtifactVersions {
 		artifact.Versions = append(artifact.Versions, version)
 	}
 	return artifact
-}
-
-func LoadArchetypes(name string, archetypeCatalogURL string, cacheDir string) (*ArchetypeModel, error) {
-	loader := func() ([]byte, error) {
-		client := http.Client{}
-		req, err := http.NewRequest(http.MethodGet, archetypeCatalogURL, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Accept", "application/xml")
-
-		res, err := client.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		return ioutil.ReadAll(res.Body)
-	}
-
-	cacheFileName := ""
-	if cacheDir != "" {
-		cacheFileName = filepath.Join(cacheDir, "archetype-catalog-"+name+".xml")
-	}
-	body, err := util.LoadCacheData(cacheFileName, loader)
-	if err != nil {
-		return nil, err
-	}
-
-	model := NewArchetypeModel()
-	decoder := xml.NewDecoder(bytes.NewReader(body))
-	artifact := ArtifactData{}
-	elementName := ""
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			break
-		}
-		switch t := token.(type) {
-		case xml.StartElement:
-			elmt := t
-			elementName = elmt.Name.Local
-		case xml.EndElement:
-			elmt := t
-			elementName = elmt.Name.Local
-			if elementName == "archetype" {
-				model.AddArtifact(&artifact)
-				artifact = ArtifactData{}
-			}
-		case xml.CharData:
-			bytes := t
-			text := strings.TrimSpace(string(bytes))
-			if text != "" {
-				switch elementName {
-				case "groupId":
-					artifact.GroupId += text
-				case "artifactId":
-					artifact.ArtifactId += text
-				case "version":
-					artifact.Version += text
-				case "description":
-					artifact.Description += text
-				}
-			}
-		}
-	}
-	return &model, nil
 }
 
 func (model *ArchetypeModel) CreateSurvey(data *ArchetypeFilter, pickVersion bool, form *ArchetypeForm, handles util.IOFileHandles) error {
