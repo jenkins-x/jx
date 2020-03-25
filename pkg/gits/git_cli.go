@@ -1223,6 +1223,11 @@ func (g *GitCLI) CherryPickTheirs(dir string, commitish string) error {
 	return g.gitCmd(dir, "cherry-pick", commitish, "--strategy=recursive", "-X", "theirs")
 }
 
+// CherryPickTheirsKeepRedundantCommits does a git cherry-pick of commit
+func (g *GitCLI) CherryPickTheirsKeepRedundantCommits(dir string, commitish string) error {
+	return g.gitCmd(dir, "cherry-pick", commitish, "--strategy=recursive", "-X", "theirs", "--keep-redundant-commits")
+}
+
 // Describe does a git describe of commitish, optionally adding the abbrev arg if not empty, falling back to just the commit ref if it's untagged
 func (g *GitCLI) Describe(dir string, contains bool, commitish string, abbrev string, fallback bool) (string, string, error) {
 	args := []string{"describe", commitish}

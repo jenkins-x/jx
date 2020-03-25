@@ -247,6 +247,7 @@ type Gitter interface {
 	RebaseTheirs(dir string, upstream string, branch string, skipEmpty bool) error
 	CherryPick(dir string, commitish string) error
 	CherryPickTheirs(dir string, commitish string) error
+	CherryPickTheirsKeepRedundantCommits(dir string, commitish string) error
 
 	StashPush(dir string) error
 	StashPop(dir string) error

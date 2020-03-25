@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/boot"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
@@ -436,7 +437,8 @@ func (o *UpgradeBootOptions) cherryPickCommits(cloneDir, fromSha, toSha string) 
 		commitSha := cmts[i].SHA
 		commitMsg := cmts[i].Subject()
 
-		err := o.Git().CherryPickTheirs(o.Dir, commitSha)
+		// cherry-pick commits preserving redundant commits to avoid error
+		err := o.Git().CherryPickTheirsKeepRedundantCommits(o.Dir, commitSha)
 		if err != nil {
 			msg := fmt.Sprintf("commit %s is a merge but no -m option was given.", commitSha)
 			if !strings.Contains(err.Error(), msg) {
