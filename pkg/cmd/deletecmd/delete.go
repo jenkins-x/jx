@@ -53,7 +53,6 @@ func NewCmdDelete(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdDeleteChat(commonOpts))
 	cmd.AddCommand(NewCmdDeleteContext(commonOpts))
 	cmd.AddCommand(NewCmdDeleteDevPod(commonOpts))
-	cmd.AddCommand(newCmdDeleteEks(commonOpts))
 	cmd.AddCommand(NewCmdDeleteEnv(commonOpts))
 	cmd.AddCommand(NewCmdDeleteGit(commonOpts))
 	cmd.AddCommand(NewCmdDeleteGke(commonOpts))
