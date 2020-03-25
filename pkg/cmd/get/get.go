@@ -83,7 +83,6 @@ func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdGetCRDCount(commonOpts))
 	cmd.AddCommand(NewCmdGetCVE(commonOpts))
 	cmd.AddCommand(NewCmdGetDevPod(commonOpts))
-	cmd.AddCommand(NewCmdGetEks(commonOpts))
 	cmd.AddCommand(NewCmdGetEnv(commonOpts))
 	cmd.AddCommand(NewCmdGetGit(commonOpts))
 	cmd.AddCommand(NewCmdGetHelmBin(commonOpts))
