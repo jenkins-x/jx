@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"unicode"
 
 	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
 
@@ -1467,4 +1468,24 @@ func logJobCompletedState(activity *v1.PipelineActivity, pri *tekton.PipelineRun
 		fields["pipelineRunType"] = pri.Type
 	}
 	log.Logger().WithFields(fields).Infof("Build %s %s", activity.Name, activity.Spec.Status)
+}
+
+// DigitSuffix outputs digital suffix
+func DigitSuffix(text string) string {
+	answer := ""
+	for {
+		l := len(text)
+		if l == 0 {
+			return answer
+		}
+		lastChar := text[l-1:]
+		for _, rune := range lastChar {
+			if !unicode.IsDigit(rune) {
+				return answer
+			}
+			break
+		}
+		answer = lastChar + answer
+		text = text[0 : l-1]
+	}
 }
