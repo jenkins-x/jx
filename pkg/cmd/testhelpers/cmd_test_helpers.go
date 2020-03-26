@@ -383,18 +383,6 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 	}
 }
 
-func AssertWorkflowStatus(t *testing.T, activities typev1.PipelineActivityInterface, name string, status v1.ActivityStatusType) {
-	activity, err := activities.Get(name, metav1.GetOptions{})
-	if err != nil {
-		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
-		return
-	}
-	if !assert.Equal(t, string(status), string(activity.Spec.Status), "PipelineActivity status for %s", activity.Name) ||
-		!assert.Equal(t, string(status), string(activity.Spec.WorkflowStatus), "PipelineActivity workflow status for %s", activity.Name) {
-		dumpFailedActivity(activity)
-	}
-}
-
 func AssertSetPullRequestComplete(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
 	fakePR := repository.PullRequests[prNumber]
 	if !assert.NotNil(t, fakePR, "No PullRequest found on repository %s for number #%d", repository.String(), prNumber) {

@@ -50,7 +50,6 @@ func NewCmdController(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(pipeline.NewCmdControllerPipelineRunner(commonOpts))
 	cmd.AddCommand(NewCmdControllerRole(commonOpts))
 	cmd.AddCommand(NewCmdControllerTeam(commonOpts))
-	cmd.AddCommand(NewCmdControllerWorkflow(commonOpts))
 	cmd.AddCommand(NewCmdControllerCommitStatus(commonOpts))
 	return cmd
 }
