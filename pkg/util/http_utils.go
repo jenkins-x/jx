@@ -96,7 +96,7 @@ func CallWithExponentialBackOff(url string, auth string, httpMethod string, reqB
 			if err != nil {
 				return backoff.Permanent(err)
 			}
-			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 				return errors.Errorf("%s not available, error was %d %s", url, resp.StatusCode, resp.Status)
 			}
 			respBody, err = ioutil.ReadAll(resp.Body)
