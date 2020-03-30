@@ -814,9 +814,10 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 			},
 		},
 	}, {
-		name:         "overrides-with-buildpack-using-jenkins-x-syntax",
-		pack:         "jx-syntax-in-buildpack",
-		repoName:     "jx-demo-qs",
+		name: "overrides-with-buildpack-using-jenkins-x-syntax",
+		pack: "jx-syntax-in-buildpack",
+		// Upper-casing to verify fix for #6983
+		repoName:     "Jx-demo-qs",
 		organization: "abayer",
 		branch:       "master",
 		expected: &config.ProjectConfig{
