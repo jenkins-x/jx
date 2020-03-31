@@ -282,6 +282,14 @@ type StorageConfig struct {
 	Backup StorageEntryConfig `json:"backup"`
 }
 
+// AWSConfig contains AWS specific requirements
+type AWSConfig struct {
+	// AccountID the unique 12-digit number assigned to your AWS account
+	AccountID string `json:"accountId,omitempty"`
+	// HelmSA if true, ServiceAccounts will be managed by helm and IRSA annotations will be applied for IAM roles
+	HelmSA bool `json:"helmSa,omitempty"`
+}
+
 // AzureConfig contains Azure specific requirements
 type AzureConfig struct {
 	// RegistrySubscription the registry subscription for defaulting the container registry.
@@ -297,6 +305,8 @@ type GKEConfig struct {
 
 // ClusterConfig contains cluster specific requirements
 type ClusterConfig struct {
+	// AWSConfig the aws specific configuration
+	AWSConfig *AWSConfig `json:"aws,omitempty"`
 	// AzureConfig the azure specific configuration
 	AzureConfig *AzureConfig `json:"azure,omitempty"`
 	// ChartRepository the repository URL to deploy charts to
