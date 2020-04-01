@@ -357,6 +357,11 @@ func logWarningForRemovalOfStaticMasters(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// Just return if this is "jx completion (shell)".
+	if commandHasParentName(cmd, "completion") {
+		return
+	}
+
 	shouldWarn := false
 	if commandHasParentName(cmd, "create cluster") {
 		shouldWarn = isStaticMasterInstall(cmd)
