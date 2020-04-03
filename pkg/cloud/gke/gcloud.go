@@ -14,6 +14,7 @@ import (
 
 	osUser "os/user"
 
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -1361,7 +1362,7 @@ func (g *GCloud) CreateGCPServiceAccount(kubeClient kubernetes.Interface, servic
 	}
 	defer os.RemoveAll(serviceAccountDir)
 
-	serviceAccountName := ServiceAccountName(clusterName, serviceAbbreviation)
+	serviceAccountName := naming.ToValidGCPServiceAccount(ServiceAccountName(clusterName, serviceAbbreviation))
 
 	serviceAccountPath, err := g.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, serviceAccountRoles)
 	if err != nil {

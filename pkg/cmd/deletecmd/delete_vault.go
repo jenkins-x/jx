@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -174,7 +175,7 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		o.GKEZone = zone
 	}
 
-	sa := gke.ServiceAccountName(vaultName, gkevault.DefaultVaultAbbreviation)
+	sa := naming.ToValidGCPServiceAccount(gke.ServiceAccountName(vaultName, gkevault.DefaultVaultAbbreviation))
 	err = o.GCloud().DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
