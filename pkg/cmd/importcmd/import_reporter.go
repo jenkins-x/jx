@@ -11,6 +11,8 @@ var info = util.ColorInfo
 type ImportReporter interface {
 	// UsingGitUserName report progress
 	UsingGitUserName(username string)
+	// ClonedGitRepository report progress
+	ClonedGitRepository(url string)
 	// PushedGitRepository report progress
 	PushedGitRepository(url string)
 	// GitRepositoryCreated report progress
@@ -21,7 +23,8 @@ type ImportReporter interface {
 	CreatedProject(genDir string)
 	// GeneratedQuickStartAt report progress
 	GeneratedQuickStartAt(genDir string)
-
+	// DraftCreated report progress
+	DraftCreated(draftPack string)
 	// Trace report generic trace message
 	Trace(message string, options ...interface{})
 }
@@ -65,4 +68,14 @@ func (r *LogImportReporter) CreatedProject(genDir string) {
 // GeneratedQuickStartAt report progress
 func (r *LogImportReporter) GeneratedQuickStartAt(genDir string) {
 	log.Logger().Infof("Generated quickstart at %s", genDir)
+}
+
+// DraftCreated report progress
+func (r *LogImportReporter) DraftCreated(draftPack string) {
+	log.Logger().Infof("Draft pack %s added", info(draftPack))
+}
+
+// ClonedGitRepository report progress
+func (r *LogImportReporter) ClonedGitRepository(repoURL string) {
+	log.Logger().Infof("Cloned Git repository from %s\n", info(repoURL))
 }
