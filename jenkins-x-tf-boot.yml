@@ -114,6 +114,17 @@ pipelineConfig:
                   - --cache-dir=/workspace
                   - --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
 
+              - name: build-and-push-terraform
+                command: /kaniko/executor
+                args:
+                  - --dockerfile=/workspace/source/Dockerfile.builder-terraform
+                  - --destination=gcr.io/jenkinsxio/builder-terraform:${inputs.params.version}
+                  - --context=/workspace/source
+                  - --cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/
+                  - --cache=true
+                  - --cache-dir=/workspace
+                  - --skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000
+
           - name: e2e-tests
             options:
               volumes:
@@ -144,7 +155,7 @@ pipelineConfig:
                 value: http://jenkins-x-athens-proxy:80
               - name: PARALLEL_BUILDS
                 value: "2"
-              - name: GH_ACCESS_TOKEN
+              - name: GH_ACCESS_TOKEN 
                 valueFrom:
                   secretKeyRef:
                     name: jenkins-x-bot-test-github
@@ -152,12 +163,12 @@ pipelineConfig:
               - name: JENKINS_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: test-jenkins-user
+                    name: test-jenkins-user 
                     key: password
             steps:
-              - name: boot-vault-e2e-tests
-                image: gcr.io/jenkinsxio/builder-go-nodejs:${inputs.params.version}
-                command: ./jx/bdd/boot-vault/ci.sh
+              - name: e2e-tests
+                image: gcr.io/jenkinsxio/builder-terraform:${inputs.params.version}
+                command: ./jx/bdd/tf-boot/ci.sh
 
               - name: generate-report
                 image: gcr.io/jenkinsxio/builder-nodejs10x:0.1.607
@@ -175,11 +186,7 @@ pipelineConfig:
                   - --output-name
                   - junit.html
                   - --suite-name
-                  - "BDD_Boot_Vault_Tests"
-
-              - name: clear-kubeconfig
-                image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
-                command: rm ~/.kube/config
+                  - "BDD_Terraform_Boot_Tests"
 
               - name: stash_html_report
                 image: gcr.io/jenkinsxio/builder-go:${inputs.params.version}
