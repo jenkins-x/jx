@@ -414,6 +414,7 @@ func (options *ImportOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			options.GetReporter().PushedGitRepository(options.RepoURL)
 		}
 	}
 
@@ -602,6 +603,8 @@ func (options *ImportOptions) DraftCreate() error {
 	if err != nil {
 		return err
 	}
+
+	options.GetReporter().DraftCreated(options.DraftPack)
 	return nil
 }
 
@@ -787,6 +790,7 @@ func (options *ImportOptions) CloneRepository() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone in directory '%s'", cloneDir)
 	}
+	options.GetReporter().ClonedGitRepository(url)
 	options.Dir = cloneDir
 	return nil
 }
