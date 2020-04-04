@@ -1072,7 +1072,7 @@ items:
               value: /kaniko-secret/secret.json
             - name: PREVIEW_VERSION
               value: 0.0.7
-          image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+          image: gcr.io/kaniko-project/executor:v0.19.0
           imagePullPolicy: IfNotPresent
           name: build-step-build-container-build
           resources:
@@ -1649,7 +1649,7 @@ items:
           type: PodScheduled
       containerStatuses:
         - containerID: docker://ee94afd22cdb071ffd2566ec3478d1290b54185b87d530cf907908c02e63195b
-          image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+          image: gcr.io/kaniko-project/executor:v0.19.0
           imageID: docker-pullable://gcr.io/kaniko-project/executor@sha256:94c69a4be5eccf88070e640bc682c969a53996c8a4490e39776c9411b974d8fa
           lastState: {}
           name: build-step-build-container-build
