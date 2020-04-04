@@ -203,7 +203,7 @@ items:
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: $(inputs.params.version)
-      image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+      image: gcr.io/kaniko-project/executor:debug-v0.19.0
       name: build-and-push-image
       resources: {}
       volumeMounts:
@@ -253,7 +253,7 @@ items:
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: $(inputs.params.version)
-      image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+      image: gcr.io/kaniko-project/executor:debug-v0.19.0
       name: build-and-push-nodejs
       resources: {}
       volumeMounts:
@@ -302,7 +302,7 @@ items:
         value: /kaniko-secret/secret.json
       - name: PREVIEW_VERSION
         value: $(inputs.params.version)
-      image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+      image: gcr.io/kaniko-project/executor:debug-v0.19.0
       name: build-and-push-maven
       resources: {}
       volumeMounts:

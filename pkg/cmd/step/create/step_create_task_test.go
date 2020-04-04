@@ -526,7 +526,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					VersionsDir: testVersionsDir,
 				},
 				DefaultImage:      "maven",
-				KanikoImage:       "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6",
+				KanikoImage:       "gcr.io/kaniko-project/executor:v0.19.0",
 				KanikoSecretMount: "/kaniko-secret/secret.json",
 				KanikoSecret:      "kaniko-secret",
 				KanikoSecretKey:   "kaniko-secret",
