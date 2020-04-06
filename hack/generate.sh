@@ -6,11 +6,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 RESET='\033[0m'
 
-if ! [ -x "$(command -v goimports)" ]; then
-	echo "Installing goimports"
-    go get golang.org/x/tools/cmd/goimports
-fi
-
 echo "Running validation scripts..."
 
 scripts=(
