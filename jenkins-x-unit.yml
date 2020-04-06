@@ -42,11 +42,11 @@ pipelineConfig:
                 args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
 
               - name: build
-                image: docker.io/golang:1.12.13
+                image: docker.io/golang:1.13.8
                 command: make
                 args: ['build']
 
               - name: unit-test
-                image: docker.io/golang:1.12.13
+                image: docker.io/golang:1.13.8
                 command: make
                 args: ['test']

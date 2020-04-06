@@ -27,15 +27,14 @@ pipelineConfig:
                     memory: 6Gi
             steps:
               - name: fmt
-                image: golang:1.12.10
+                image: golang:1.13.8
                 command: ./hack/gofmt.sh
                 dir: /workspace/source
               - name: lint
-                image: golang:1.12.10
+                image: golang:1.13.8
                 command: ./hack/linter.sh
                 dir: /workspace/source
               - name: ensure-test-classification
                 image: bash
                 command: ./hack/ensure-test-classification.sh
                 dir: /workspace/source
-

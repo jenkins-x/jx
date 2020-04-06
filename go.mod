@@ -1,4 +1,4 @@
-module github.com/jenkins-x/jx
+ github.com/jenkins-x/jx
 
 require (
 	code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a
@@ -152,3 +152,5 @@ replace github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v10.14.0+incompatible
 
 replace github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
+
+go 1.13

@@ -41,6 +41,6 @@ pipelineConfig:
                   - "/workspace/go/src/github.com/jenkins-x/jx"
                 dir: /workspace/source
               - name: generate
-                image: golang:1.12.10
+                image: golang:1.13.8
                 command: ./hack/generate.sh
                 dir: /workspace/go/src/github.com/jenkins-x/jx
