@@ -45,12 +45,12 @@ pipelineConfig:
                     memory: 3072Mi
             steps:
               - name: build-binary
-                image: docker.io/golang:1.12.4
+                image: docker.io/golang:1.13.8
                 command: make
                 args: ['linux']
 
               - name: validate-binary
-                image: docker.io/golang:1.12.4
+                image: docker.io/golang:1.13.8
                 command: "./build/linux/jx"
                 args: ['help']
 
