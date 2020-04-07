@@ -167,3 +167,5 @@ replace github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v10.14.0+incompatible
 
 replace github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
+
+replace github.com/spf13/cobra => github.com/spf13/cobra v0.0.5
