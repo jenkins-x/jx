@@ -76,7 +76,6 @@ type PromoteOptions struct {
 	PullRequestPollDuration *time.Duration
 	Activities              typev1.PipelineActivityInterface
 	GitInfo                 *gits.GitRepository
-	jenkinsURL              string
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
 	prow                    bool
@@ -963,27 +962,6 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 	name := pipeline
 	if build != "" {
 		name += "-" + build
-		if (buildURL == "" || buildLogsURL == "") && !o.prow {
-			jenkinsURL := o.getAndUpdateJenkinsURL()
-			if jenkinsURL != "" {
-				path := pipeline
-				if !strings.HasPrefix(path, "job/") && !strings.HasPrefix(path, "/job/") {
-					// lets split the path and prefix it with /job
-					path = strings.Join(strings.Split(path, "/"), "/job/")
-					path = util.UrlJoin("job", path)
-				}
-				path = util.UrlJoin(path, build)
-				if !strings.HasSuffix(path, "/") {
-					path += "/"
-				}
-				if buildURL == "" {
-					buildURL = util.UrlJoin(jenkinsURL, path)
-				}
-				if buildLogsURL == "" {
-					buildLogsURL = util.UrlJoin(buildURL, "console")
-				}
-			}
-		}
 	}
 	name = naming.ToValidName(name)
 	log.Logger().Debugf("Using pipeline: %s build: %s", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
@@ -999,19 +977,6 @@ func (o *PromoteOptions) CreatePromoteKey(env *v1.Environment) *kube.PromoteStep
 		},
 		Environment: env.Name,
 	}
-}
-
-func (o *PromoteOptions) getAndUpdateJenkinsURL() string {
-	if o.jenkinsURL == "" {
-		o.jenkinsURL = os.Getenv("JENKINS_URL")
-	}
-	url, err := o.GetJenkinsURL()
-	if err != nil {
-		log.Logger().Warnf("Could not find Jenkins URL: %s", err)
-	} else {
-		o.jenkinsURL = url
-	}
-	return o.jenkinsURL
 }
 
 // CommentOnIssues comments on any issues for a release that the fix is available in the given environment

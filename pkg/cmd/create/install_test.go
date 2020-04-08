@@ -70,11 +70,11 @@ func TestCheckFlags(t *testing.T) {
 				Provider: cloud.GKE,
 			},
 			nextGeneration: false,
-			tekton:         false,
-			prow:           false,
-			staticJenkins:  true,
-			kaniko:         false,
-			dockerRegistry: "",
+			tekton:         true,
+			prow:           true,
+			staticJenkins:  false,
+			kaniko:         true,
+			dockerRegistry: "gcr.io",
 			err:            nil,
 		},
 		{
@@ -164,20 +164,11 @@ func TestCheckFlags(t *testing.T) {
 			err:            nil,
 		},
 		{
-			name: "next_generation_and_static_jenkins",
+			name: "static_jenkins",
 			in: &create.InstallFlags{
-				NextGeneration: true,
-				StaticJenkins:  true,
-			},
-			err: errors.New("incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated"),
-		},
-		{
-			name: "tekton_and_static_jenkins",
-			in: &create.InstallFlags{
-				Tekton:        true,
 				StaticJenkins: true,
 			},
-			err: errors.New("incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated"),
+			err: errors.New("option '--static-jenkins' has been removed"),
 		},
 	}
 
