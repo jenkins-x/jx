@@ -184,16 +184,6 @@ func (o *CommonOptions) CreateCustomJenkinsClient(jenkinsSelector *JenkinsSelect
 	return jenkinsClient, err
 }
 
-// getJenkinsURL return the Jenkins URL
-func (o *CommonOptions) GetJenkinsURL() (string, error) {
-	kubeClient, ns, err := o.KubeClientAndNamespace()
-	if err != nil {
-		return "", err
-	}
-
-	return o.factory.GetJenkinsURL(kubeClient, ns)
-}
-
 // GetJenkinsJobs returns the existing Jenkins jobs
 func (o *CommonOptions) GetJenkinsJobs(jenkinsSelector *JenkinsSelectorOptions, filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}

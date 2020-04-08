@@ -3,17 +3,14 @@ package get
 import (
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/logs"
 	"github.com/jenkins-x/jx/pkg/tekton"
@@ -38,7 +35,6 @@ type GetBuildLogsOptions struct {
 	Tail                    bool
 	Wait                    bool
 	BuildFilter             builds.BuildPodInfoFilter
-	JenkinsSelector         opts.JenkinsSelectorOptions
 	CurrentFolder           bool
 	WaitForPipelineDuration time.Duration
 	TektonLogger            *logs.TektonLogger
@@ -112,7 +108,6 @@ func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.GitURL, "giturl", "g", "", "The git URL to filter on. If you specify a link to a github repository or PR we can filter the query of build pods accordingly")
 	cmd.Flags().StringVarP(&options.BuildFilter.Context, "context", "", "", "Filters the context of the build")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
-	options.JenkinsSelector.AddFlags(cmd)
 	options.AddBaseFlags(cmd)
 
 	return cmd
@@ -142,109 +137,7 @@ func (o *GetBuildLogsOptions) Run() error {
 		return err
 	}
 
-	devEnv, err := kube.GetDevEnvironment(jxClient, ns)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get dev environment in namespace %s", ns)
-	}
-	if devEnv == nil {
-		return fmt.Errorf("No development environment found for namespace %s", ns)
-	}
-	webhookEngine := devEnv.Spec.WebHookEngine
-	if (webhookEngine == v1.WebHookEngineProw || webhookEngine == v1.WebHookEngineLighthouse) && !o.JenkinsSelector.IsCustom() {
-		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
-	}
-
-	args := o.Args
-
-	if !o.BatchMode && len(args) == 0 {
-		jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.BuildFilter.Filter)
-		if err != nil {
-			return err
-		}
-		names := []string{}
-		for k := range jobMap {
-			names = append(names, k)
-		}
-		sort.Strings(names)
-		if len(names) == 0 {
-			return fmt.Errorf("No pipelines have been built!")
-		}
-
-		defaultName := ""
-		for _, n := range names {
-			if strings.HasSuffix(n, "/master") {
-				defaultName = n
-				break
-			}
-		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, "", o.GetIOFileHandles())
-		if err != nil {
-			return err
-		}
-		args = []string{name}
-	}
-	if len(args) == 0 {
-		return fmt.Errorf("No pipeline chosen")
-	}
-	name := args[0]
-	buildNumber := o.BuildFilter.BuildNumber()
-
-	last, err := o.getLastJenkinsBuild(name, buildNumber)
-	if err != nil {
-		return err
-	}
-
-	log.Logger().Infof("%s %s", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
-	return o.TailJenkinsBuildLog(&o.JenkinsSelector, name, &last)
-}
-
-func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
-	var last gojenkins.Build
-
-	jenkinsClient, err := o.CreateCustomJenkinsClient(&o.JenkinsSelector)
-	if err != nil {
-		return last, err
-	}
-
-	f := func() error {
-		var err error
-
-		jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.BuildFilter.Filter)
-		if err != nil {
-			return err
-		}
-		job := jobMap[name]
-		if job.Url == "" {
-			return fmt.Errorf("No Job exists yet called %s", name)
-		}
-		job.Url = jenkins.SwitchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
-
-		if buildNumber > 0 {
-			last, err = jenkinsClient.GetBuild(job, buildNumber)
-		} else {
-			last, err = jenkinsClient.GetLastBuild(job)
-		}
-		if err != nil {
-			return err
-		}
-		if last.Url == "" {
-			if buildNumber > 0 {
-				return fmt.Errorf("No build found for name %s number %d", name, buildNumber)
-			} else {
-				return fmt.Errorf("No build found for name %s", name)
-			}
-		}
-		last.Url = jenkins.SwitchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
-		return err
-	}
-
-	if o.Wait {
-		err := o.Retry(60, time.Second*2, f)
-		return last, err
-	} else {
-		err := f()
-		return last, err
-	}
+	return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
 }
 
 // getProwBuildLog prompts the user, if needed, to choose a pipeline, and then prints out that pipeline's logs.

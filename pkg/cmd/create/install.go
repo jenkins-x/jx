@@ -162,8 +162,7 @@ const (
 	JX_GIT_TOKEN = "JX_GIT_TOKEN" // #nosec
 	JX_GIT_USER  = "JX_GIT_USER"
 
-	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"
-	StaticMasterJenkins = "Static Jenkins Server and Jenkinsfiles"
+	ServerlessJenkins = "Serverless Jenkins X Pipelines with Tekton"
 
 	GitOpsChartYAML = `name: env
 version: 0.0.1
@@ -426,16 +425,11 @@ func (options *InstallOptions) CheckFlags() error {
 	log.Logger().Debug("checking installation flags")
 	flags := &options.Flags
 
-	if flags.NextGeneration && flags.StaticJenkins {
-		return fmt.Errorf("incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated")
-	}
-
-	if flags.Tekton && flags.StaticJenkins {
-		return fmt.Errorf("incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated")
+	if flags.StaticJenkins {
+		return fmt.Errorf("option '--static-jenkins' has been removed")
 	}
 
 	if flags.Prow {
-		flags.StaticJenkins = false
 		flags.Tekton = true
 	}
 
@@ -446,18 +440,20 @@ func (options *InstallOptions) CheckFlags() error {
 		}
 	}
 
+	if options.BatchMode && !flags.NextGeneration && !flags.Tekton && !flags.Prow {
+		flags.Tekton = true
+		flags.Prow = true
+		flags.Kaniko = true
+		options.InitOptions.Flags.NoTiller = true
+	}
+
 	if flags.NextGeneration {
-		flags.StaticJenkins = false
 		flags.GitOpsMode = true
 		flags.Vault = true
 		flags.Prow = true
 		flags.Tekton = true
 		flags.Kaniko = true
 		options.InitOptions.Flags.NoTiller = true
-	}
-
-	if options.BatchMode && !flags.NextGeneration && !flags.Prow && !flags.Tekton {
-		flags.StaticJenkins = true
 	}
 
 	// only kaniko is supported as a builder in tekton
@@ -1169,28 +1165,9 @@ func (options *InstallOptions) configureHelmRepo() error {
 
 func (options *InstallOptions) selectJenkinsInstallation() error {
 	if !options.BatchMode {
-		//install type has not been configured
-		if !options.Flags.Prow && !options.Flags.StaticJenkins {
-			jenkinsInstallOptions := []string{
-				ServerlessJenkins,
-				StaticMasterJenkins,
-			}
-			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.GetIOFileHandles())
-			if err != nil {
-				return errors.Wrap(err, "picking Jenkins installation type")
-			}
-			if jenkinsInstallOption == ServerlessJenkins {
-				options.Flags.Prow = true
-				options.Flags.Tekton = true
-			}
-		} else {
-			//determine which install type is configured
-			jenkinsInstallOption := ServerlessJenkins
-			if options.Flags.StaticJenkins {
-				jenkinsInstallOption = StaticMasterJenkins
-			}
-			log.Logger().Infof(util.QuestionAnswer("Configured Jenkins installation type", jenkinsInstallOption))
-		}
+		//determine which install type is configured
+		jenkinsInstallOption := ServerlessJenkins
+		log.Logger().Infof(util.QuestionAnswer("Configured Jenkins installation type", jenkinsInstallOption))
 	}
 	return nil
 }
