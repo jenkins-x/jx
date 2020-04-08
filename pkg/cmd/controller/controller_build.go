@@ -177,8 +177,10 @@ func (o *ControllerBuildOptions) Run() error {
 	}
 	if o.GitReporting {
 		_, err = kubeClient.AppsV1().Deployments(devNs).Get(foghornDeploymentName, metav1.GetOptions{})
-		if err != nil && !k8sErrors.IsNotFound(err) {
-			log.Logger().Warnf("failed to look up deployment %s in namespace %s: %s", foghornDeploymentName, devNs, err)
+		if err != nil {
+			if !k8sErrors.IsNotFound(err) {
+				log.Logger().Warnf("failed to look up deployment %s in namespace %s: %s", foghornDeploymentName, devNs, err)
+			}
 		} else {
 			o.foghornPresent = true
 		}
