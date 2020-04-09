@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 func fakeSearchForChart(f string) (string, error) {
 	return "mySearchedApp", nil
 }
@@ -275,4 +274,3 @@ type TestEnv struct {
 	StagingRepo     *gits.FakeRepository
 	ProdRepo        *gits.FakeRepository
 }
-
