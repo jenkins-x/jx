@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	genAPIDocsRepo = "github.com/kubernetes-incubator/reference-docs"
+	genAPIDocsRepo = "github.com/kubernetes-sigs/reference-docs"
 	genAPIDocsBin  = genAPIDocsRepo + "/gen-apidocs"
 )
 

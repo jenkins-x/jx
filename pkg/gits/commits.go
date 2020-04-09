@@ -40,7 +40,7 @@ var (
 		"":         createCommitGroup(""),
 	}
 
-	unknownKindOrder = groupCounter + 1
+	unknownKindOrder = len(ConventionalCommitTitles) + 1
 )
 
 func createCommitGroup(title string) *CommitGroup {
