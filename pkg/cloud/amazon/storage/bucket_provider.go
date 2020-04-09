@@ -151,9 +151,10 @@ func (b *AmazonBucketProvider) UploadFileToBucket(reader io.Reader, outputName s
 	}
 	bucketURL = strings.TrimPrefix(bucketURL, "s3://")
 	output, err := uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucketURL),
-		Key:    aws.String("/" + outputName),
-		Body:   reader,
+		Bucket:      aws.String(bucketURL),
+		Key:         aws.String("/" + outputName),
+		ContentType: aws.String(util.ContentTypeForFileName(outputName)),
+		Body:        reader,
 	})
 	if err != nil {
 		return "", err
