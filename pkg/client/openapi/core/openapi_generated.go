@@ -3517,8 +3517,9 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 					},
 					"workflow": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Deprecated - Workflow functionality was removed and is obsolete Keeping these fields to ensure backwards compatibility Should be removed when we increment spec version",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"workflowStatus": {
