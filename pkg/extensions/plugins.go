@@ -122,14 +122,15 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(pluginBinDir, fmt.Sprintf("%s-%s", plugin.Spec.Name, plugin.Spec.Version))
+	version := plugin.Spec.Version
+	path := filepath.Join(pluginBinDir, fmt.Sprintf("%s-%s", plugin.Spec.Name, version))
 	if _, err = os.Stat(path); os.IsNotExist(err) {
 		u, err := FindPluginUrl(plugin.Spec)
 		if err != nil {
 			return "", err
 		}
 		log.Logger().Infof("Installing plugin %s version %s for command %s from %s", util.ColorInfo(plugin.Spec.Name),
-			util.ColorInfo(plugin.Spec.Version), util.ColorInfo(fmt.Sprintf("jx %s", plugin.Spec.SubCommand)), util.ColorInfo(u))
+			util.ColorInfo(version), util.ColorInfo(fmt.Sprintf("jx %s", plugin.Spec.SubCommand)), util.ColorInfo(u))
 
 		// Look for other versions to cleanup
 		files, err := ioutil.ReadDir(pluginBinDir)
@@ -137,8 +138,14 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 			return path, err
 		}
 		deleted := make([]string, 0)
+
+		// lets only delete plugins for this major version so we can keep, say, helm 2 and 3 around
+		prefix := plugin.Name + "-"
+		if len(version) > 0 {
+			prefix += version[0:1]
+		}
 		for _, f := range files {
-			if strings.HasPrefix(f.Name(), plugin.Name) {
+			if strings.HasPrefix(f.Name(), prefix) {
 				err = os.Remove(filepath.Join(pluginBinDir, f.Name()))
 				if err != nil {
 					log.Logger().Warnf("Unable to delete old version of plugin %s installed at %s because %v", plugin.Name, f.Name(), err)

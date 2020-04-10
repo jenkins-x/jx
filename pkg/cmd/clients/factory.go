@@ -5,6 +5,7 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	sonoboy_dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/jenkins-x/jx/pkg/extensions"
 	"k8s.io/client-go/dynamic"
 
 	"io"
@@ -754,6 +755,14 @@ func (f *factory) CreateHelm(verbose bool,
 	}
 	if verbose {
 		log.Logger().Debugf("Using helmBinary %s with feature flag: %s", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+	}
+	if helmBinary == "helm" {
+		path, err := extensions.GetHelmBinary(extensions.HelmVersion)
+		if err != nil {
+			log.Logger().Warnf("failed to download helm 2 plugin: %s", err.Error())
+		} else {
+			helmBinary = path
+		}
 	}
 	helmCLI := helm.NewHelmCLIWithCompatibilityCheck(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI
