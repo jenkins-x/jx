@@ -7,7 +7,7 @@ endif
 
 PEGOMOCK_VERSION := v2.7.0
 CLIENTSET_GENERATOR_VERSION := kubernetes-1.12.9
-GEN_APIDOCS_VERSION := 9642bd3f4de5
+GEN_APIDOCS_VERSION := v0.0.0-20190410022412-9642bd3f4de5
 OPENAPI_GEN_VERSION := 36ebc4887cdc
 
 build-codegen: build/$(CODE_GEN_BIN_NAME) ## Build the code generator
