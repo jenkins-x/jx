@@ -9,14 +9,19 @@ import (
 )
 
 const (
-	genAPIDocsRepo = "github.com/kubernetes-sigs/reference-docs"
+	genAPIDocsRepo = "github.com/kubernetes-incubator/reference-docs"
 	genAPIDocsBin  = genAPIDocsRepo + "/gen-apidocs"
 )
 
 // InstallGenAPIDocs installs the gen-apidocs tool from the kubernetes-incubator/reference-docs repository.
 func InstallGenAPIDocs(version string, gopath string) error {
+	util.AppLogger().Infof("installing %s in version %s via 'go get'", genAPIDocsRepo, version)
+	err := util.GoGet(genAPIDocsRepo, version, gopath, true, false, true)
+	if err != nil {
+		return err
+	}
 	util.AppLogger().Infof("installing %s in version %s via 'go get'", genAPIDocsBin, version)
-	err := util.GoGet(genAPIDocsBin, version, gopath, true, false, true)
+	err = util.GoGet(genAPIDocsBin, version, gopath, true, false, true)
 	if err != nil {
 		return err
 	}
