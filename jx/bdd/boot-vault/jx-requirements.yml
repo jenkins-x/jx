@@ -1,7 +1,7 @@
 gitops: true
 cluster:
   clusterName: bdd-boot
-  environmentGitOwner: jenkins-x-bot-test
+  environmentGitOwner: cb-kubecd
   project: jenkins-x-bdd3
   provider: gke
   zone: europe-west1-c
