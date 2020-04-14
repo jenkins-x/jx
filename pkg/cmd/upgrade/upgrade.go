@@ -54,7 +54,6 @@ func NewCmdUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdUpgradeBinaries(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeIngress(commonOpts))
 	cmd.AddCommand(NewCmdUpgradePlatform(commonOpts))
-	cmd.AddCommand(NewCmdUpgradeExtensions(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeApps(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeCRDs(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeBoot(commonOpts))
