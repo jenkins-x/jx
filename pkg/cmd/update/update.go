@@ -47,7 +47,6 @@ func NewCmdUpdate(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdUpdateCluster(commonOpts))
 	cmd.AddCommand(NewCmdUpdateWebhooks(commonOpts))
 
 	return cmd
