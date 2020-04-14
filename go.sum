@@ -970,6 +970,8 @@ k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc h1:7z9/6jKWBqkK9GI1RRB0B5
 k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
 k8s.io/client-go v0.0.0-20190528110200-4f3abb12cae2 h1:87hTkxzcX/mnx9Q63kwAc6fE79qajt6uLUs/btl7l9c=
 k8s.io/client-go v0.0.0-20190528110200-4f3abb12cae2/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
+k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931 h1:5nlNOG+ShM9gcSivU8/IEhrANa/ljMMEJ1sw86/eFzQ=
+k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931/go.mod h1:MYiN+ZJZ9HkETbgVZdWw2AsuAi9PZ4V80cwfuf2axe8=
 k8s.io/code-generator v0.0.0-20190416052311-01a054e913a9/go.mod h1:6a07iUCUWB1tykSctOVKTgzqTeUuHn5KrusWzAYtRFY=
 k8s.io/gengo v0.0.0-20190116091435-f8a0810f38af/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/gengo v0.0.0-20190327210449-e17681d19d3a h1:QoHVuRquf80YZ+/bovwxoMO3Q/A3nt3yTgS0/0nejuk=
@@ -981,6 +983,8 @@ k8s.io/klog v0.2.0 h1:0ElL0OHzF3N+OhoJTL0uca20SxtYt4X4+bzHeqrB83c=
 k8s.io/klog v0.2.0/go.mod h1:Gq+BEi5rUBO/HRz0bTSXDUcqjScdoY3a9IHpCEIOOfk=
 k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d h1:mn2F9UzCk6KGa7M/d2ibLyRtBQm7n6QvbCjDe/cDWSg=
 k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
+k8s.io/kube-openapi v0.0.0-20190205214119-36ebc4887cdc h1:31yqWxeqWwhOH8KgSsiFsjwCA6+EWsVWiVW+wHW9eSw=
+k8s.io/kube-openapi v0.0.0-20190205214119-36ebc4887cdc/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
 k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30 h1:TRb4wNWoBVrH9plmkp2q86FIDppkbrEXdXlxU3a3BMI=
 k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
 k8s.io/kubernetes v1.11.3 h1:49Pz+NOerox7nZ9F0m/fWv2MIuFDU5cDAoYMozurx1k=
