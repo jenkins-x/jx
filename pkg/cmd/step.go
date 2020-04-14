@@ -20,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/nexus"
 	"github.com/jenkins-x/jx/pkg/cmd/step/post"
 	"github.com/jenkins-x/jx/pkg/cmd/step/pr"
-	"github.com/jenkins-x/jx/pkg/cmd/step/pre"
 	"github.com/jenkins-x/jx/pkg/cmd/step/report"
 	"github.com/jenkins-x/jx/pkg/cmd/step/restore"
 	"github.com/jenkins-x/jx/pkg/cmd/step/scheduler"
@@ -68,7 +67,6 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(nexus.NewCmdStepNexus(commonOpts))
 	cmd.AddCommand(step.NewCmdStepNextVersion(commonOpts))
 	cmd.AddCommand(step.NewCmdStepNextBuildNumber(commonOpts))
-	cmd.AddCommand(pre.NewCmdStepPre(commonOpts))
 	cmd.AddCommand(pr.NewCmdStepPR(commonOpts))
 	cmd.AddCommand(post.NewCmdStepPost(commonOpts))
 	cmd.AddCommand(step.NewCmdStepRelease(commonOpts))
