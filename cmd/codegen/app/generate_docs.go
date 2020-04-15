@@ -76,13 +76,19 @@ func run(o *GenerateDocsOptions) error {
 	}
 	util.AppLogger().Infof("generating docs to %s\n", o.OutputBase)
 
+	cleanupFunc := func() {}
 	gopath := util.GoPath()
 	if !o.Global {
 		gopath, err = util.IsolatedGoPath()
 		if err != nil {
 			return errors.Wrapf(err, "getting isolated gopath")
 		}
+		cleanupFunc, err = util.BackupGoModAndGoSum()
+		if err != nil {
+			return errors.Wrapf(err, "backing up go.mod and go.sum")
+		}
 	}
+	defer cleanupFunc()
 	err = generator.InstallGenAPIDocs(o.GeneratorVersion, gopath)
 	if err != nil {
 		return err

@@ -12,6 +12,58 @@ import (
 	"github.com/pkg/errors"
 )
 
+// BackupGoModAndGoSum creates backup copies of go.mod and go.sum and returns a function to run at the end of execution
+// to revert the go.mod and go.sum in the repo to the backups.
+func BackupGoModAndGoSum() (func(), error) {
+	defaultCleanupFunc := func() {}
+	wd, err := os.Getwd()
+	if err != nil {
+		return defaultCleanupFunc, errors.Wrapf(err, "getting current directory")
+	}
+	origMod := filepath.Join(wd, "go.mod")
+	origSum := filepath.Join(wd, "go.sum")
+	modExists, err := FileExists(origMod)
+	if err != nil {
+		return defaultCleanupFunc, errors.Wrapf(err, "checking if %s exists", origMod)
+	}
+	sumExists, err := FileExists(origSum)
+	if err != nil {
+		return defaultCleanupFunc, errors.Wrapf(err, "checking if %s exists", origSum)
+	}
+	if modExists && sumExists {
+		tmpDir, err := ioutil.TempDir("", "go-mod-backup-")
+		if err != nil {
+			return defaultCleanupFunc, errors.Wrapf(err, "creating go mod backup directory")
+		}
+		tmpMod := filepath.Join(tmpDir, "go.mod")
+		tmpSum := filepath.Join(tmpDir, "go.sum")
+		err = CopyFile(origMod, tmpMod)
+		if err != nil {
+			return defaultCleanupFunc, errors.Wrapf(err, "copying %s to %s", origMod, tmpMod)
+		}
+		err = CopyFile(origSum, tmpSum)
+		if err != nil {
+			return defaultCleanupFunc, errors.Wrapf(err, "copying %s to %s", origSum, tmpSum)
+		}
+
+		return func() {
+			err := CopyFile(tmpMod, origMod)
+			if err != nil {
+				AppLogger().WithError(err).Errorf("restoring backup go.mod from %s", tmpMod)
+			}
+			err = CopyFile(tmpSum, origSum)
+			if err != nil {
+				AppLogger().WithError(err).Errorf("restoring backup go.sum from %s", tmpSum)
+			}
+			err = os.RemoveAll(tmpDir)
+			if err != nil {
+				AppLogger().WithError(err).Errorf("removing go mod backup directory %s", tmpDir)
+			}
+		}, nil
+	}
+	return defaultCleanupFunc, nil
+}
+
 // DeleteDirContents removes all the contents of the given directory
 func DeleteDirContents(dir string) error {
 	files, err := filepath.Glob(filepath.Join(dir, "*"))

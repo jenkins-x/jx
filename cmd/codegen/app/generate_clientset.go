@@ -109,13 +109,20 @@ func (o *ClientSetGenerationOptions) Run() error {
 		return errors.Wrapf(err, "ensure GOPATH is set correctly")
 	}
 
+	cleanupFunc := func() {}
 	gopath := util.GoPath()
 	if !o.Global {
 		gopath, err = util.IsolatedGoPath()
 		if err != nil {
 			return errors.Wrapf(err, "getting isolated gopath")
 		}
+		cleanupFunc, err = util.BackupGoModAndGoSum()
+		if err != nil {
+			return errors.Wrapf(err, "backing up go.mod and go.sum")
+		}
 	}
+	defer cleanupFunc()
+
 	err = generator.InstallCodeGenerators(o.GeneratorVersion, gopath)
 	if err != nil {
 		return errors.Wrapf(err, "installing kubernetes code generator tools")

@@ -137,13 +137,22 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 		return util.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 
+	cleanupFunc := func() {}
+
 	gopath := util.GoPath()
 	if !o.Global {
 		gopath, err = util.IsolatedGoPath()
 		if err != nil {
 			return errors.Wrapf(err, "getting isolated gopath")
 		}
+		cleanupFunc, err = util.BackupGoModAndGoSum()
+		if err != nil {
+			return errors.Wrapf(err, "backing up go.mod and go.sum")
+		}
 	}
+
+	defer cleanupFunc()
+
 	err = generator.InstallOpenApiGen(o.GeneratorVersion, gopath)
 	if err != nil {
 		return errors.Wrapf(err, "error installing kubernetes openapi tools")
