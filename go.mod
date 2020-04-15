@@ -24,7 +24,7 @@ require (
 	github.com/antham/chyle v1.6.0
 	github.com/aws/aws-sdk-go v1.24.0
 	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
-	github.com/banzaicloud/bank-vaults v0.0.0-00010101000000-000000000000
+	github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.7.0 // indirect
@@ -162,7 +162,5 @@ replace github.com/sirupsen/logrus => github.com/jtnord/logrus v1.4.2-0.20190423
 replace github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v21.1.0+incompatible
 
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v10.14.0+incompatible
-
-replace github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
 
 go 1.13
