@@ -5548,6 +5548,6 @@ definitions:
     type: string
 info:
   title: Jenkins X
-  version: "1.0"
+  version: "2.0"
 paths: {}
 swagger: "2.0"
