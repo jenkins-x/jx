@@ -45,10 +45,12 @@ require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20200320173742-022f4bab9090
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ole/go-ole v1.2.1 // indirect
+	github.com/go-openapi/errors v0.19.4 // indirect
 	github.com/go-openapi/jsonreference v0.19.3
+	github.com/go-openapi/loads v0.19.5 // indirect
 	github.com/go-openapi/spec v0.19.7
+	github.com/go-openapi/strfmt v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2
@@ -72,14 +74,14 @@ require (
 	github.com/knative/build v0.7.0 // indirect
 	github.com/knative/pkg v0.0.0-20190624141606-d82505e6c5b4
 	github.com/knative/serving v0.7.0
+	github.com/kubernetes-incubator/reference-docs v0.0.0-20190912061656-a61bc210ee54 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
 	github.com/magiconair/properties v1.8.0
-	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mitchellh/mapstructure v1.2.2
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.7.0
@@ -114,6 +116,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	go.mongodb.org/mongo-driver v1.3.2 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	gocloud.dev v0.9.0
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect

@@ -7,7 +7,7 @@ endif
 
 PEGOMOCK_VERSION := v2.7.0
 CLIENTSET_GENERATOR_VERSION := kubernetes-1.12.9
-GEN_APIDOCS_VERSION := v0.0.0-20190410022412-9642bd3f4de5
+GEN_APIDOCS_VERSION := v0.0.0-20190912061656-a61bc210ee54
 OPENAPI_GEN_VERSION := 36ebc4887cdc
 
 build-codegen: build/$(CODE_GEN_BIN_NAME) ## Build the code generator
@@ -52,7 +52,7 @@ generate-openapi: codegen-openapi fmt importfmt
 
 codegen-openapi: build-codegen
 	@echo "Generating OpenAPI structs for Kubernetes Clients"
-	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/pkg/apis --group-with-version=jenkins.io:v1
+	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/pkg/apis --group-with-version=jenkins.io:v1 --version=2.0
 
 install-refdocs:
 	$(GO) get github.com/jenkins-x/gen-crd-api-reference-docs
