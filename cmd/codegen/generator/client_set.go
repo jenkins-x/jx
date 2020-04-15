@@ -30,13 +30,11 @@ func InstallCodeGenerators(version string, gopath string) error {
 	if version == "" {
 		version = defaultVersion
 	}
-	for _, generator := range allGenerators {
-		path := fmt.Sprintf("%s/%s", basePath, generator)
-		util.AppLogger().Infof("installing %s version %s into %s", path, version, gopath)
-		err := util.GoGet(path, version, gopath, true, false, true)
-		if err != nil {
-			return err
-		}
+	path := fmt.Sprintf("%s/...", basePath)
+	util.AppLogger().Infof("installing %s version %s into %s", path, version, gopath)
+	err := util.GoGet(path, version, gopath, true, false, true)
+	if err != nil {
+		return err
 	}
 
 	return nil
