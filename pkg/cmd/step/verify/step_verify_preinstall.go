@@ -735,10 +735,7 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 		if requirements.Cluster.EnvironmentGitPublic {
 			log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s jx-requirements.yml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("false"))
 		} else {
-			err = o.verifyPrivateRepos(requirements)
-			if err != nil {
-				return err
-			}
+			log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s in jx-requirements.yml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
 		}
 	}
 	if len(requirements.Cluster.DevEnvApprovers) == 0 && !o.BatchMode {
@@ -755,25 +752,6 @@ func (o *StepVerifyPreInstallOptions) gatherGitRequirements(requirements *config
 		}
 		for _, a := range strings.Split(approversString, ",") {
 			requirements.Cluster.DevEnvApprovers = append(requirements.Cluster.DevEnvApprovers, strings.TrimSpace(a))
-		}
-	}
-	return nil
-}
-
-func (o *StepVerifyPreInstallOptions) verifyPrivateRepos(requirements *config.RequirementsConfig) error {
-	log.Logger().Infof("Environment repos will be %s, if you want to create %s environment repos, please set %s to %s in jx-requirements.yml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
-
-	if o.BatchMode {
-		return nil
-	}
-
-	if requirements.Cluster.GitKind == "github" {
-		message := fmt.Sprintf("If '%s' is an GitHub organisation it needs to have a paid subscription to create private repos. Do you wish to continue?", requirements.Cluster.EnvironmentGitOwner)
-		help := fmt.Sprint("GitHub organisation on a free plan cannot create private repositories. You either need to upgrade, use a GitHub user instead or use public repositories.")
-		if answer, err := util.Confirm(message, false, help, o.GetIOFileHandles()); err != nil {
-			return err
-		} else if !answer {
-			return errors.New("cannot continue without completed git requirements")
 		}
 	}
 	return nil
