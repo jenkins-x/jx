@@ -383,6 +383,12 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
 		log.Logger().Infof("Git repository %s/%s already exists", util.ColorInfo(owner), util.ColorInfo(repoName))
+
+		if env.Spec.RemoteCluster {
+			log.Logger().Infof("git repository %s is remote so not modifying it", util.ColorInfo(repo.HTMLURL))
+			return repo, provider, nil
+		}
+
 		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
