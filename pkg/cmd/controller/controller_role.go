@@ -89,19 +89,6 @@ func NewCmdControllerRole(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *ControllerRoleOptions) Run() error {
-	apiClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentCRD(apiClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentRoleBindingCRD(apiClient)
-	if err != nil {
-		return err
-	}
-
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
