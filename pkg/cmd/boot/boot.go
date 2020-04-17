@@ -567,11 +567,10 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 }
 
 func (o *BootOptions) verifyClusterConnection() error {
-	client, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err == nil {
-		_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
+		_, err = client.CoreV1().Pods(ns).List(metav1.ListOptions{})
 	}
-
 	if err != nil {
 		return fmt.Errorf("You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
 			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
