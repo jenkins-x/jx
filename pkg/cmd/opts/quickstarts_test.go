@@ -7,18 +7,18 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/gits"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx/pkg/quickstarts"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/quickstarts"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 )
 
 func TestLoadQuickStarts(t *testing.T) {

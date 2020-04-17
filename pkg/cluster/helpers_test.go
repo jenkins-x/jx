@@ -5,8 +5,8 @@ package cluster_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cluster"
-	"github.com/jenkins-x/jx/pkg/cluster/fake"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

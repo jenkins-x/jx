@@ -3,17 +3,17 @@ package upgrade
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/add"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/add"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/apps"
-	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/v2/pkg/apps"
+	"github.com/jenkins-x/jx/v2/pkg/io/secrets"
 	"github.com/pkg/errors"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 )
 

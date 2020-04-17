@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step"
 )
 
 func TestCollapseDependencyUpdates(t *testing.T) {

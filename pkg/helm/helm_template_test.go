@@ -15,7 +15,7 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )

@@ -16,7 +16,7 @@ type ConfigService interface {
 }
 
 // ConfigHandler is an interface that handles an AuthConfig
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/auth ConfigHandler -o mocks/auth_interface.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/auth ConfigHandler -o mocks/auth_interface.go
 type ConfigHandler interface {
 	// LoadConfig loads the configuration from the users JX config directory
 	LoadConfig() (*AuthConfig, error)

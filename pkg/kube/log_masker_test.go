@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/testkube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/testkube"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"

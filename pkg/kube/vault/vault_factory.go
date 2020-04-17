@@ -6,13 +6,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
-	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/api/core/v1"

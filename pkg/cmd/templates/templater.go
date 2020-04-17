@@ -21,7 +21,7 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 )

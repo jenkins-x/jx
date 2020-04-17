@@ -12,22 +12,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/upgrade"
 
-	"github.com/jenkins-x/jx/pkg/cmd/add"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/add"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/petergtz/pegomock"
 
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 
 	"github.com/blang/semver"
 

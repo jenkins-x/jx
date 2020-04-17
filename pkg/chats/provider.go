@@ -3,8 +3,8 @@ package chats
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // ChatProvider represents an integration interface to chat

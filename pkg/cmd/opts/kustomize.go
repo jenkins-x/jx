@@ -2,8 +2,8 @@ package opts
 
 import (
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"
 )
 

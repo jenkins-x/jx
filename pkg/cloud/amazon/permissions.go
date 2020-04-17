@@ -9,16 +9,16 @@ import (
 	"strings"
 	"text/template"
 
-	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	session2 "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
 )

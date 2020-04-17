@@ -1,8 +1,8 @@
 package jxfactory
 
 import (
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -13,7 +13,7 @@ import (
 )
 
 // Factory is the interface defined for Kubernetes, Jenkins X, and Tekton REST APIs
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/jxfactory Factory -o mocks/factory.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/jxfactory Factory -o mocks/factory.go
 type Factory interface {
 	// WithBearerToken creates a factory from a k8s bearer token
 	WithBearerToken(token string) Factory

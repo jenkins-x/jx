@@ -7,9 +7,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/jenkins-x/jx/pkg/client/informers/externalversions/internalinterfaces"
-	jenkinsio "github.com/jenkins-x/jx/pkg/client/informers/externalversions/jenkins.io"
+	versioned "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/jenkins-x/jx/v2/pkg/client/informers/externalversions/internalinterfaces"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/client/informers/externalversions/jenkins.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

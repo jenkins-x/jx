@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

@@ -5,13 +5,13 @@ package step
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
-	cmd_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
+	cmd_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 

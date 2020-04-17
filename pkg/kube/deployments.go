@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

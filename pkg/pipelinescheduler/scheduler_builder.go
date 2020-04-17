@@ -3,11 +3,11 @@ package pipelinescheduler
 import (
 	"strings"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"k8s.io/test-infra/prow/plugins"
 

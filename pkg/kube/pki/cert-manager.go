@@ -1,9 +1,9 @@
 package pki
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/jenkins-x/jx/pkg/cmd/gc"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/gc"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"

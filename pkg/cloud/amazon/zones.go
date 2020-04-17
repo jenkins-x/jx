@@ -2,7 +2,7 @@ package amazon
 
 import (
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 )
 
 func AvailabilityZones() ([]string, error) {

@@ -1,14 +1,14 @@
 package testutils
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/awscli"
-	awsclitest "github.com/jenkins-x/jx/pkg/cloud/amazon/awscli/mocks"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/ec2"
-	ec2test "github.com/jenkins-x/jx/pkg/cloud/amazon/ec2/mocks"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/eks"
-	ekstest "github.com/jenkins-x/jx/pkg/cloud/amazon/eks/mocks"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/eksctl"
-	eksctltest "github.com/jenkins-x/jx/pkg/cloud/amazon/eksctl/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/awscli"
+	awsclitest "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/awscli/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/ec2"
+	ec2test "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/ec2/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eks"
+	ekstest "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eks/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eksctl"
+	eksctltest "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eksctl/mocks"
 )
 
 type MockClusterProvider struct {

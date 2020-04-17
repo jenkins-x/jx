@@ -6,7 +6,7 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 )
 
 // SwitchAWSHome creates a dummy .aws dir for testing

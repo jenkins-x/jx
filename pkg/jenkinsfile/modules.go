@@ -1,6 +1,6 @@
 package jenkinsfile
 
-import "github.com/jenkins-x/jx/pkg/util"
+import "github.com/jenkins-x/jx/v2/pkg/util"
 
 const (
 	// ModuleFileName the name of the module imports file name

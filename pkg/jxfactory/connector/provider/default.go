@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/jenkins-x/jx/pkg/jxfactory/connector"
-	"github.com/jenkins-x/jx/pkg/jxfactory/connector/gcp"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory/connector"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory/connector/gcp"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 )

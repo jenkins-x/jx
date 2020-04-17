@@ -3,21 +3,21 @@ package post
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 
 	"github.com/spf13/cobra"
 )

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"

@@ -7,22 +7,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/cluster/factory"
+	"github.com/jenkins-x/jx/v2/pkg/cluster/factory"
 
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
-	"github.com/jenkins-x/jx/pkg/cmd/gc"
-	"github.com/jenkins-x/jx/pkg/cmd/get"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/gc"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/get"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/spf13/cobra"
 )
 

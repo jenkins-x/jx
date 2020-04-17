@@ -7,8 +7,8 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/kube/vault"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/kube/vault"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

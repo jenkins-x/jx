@@ -7,13 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	eksctltest "github.com/jenkins-x/jx/pkg/cloud/amazon/eksctl/mocks"
+	eksctltest "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eksctl/mocks"
 
-	"github.com/jenkins-x/jx/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
 
 	"github.com/petergtz/pegomock"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/testutils"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/testutils"
 )
 
 func TestAWSClusterClient_List(t *testing.T) {

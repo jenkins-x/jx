@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	jenkauth "github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	jenkauth "github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigService, handles util.IOFileHandles) (gojenkins.JenkinsClient, error) {

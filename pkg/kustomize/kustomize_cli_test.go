@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jenkins-x/jx/pkg/kustomize"
+	"github.com/jenkins-x/jx/v2/pkg/kustomize"
 )
 
 func TestKustomizeCLI_FindKustomize(t *testing.T) {

@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/stretchr/testify/assert"
 )

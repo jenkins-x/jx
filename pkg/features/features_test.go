@@ -5,7 +5,7 @@ package features_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/features"
+	"github.com/jenkins-x/jx/v2/pkg/features"
 	"github.com/stretchr/testify/assert"
 )
 

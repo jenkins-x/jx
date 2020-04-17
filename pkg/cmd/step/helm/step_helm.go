@@ -5,25 +5,25 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/spf13/cobra"
 
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 const (

@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 	"github.com/pkg/errors"
 )
 

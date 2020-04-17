@@ -7,10 +7,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/pkg/errors"

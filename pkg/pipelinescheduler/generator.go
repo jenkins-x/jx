@@ -11,14 +11,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/prow"
 
-	"github.com/jenkins-x/jx/pkg/environments"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/environments"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 	uuid "github.com/satori/go.uuid"
 	v1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,8 +28,8 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/test-infra/prow/config"

@@ -4,7 +4,7 @@ package matchers
 import (
 	"reflect"
 
-	gits "github.com/jenkins-x/jx/pkg/gits"
+	gits "github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/petergtz/pegomock"
 )
 

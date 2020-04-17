@@ -3,8 +3,8 @@
 package jenkins
 
 import (
-	internalinterfaces "github.com/jenkins-x/jx/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/jenkins-x/jx/pkg/client/informers/externalversions/jenkins.io/v1"
+	internalinterfaces "github.com/jenkins-x/jx/v2/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/jenkins-x/jx/v2/pkg/client/informers/externalversions/jenkins.io/v1"
 )
 
 // Interface provides access to each of this group's versions.

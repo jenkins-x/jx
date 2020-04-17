@@ -1,6 +1,6 @@
 package virtualbox
 
-import "github.com/jenkins-x/jx/pkg/log"
+import "github.com/jenkins-x/jx/v2/pkg/log"
 
 // InstallVirtualBox installs virtual box
 func InstallVirtualBox() error {

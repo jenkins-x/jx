@@ -6,15 +6,15 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/pkg/errors"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/gits"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"k8s.io/client-go/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

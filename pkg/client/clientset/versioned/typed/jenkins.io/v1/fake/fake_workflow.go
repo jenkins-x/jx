@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

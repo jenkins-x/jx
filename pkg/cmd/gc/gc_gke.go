@@ -3,7 +3,7 @@ package gc
 import (
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
 
@@ -15,10 +15,10 @@ import (
 
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // GCGKEOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of

@@ -1,11 +1,11 @@
 package update
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 )
 
 // Update contains the command line options

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 )
 
 // CopyBuildPack copies the build pack from the source dir to the destination dir

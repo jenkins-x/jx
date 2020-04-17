@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	vault_test "github.com/jenkins-x/jx/v2/pkg/vault/mocks"
 	"github.com/petergtz/pegomock"
 )
 

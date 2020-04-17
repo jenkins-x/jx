@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 // TestInstallKustomize tests that Kustomize gets properly installed into JX_HOME

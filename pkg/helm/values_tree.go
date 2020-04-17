@@ -9,16 +9,16 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/secreturl"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/engine"
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 //DefaultValuesTreeIgnores is the default set of ignored files for collapsing the values tree which are used if

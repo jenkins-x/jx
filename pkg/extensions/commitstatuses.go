@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 func NotifyCommitStatus(commitRef jenkinsv1.CommitStatusCommitReference, state string, targetUrl string, description string, comment string, context string, gitProvider gits.GitProvider, gitRepoInfo *gits.GitRepository) (status *gits.GitRepoStatus, err error) {

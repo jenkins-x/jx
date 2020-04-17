@@ -8,30 +8,30 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/environments"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/environments"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 
 	"github.com/blang/semver"
-	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	typev1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

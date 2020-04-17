@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 

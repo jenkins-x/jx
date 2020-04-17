@@ -10,16 +10,16 @@ import (
 	"strings"
 	"testing"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 
-	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl/localvault"
 	"github.com/pborman/uuid"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jenkins-x/jx/pkg/helm"
-	secreturl_test "github.com/jenkins-x/jx/pkg/secreturl/mocks"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	secreturl_test "github.com/jenkins-x/jx/v2/pkg/secreturl/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/magiconair/properties/assert"
 	assert2 "github.com/stretchr/testify/assert"
 )

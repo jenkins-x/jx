@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/brew"
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/v2/pkg/brew"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/version"
 	"github.com/stretchr/testify/assert"
 )
 

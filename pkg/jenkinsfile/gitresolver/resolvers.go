@@ -3,9 +3,9 @@ package gitresolver
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"sigs.k8s.io/yaml"
 
 	"io/ioutil"

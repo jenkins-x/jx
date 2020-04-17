@@ -3,10 +3,10 @@
 package prow_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/prow"
-	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/prow"
+	prowconfig "github.com/jenkins-x/jx/v2/pkg/prow/config"
 	"github.com/stretchr/testify/assert"
 
 	v1 "k8s.io/api/core/v1"

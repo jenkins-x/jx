@@ -4,7 +4,7 @@ package matchers
 import (
 	"reflect"
 
-	auth "github.com/jenkins-x/jx/pkg/auth"
+	auth "github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/petergtz/pegomock"
 )
 

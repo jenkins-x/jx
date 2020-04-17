@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/quickstarts"
+	"github.com/jenkins-x/jx/v2/pkg/quickstarts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

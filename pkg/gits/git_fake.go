@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 

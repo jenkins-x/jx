@@ -1,7 +1,7 @@
 package helm
 
 // Helmer defines common helm actions used within Jenkins X
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/helm Helmer -o mocks/helmer.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/helm Helmer -o mocks/helmer.go
 type Helmer interface {
 	SetCWD(dir string)
 	HelmBinary() string

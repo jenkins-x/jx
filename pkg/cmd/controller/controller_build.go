@@ -10,29 +10,29 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/logs"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/logs"
 	"k8s.io/apimachinery/pkg/fields"
 
-	"github.com/jenkins-x/jx/pkg/collector"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/v2/pkg/collector"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
+	"github.com/jenkins-x/jx/v2/pkg/tekton/metapipeline"
+	"github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/builds"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +41,7 @@ import (
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 )
 
 const (

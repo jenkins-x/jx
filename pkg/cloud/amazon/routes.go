@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 

@@ -6,22 +6,22 @@ import (
 	"time"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/pkg/errors"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 
-	jv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/util"
+	jv1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned/typed/prowjobs/v1"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of

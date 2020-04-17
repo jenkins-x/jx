@@ -10,15 +10,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	"github.com/jenkins-x/jx/pkg/util/secrets"
+	"github.com/jenkins-x/jx/v2/pkg/util/secrets"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/iancoleman/orderedmap"
 

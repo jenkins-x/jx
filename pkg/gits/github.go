@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/util/trace"
+	"github.com/jenkins-x/jx/v2/pkg/util/trace"
 
 	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"golang.org/x/oauth2"
 )
 

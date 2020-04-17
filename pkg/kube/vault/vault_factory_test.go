@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
-	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
+	kubevault "github.com/jenkins-x/jx/v2/pkg/kube/vault"
 	"github.com/stretchr/testify/assert"
 )
 

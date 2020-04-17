@@ -3,14 +3,14 @@ package opts
 import (
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/versionstream/versionstreamrepo"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream/versionstreamrepo"
 
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/table"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/version"
 )
 
 // CreateVersionResolver creates a new VersionResolver service

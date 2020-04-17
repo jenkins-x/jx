@@ -14,17 +14,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/pborman/uuid"
 
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/secreturl"
-	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/table"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/ghodss/yaml"

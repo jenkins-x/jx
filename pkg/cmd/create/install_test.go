@@ -8,16 +8,16 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
-	"github.com/jenkins-x/jx/pkg/cmd/initcmd"
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/initcmd"
+	"github.com/jenkins-x/jx/v2/pkg/kube/cluster"
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	configio "github.com/jenkins-x/jx/pkg/io"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	configio "github.com/jenkins-x/jx/v2/pkg/io"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	//. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"

@@ -7,7 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 )
 
 // SchemeGroupVersion is group version used to register these objects

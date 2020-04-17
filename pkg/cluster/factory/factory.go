@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cluster"
-	"github.com/jenkins-x/jx/pkg/cluster/eks"
-	"github.com/jenkins-x/jx/pkg/cluster/gke"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster/eks"
+	"github.com/jenkins-x/jx/v2/pkg/cluster/gke"
 )
 
 // NewClientFromEnv uses environment variables to detect which kind of cluster we are running inside

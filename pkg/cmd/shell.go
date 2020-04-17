@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"io/ioutil"
@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 const (

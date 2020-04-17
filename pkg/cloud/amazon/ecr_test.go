@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/testutils"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/testutils"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 
 	"github.com/stretchr/testify/assert"
 )

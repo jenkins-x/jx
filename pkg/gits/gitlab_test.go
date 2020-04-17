@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/suite"
 	"github.com/xanzy/go-gitlab"
 )

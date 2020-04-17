@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits/testhelpers"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/gits/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

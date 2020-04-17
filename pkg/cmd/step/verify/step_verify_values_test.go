@@ -7,9 +7,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
-	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/verify"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl/fakevault"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

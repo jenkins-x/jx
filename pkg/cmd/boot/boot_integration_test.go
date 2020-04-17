@@ -8,17 +8,17 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 
-	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	"github.com/jenkins-x/jx/pkg/config"
+	cmd_mocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/stretchr/testify/require"
 
 	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 	corev1 "k8s.io/api/core/v1"
 )
 

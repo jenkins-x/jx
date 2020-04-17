@@ -5,17 +5,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // GetAccountIDAndRegion returns the current account ID and region

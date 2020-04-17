@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

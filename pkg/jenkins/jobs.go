@@ -1,7 +1,7 @@
 package jenkins
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 

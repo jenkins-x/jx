@@ -5,7 +5,7 @@ package reports_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/reports"
+	"github.com/jenkins-x/jx/v2/pkg/reports"
 	"github.com/stretchr/testify/assert"
 )
 

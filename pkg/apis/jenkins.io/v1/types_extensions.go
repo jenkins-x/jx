@@ -12,8 +12,8 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

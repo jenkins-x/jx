@@ -5,10 +5,10 @@ package v1
 import (
 	time "time"
 
-	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/jenkins-x/jx/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/jenkins-x/jx/pkg/client/listers/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	versioned "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/jenkins-x/jx/v2/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/jenkins-x/jx/v2/pkg/client/listers/jenkins.io/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

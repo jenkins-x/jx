@@ -8,14 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/petergtz/pegomock"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl"
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 	"github.com/stretchr/testify/assert"
 )
 

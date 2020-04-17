@@ -10,21 +10,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/vault/fake"
+	"github.com/jenkins-x/jx/v2/pkg/vault/fake"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jenkins-x/jx/pkg/surveyutils"
+	"github.com/jenkins-x/jx/v2/pkg/surveyutils"
 )
 
 // TODO Figure out how to test selects (affects arrays, enums, validation keywords for arrays)

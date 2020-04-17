@@ -9,7 +9,7 @@ import (
 
 	"github.com/shirou/gopsutil/process"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 func RunCommandBackground(name string, output io.Writer, verbose bool, args ...string) error {

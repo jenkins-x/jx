@@ -5,7 +5,7 @@ package opts
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 )
 

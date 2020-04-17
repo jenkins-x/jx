@@ -1,11 +1,11 @@
 package amazon
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/awscli"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/ec2"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/eks"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/eksctl"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/awscli"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/ec2"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eksctl"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 	"github.com/pkg/errors"
 )
 

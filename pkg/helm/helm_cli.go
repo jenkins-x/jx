@@ -10,13 +10,13 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/pkg/util/slice"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 

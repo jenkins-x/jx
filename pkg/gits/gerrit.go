@@ -9,8 +9,8 @@ import (
 
 	gerrit "github.com/andygrunwald/go-gerrit"
 	"github.com/google/go-github/github"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/pkg/errors"
 )
 

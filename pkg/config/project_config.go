@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
 

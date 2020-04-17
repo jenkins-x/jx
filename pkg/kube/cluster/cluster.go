@@ -5,11 +5,11 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 )
 
 // Name gets the cluster name from the current context

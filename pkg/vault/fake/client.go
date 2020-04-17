@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 

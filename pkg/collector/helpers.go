@@ -1,10 +1,10 @@
 package collector
 
 import (
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cloud/factory"
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/gits"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/factory"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/pkg/errors"
 )
 

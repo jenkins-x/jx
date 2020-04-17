@@ -13,34 +13,34 @@ import (
 	"testing"
 
 	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 
-	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
+	vault_test "github.com/jenkins-x/jx/v2/pkg/vault/mocks"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/gits/operations"
+	"github.com/jenkins-x/jx/v2/pkg/gits/operations"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
-	"github.com/jenkins-x/jx/pkg/gits"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"

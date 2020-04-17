@@ -6,26 +6,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/eks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eks"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/packages"
+	"github.com/jenkins-x/jx/v2/pkg/packages"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/features"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/v2/pkg/features"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/spf13/cobra"
 )
 

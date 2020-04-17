@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"

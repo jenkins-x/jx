@@ -7,18 +7,18 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 
-	"github.com/jenkins-x/jx/pkg/cmd/get"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/get"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	clientmocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	clientmocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo"

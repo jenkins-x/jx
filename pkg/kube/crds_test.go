@@ -5,8 +5,8 @@ package kube_test
 import (
 	"testing"
 
-	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
+	cmd_mocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	apiextentions_mocks "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"

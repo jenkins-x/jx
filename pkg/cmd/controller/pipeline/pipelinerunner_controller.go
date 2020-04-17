@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
+	"github.com/jenkins-x/jx/v2/pkg/tekton/metapipeline"
 
 	"io/ioutil"
 	"net/http"
@@ -20,17 +20,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/prow"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/sirupsen/logrus"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/create"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/create"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/kube"
+	jxclient "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/pkg/errors"
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	expect "github.com/Netflix/go-expect"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
 

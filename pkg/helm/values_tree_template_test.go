@@ -6,9 +6,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/secreturl/localvault"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl/localvault"
 	"github.com/stretchr/testify/assert"
 )
 

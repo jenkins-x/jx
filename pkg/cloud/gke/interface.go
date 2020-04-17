@@ -3,7 +3,7 @@ package gke
 import "k8s.io/client-go/kubernetes"
 
 // GClouder interface to define interactions with the gcloud command
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/cloud/gke GClouder -o mocks/gclouder.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/cloud/gke GClouder -o mocks/gclouder.go
 type GClouder interface {
 	CreateManagedZone(projectID string, domain string) error
 	CreateDNSZone(projectID string, domain string) (string, []string, error)

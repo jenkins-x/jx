@@ -1,6 +1,6 @@
 package options
 
-import "github.com/jenkins-x/jx/pkg/cmd/opts"
+import "github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 
 // CreateOptions contains the command line options
 type CreateOptions struct {

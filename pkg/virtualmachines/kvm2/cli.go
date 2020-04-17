@@ -1,6 +1,6 @@
 package kvm2
 
-import "github.com/jenkins-x/jx/pkg/log"
+import "github.com/jenkins-x/jx/v2/pkg/log"
 
 // InstallKvm2 install kvm2
 func InstallKvm2() error {

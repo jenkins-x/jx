@@ -16,12 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	helm_cmd "github.com/jenkins-x/jx/pkg/cmd/step/helm"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/util"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	helm_cmd "github.com/jenkins-x/jx/v2/pkg/cmd/step/helm"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 func TestApplyAppsTemplateOverrides(t *testing.T) {

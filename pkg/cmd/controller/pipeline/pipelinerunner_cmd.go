@@ -1,18 +1,18 @@
 package pipeline
 
 import (
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
-	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/tekton/metapipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/spf13/cobra"
 
-	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	jxclient "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 )
 
 const (
