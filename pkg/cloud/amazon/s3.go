@@ -3,7 +3,7 @@ package amazon
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 )
 
 // CreateS3Bucket creates a new S3 bucket in the default region with the given bucket name

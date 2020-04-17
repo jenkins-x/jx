@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/util"
 	"github.com/pkg/errors"
 )
 

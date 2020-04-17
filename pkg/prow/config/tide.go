@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/test-infra/prow/config"
 )
 

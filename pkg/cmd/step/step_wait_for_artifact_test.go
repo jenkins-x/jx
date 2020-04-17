@@ -5,7 +5,7 @@ package step_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -6,19 +6,19 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/pkg/environments"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/environments"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/pkg/errors"
 )
 

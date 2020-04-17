@@ -5,13 +5,13 @@ import (
 	"os"
 	"strings"
 
-	openapi "github.com/jenkins-x/jx/pkg/client/openapi/all"
+	openapi "github.com/jenkins-x/jx/v2/pkg/client/openapi/all"
 
 	"github.com/go-openapi/spec"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/generator"
 )
 
 func main() {

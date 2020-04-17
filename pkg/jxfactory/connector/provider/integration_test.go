@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jxfactory/connector"
-	"github.com/jenkins-x/jx/pkg/jxfactory/connector/provider"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory/connector"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory/connector/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

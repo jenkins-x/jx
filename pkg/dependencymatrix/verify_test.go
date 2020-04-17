@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 )
 
 func TestVerifyDependencyMatrixHasConsistentVersions(t *testing.T) {

@@ -3,13 +3,13 @@ package opts
 import (
 	"sort"
 
-	gcp "github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/cluster/fake"
-	"github.com/jenkins-x/jx/pkg/log"
+	gcp "github.com/jenkins-x/jx/v2/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/v2/pkg/cluster/fake"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	"github.com/jenkins-x/jx/pkg/cluster"
-	"github.com/jenkins-x/jx/pkg/cluster/gke"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster/gke"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

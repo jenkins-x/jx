@@ -3,16 +3,16 @@ package pr
 import (
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 	"github.com/spf13/cobra"
 
 	"strconv"
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of

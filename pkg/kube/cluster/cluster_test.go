@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
-	kube_test "github.com/jenkins-x/jx/pkg/kube/mocks"
-	"github.com/jenkins-x/jx/pkg/kube/vault"
+	"github.com/jenkins-x/jx/v2/pkg/kube/cluster"
+	kube_test "github.com/jenkins-x/jx/v2/pkg/kube/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/kube/vault"
 )
 
 func TestGetSimplifiedClusterName(t *testing.T) {

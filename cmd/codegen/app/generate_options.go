@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/util"
 )
 
 const (

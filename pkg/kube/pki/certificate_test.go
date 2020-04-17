@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/kube/pki"
+	"github.com/jenkins-x/jx/v2/pkg/kube/pki"
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/jetstack/cert-manager/pkg/client/clientset/versioned/fake"

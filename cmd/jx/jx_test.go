@@ -13,15 +13,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/pborman/uuid"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jenkins-x/jx/cmd/jx/app"
+	"github.com/jenkins-x/jx/v2/cmd/jx/app"
 )
 
 func TestSystem(t *testing.T) {

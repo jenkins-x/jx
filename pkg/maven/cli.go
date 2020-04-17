@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	filemutex "github.com/alexflint/go-filemutex"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/packages"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/packages"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // InstallMavenIfRequired installs maven if not available

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/client-go/kubernetes"
 )
 

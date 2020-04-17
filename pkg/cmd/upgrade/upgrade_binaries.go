@@ -3,16 +3,16 @@ package upgrade
 import (
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 
-	"github.com/jenkins-x/jx/pkg/packages"
+	"github.com/jenkins-x/jx/v2/pkg/packages"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 )
 

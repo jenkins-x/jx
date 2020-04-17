@@ -5,8 +5,8 @@ package step
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
 	"github.com/pborman/uuid"
 	v1 "k8s.io/api/core/v1"
@@ -14,10 +14,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 )
 
 func TestStepValuesSchemaTemplate(t *testing.T) {

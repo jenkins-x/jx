@@ -7,13 +7,13 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/client"
 
-	session2 "github.com/jenkins-x/jx/pkg/cloud/amazon/session"
+	session2 "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/jenkins-x/jx/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
 	"github.com/pkg/errors"
 )
 

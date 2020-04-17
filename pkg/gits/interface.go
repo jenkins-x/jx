@@ -7,24 +7,24 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 // OrganisationLister returns a slice of GitOrganisation
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationLister -o mocks/organisation_lister.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/gits OrganisationLister -o mocks/organisation_lister.go
 type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
 // OrganisationChecker verifies if an user is member of an organization
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/gits OrganisationChecker -o mocks/organisation_checker.go
 type OrganisationChecker interface {
 	IsUserInOrganisation(user string, organisation string) (bool, error)
 }
 
 // GitProvider is the interface for abstracting use of different git provider APIs
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/gits GitProvider -o mocks/git_provider.go
 type GitProvider interface {
 	OrganisationLister
 
@@ -174,7 +174,7 @@ type GitProvider interface {
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/gits Gitter -o mocks/gitter.go
 type Gitter interface {
 	// IsVersionControlled returns true if the specified directory is under Git version control, otherwise false.
 	// An error is returned for unexpected IO errors.

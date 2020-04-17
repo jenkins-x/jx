@@ -1,9 +1,9 @@
 package fake
 
 import (
-	"github.com/jenkins-x/jx/pkg/cluster"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // Client a fake implementation of the cluster client

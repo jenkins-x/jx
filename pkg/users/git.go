@@ -3,7 +3,7 @@ package users
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/pkg/errors"
@@ -12,12 +12,12 @@ import (
 
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/log"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	jenkninsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	jenkninsv1client "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 )
 
 // GitUserResolver allows git users to be converted to Jenkins X users

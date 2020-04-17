@@ -8,27 +8,27 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/create/pr"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/create/pr"
 
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/gits"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 )
 
 func TestCreatePullRequestUpdateVersionFilesFn(t *testing.T) {

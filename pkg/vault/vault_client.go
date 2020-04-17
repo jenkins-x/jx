@@ -7,8 +7,8 @@ import (
 	"regexp"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/jenkins-x/jx/pkg/secreturl"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +19,7 @@ const (
 var vaultURIRegex = regexp.MustCompile(`:[\s"]*vault:[-_.\w\/:]*`)
 
 // Client is an interface for interacting with Vault
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/vault Client -o mocks/vault_client.go
 type Client interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)

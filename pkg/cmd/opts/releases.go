@@ -6,15 +6,15 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx/pkg/gits/releases"
+	"github.com/jenkins-x/jx/v2/pkg/gits/releases"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/pkg/errors"
 )
 

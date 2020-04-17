@@ -13,149 +13,149 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AccountReference":                    schema_pkg_apis_jenkinsio_v1_AccountReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.App":                                 schema_pkg_apis_jenkinsio_v1_App(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppList":                             schema_pkg_apis_jenkinsio_v1_AppList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec":                             schema_pkg_apis_jenkinsio_v1_AppSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve":                             schema_pkg_apis_jenkinsio_v1_Approve(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment":                          schema_pkg_apis_jenkinsio_v1_Attachment(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity":               schema_pkg_apis_jenkinsio_v1_BatchPipelineActivity(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Binary":                              schema_pkg_apis_jenkinsio_v1_Binary(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy":       schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher":                            schema_pkg_apis_jenkinsio_v1_Brancher(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPack":                           schema_pkg_apis_jenkinsio_v1_BuildPack(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackList":                       schema_pkg_apis_jenkinsio_v1_BuildPackList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackSpec":                       schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ChartRef":                            schema_pkg_apis_jenkinsio_v1_ChartRef(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatus":                        schema_pkg_apis_jenkinsio_v1_CommitStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusCommitReference":         schema_pkg_apis_jenkinsio_v1_CommitStatusCommitReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusDetails":                 schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusItem":                    schema_pkg_apis_jenkinsio_v1_CommitStatusItem(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusList":                    schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusSpec":                    schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary":                       schema_pkg_apis_jenkinsio_v1_CommitSummary(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec":                       schema_pkg_apis_jenkinsio_v1_ConfigMapSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater":                       schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy":                       schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate":                    schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails":             schema_pkg_apis_jenkinsio_v1_DependencyUpdateDetails(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DeployOptions":                       schema_pkg_apis_jenkinsio_v1_DeployOptions(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository":               schema_pkg_apis_jenkinsio_v1_EnvironmentRepository(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding":              schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBinding(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingList":          schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec":          schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus":        schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentSpec":                     schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentStatus":                   schema_pkg_apis_jenkinsio_v1_EnvironmentStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentVariable":                 schema_pkg_apis_jenkinsio_v1_EnvironmentVariable(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Extension":                           schema_pkg_apis_jenkinsio_v1_Extension(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfig":                     schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfigList":                 schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinition":                 schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference":   schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionChildReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionList":             schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference":        schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReferenceList":    schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution":                  schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionList":                       schema_pkg_apis_jenkinsio_v1_ExtensionList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter":                  schema_pkg_apis_jenkinsio_v1_ExtensionParameter(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameterValue":             schema_pkg_apis_jenkinsio_v1_ExtensionParameterValue(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference":        schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReferenceList":    schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec":                       schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExternalPlugin":                      schema_pkg_apis_jenkinsio_v1_ExternalPlugin(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact":                                schema_pkg_apis_jenkinsio_v1_Fact(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactList":                            schema_pkg_apis_jenkinsio_v1_FactList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec":                            schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus":                          schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService":                          schema_pkg_apis_jenkinsio_v1_GitService(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceList":                      schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec":                      schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitStatus":                           schema_pkg_apis_jenkinsio_v1_GitStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy":              schema_pkg_apis_jenkinsio_v1_GlobalProtectionPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueLabel":                          schema_pkg_apis_jenkinsio_v1_IssueLabel(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary":                        schema_pkg_apis_jenkinsio_v1_IssueSummary(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase":                             schema_pkg_apis_jenkinsio_v1_JobBase(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm":                                schema_pkg_apis_jenkinsio_v1_Lgtm(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement":                         schema_pkg_apis_jenkinsio_v1_Measurement(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger":                              schema_pkg_apis_jenkinsio_v1_Merger(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original":                            schema_pkg_apis_jenkinsio_v1_Original(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodic":                            schema_pkg_apis_jenkinsio_v1_Periodic(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodics":                           schema_pkg_apis_jenkinsio_v1_Periodics(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity":                    schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityList":                schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":                schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":                schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension":                   schema_pkg_apis_jenkinsio_v1_PipelineExtension(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                   schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":               schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":              schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin":                              schema_pkg_apis_jenkinsio_v1_Plugin(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginList":                          schema_pkg_apis_jenkinsio_v1_PluginList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec":                          schema_pkg_apis_jenkinsio_v1_PluginSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmit":                          schema_pkg_apis_jenkinsio_v1_Postsubmit(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits":                         schema_pkg_apis_jenkinsio_v1_Postsubmits(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmit":                           schema_pkg_apis_jenkinsio_v1_Presubmit(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits":                          schema_pkg_apis_jenkinsio_v1_Presubmits(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep":                 schema_pkg_apis_jenkinsio_v1_PreviewActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec":                      schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep":                 schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromotePullRequestStep":              schema_pkg_apis_jenkinsio_v1_PromotePullRequestStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteUpdateStep":                   schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep":                 schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies":                  schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy":                    schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PullRequestInfo":                     schema_pkg_apis_jenkinsio_v1_PullRequestInfo(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query":                               schema_pkg_apis_jenkinsio_v1_Query(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation":                  schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher":                 schema_pkg_apis_jenkinsio_v1_RegexpChangeMatcher(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Release":                             schema_pkg_apis_jenkinsio_v1_Release(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseList":                         schema_pkg_apis_jenkinsio_v1_ReleaseList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseSpec":                         schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseStatus":                       schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy": schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString":        schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringString(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins":   schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings":           schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfStrings(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RepoContextPolicy":                   schema_pkg_apis_jenkinsio_v1_RepoContextPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference":                   schema_pkg_apis_jenkinsio_v1_ResourceReference(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions":                        schema_pkg_apis_jenkinsio_v1_Restrictions(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy":                        schema_pkg_apis_jenkinsio_v1_ReviewPolicy(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Scheduler":                           schema_pkg_apis_jenkinsio_v1_Scheduler(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent":                      schema_pkg_apis_jenkinsio_v1_SchedulerAgent(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerList":                       schema_pkg_apis_jenkinsio_v1_SchedulerList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerSpec":                       schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepository":                    schema_pkg_apis_jenkinsio_v1_SourceRepository(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroup":               schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroup(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupList":           schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec":           schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryList":                schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositorySpec":                schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep":                   schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement":                           schema_pkg_apis_jenkinsio_v1_Statement(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation":                     schema_pkg_apis_jenkinsio_v1_StorageLocation(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Team":                                schema_pkg_apis_jenkinsio_v1_Team(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamList":                            schema_pkg_apis_jenkinsio_v1_TeamList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings":                        schema_pkg_apis_jenkinsio_v1_TeamSettings(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSpec":                            schema_pkg_apis_jenkinsio_v1_TeamSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamStatus":                          schema_pkg_apis_jenkinsio_v1_TeamStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger":                             schema_pkg_apis_jenkinsio_v1_Trigger(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.User":                                schema_pkg_apis_jenkinsio_v1_User(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails":                         schema_pkg_apis_jenkinsio_v1_UserDetails(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserList":                            schema_pkg_apis_jenkinsio_v1_UserList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserSpec":                            schema_pkg_apis_jenkinsio_v1_UserSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Welcome":                             schema_pkg_apis_jenkinsio_v1_Welcome(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Workflow":                            schema_pkg_apis_jenkinsio_v1_Workflow(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowList":                        schema_pkg_apis_jenkinsio_v1_WorkflowList(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions":               schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowSpec":                        schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStatus":                      schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref),
-		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStep":                        schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AccountReference":                    schema_pkg_apis_jenkinsio_v1_AccountReference(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.App":                                 schema_pkg_apis_jenkinsio_v1_App(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AppList":                             schema_pkg_apis_jenkinsio_v1_AppList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AppSpec":                             schema_pkg_apis_jenkinsio_v1_AppSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Approve":                             schema_pkg_apis_jenkinsio_v1_Approve(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Attachment":                          schema_pkg_apis_jenkinsio_v1_Attachment(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BatchPipelineActivity":               schema_pkg_apis_jenkinsio_v1_BatchPipelineActivity(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Binary":                              schema_pkg_apis_jenkinsio_v1_Binary(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy":       schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Brancher":                            schema_pkg_apis_jenkinsio_v1_Brancher(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPack":                           schema_pkg_apis_jenkinsio_v1_BuildPack(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPackList":                       schema_pkg_apis_jenkinsio_v1_BuildPackList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPackSpec":                       schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ChartRef":                            schema_pkg_apis_jenkinsio_v1_ChartRef(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatus":                        schema_pkg_apis_jenkinsio_v1_CommitStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusCommitReference":         schema_pkg_apis_jenkinsio_v1_CommitStatusCommitReference(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusDetails":                 schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusItem":                    schema_pkg_apis_jenkinsio_v1_CommitStatusItem(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusList":                    schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusSpec":                    schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitSummary":                       schema_pkg_apis_jenkinsio_v1_CommitSummary(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigMapSpec":                       schema_pkg_apis_jenkinsio_v1_ConfigMapSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigUpdater":                       schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy":                       schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CoreActivityStep":                    schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DependencyUpdate":                    schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DependencyUpdateDetails":             schema_pkg_apis_jenkinsio_v1_DependencyUpdateDetails(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DeployOptions":                       schema_pkg_apis_jenkinsio_v1_DeployOptions(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Environment":                         schema_pkg_apis_jenkinsio_v1_Environment(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentFilter":                   schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentList":                     schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRepository":               schema_pkg_apis_jenkinsio_v1_EnvironmentRepository(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding":              schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBinding(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingList":          schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec":          schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus":        schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentSpec":                     schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentStatus":                   schema_pkg_apis_jenkinsio_v1_EnvironmentStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentVariable":                 schema_pkg_apis_jenkinsio_v1_EnvironmentVariable(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Extension":                           schema_pkg_apis_jenkinsio_v1_Extension(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionConfig":                     schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionConfigList":                 schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinition":                 schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference":   schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionChildReference(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionList":             schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference":        schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReference(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionReferenceList":    schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionExecution":                  schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionList":                       schema_pkg_apis_jenkinsio_v1_ExtensionList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameter":                  schema_pkg_apis_jenkinsio_v1_ExtensionParameter(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameterValue":             schema_pkg_apis_jenkinsio_v1_ExtensionParameterValue(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference":        schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReference(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionRepositoryReferenceList":    schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionSpec":                       schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExternalPlugin":                      schema_pkg_apis_jenkinsio_v1_ExternalPlugin(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Fact":                                schema_pkg_apis_jenkinsio_v1_Fact(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactList":                            schema_pkg_apis_jenkinsio_v1_FactList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactSpec":                            schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactStatus":                          schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitService":                          schema_pkg_apis_jenkinsio_v1_GitService(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitServiceList":                      schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitServiceSpec":                      schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitStatus":                           schema_pkg_apis_jenkinsio_v1_GitStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy":              schema_pkg_apis_jenkinsio_v1_GlobalProtectionPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueLabel":                          schema_pkg_apis_jenkinsio_v1_IssueLabel(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueSummary":                        schema_pkg_apis_jenkinsio_v1_IssueSummary(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase":                             schema_pkg_apis_jenkinsio_v1_JobBase(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Lgtm":                                schema_pkg_apis_jenkinsio_v1_Lgtm(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Measurement":                         schema_pkg_apis_jenkinsio_v1_Measurement(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Merger":                              schema_pkg_apis_jenkinsio_v1_Merger(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Original":                            schema_pkg_apis_jenkinsio_v1_Original(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Periodic":                            schema_pkg_apis_jenkinsio_v1_Periodic(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Periodics":                           schema_pkg_apis_jenkinsio_v1_Periodics(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivity":                    schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityList":                schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivitySpec":                schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityStatus":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityStep":                schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineExtension":                   schema_pkg_apis_jenkinsio_v1_PipelineExtension(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructure":                   schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructureList":               schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructureStage":              schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Plugin":                              schema_pkg_apis_jenkinsio_v1_Plugin(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PluginList":                          schema_pkg_apis_jenkinsio_v1_PluginList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PluginSpec":                          schema_pkg_apis_jenkinsio_v1_PluginSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Postsubmit":                          schema_pkg_apis_jenkinsio_v1_Postsubmit(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Postsubmits":                         schema_pkg_apis_jenkinsio_v1_Postsubmits(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Presubmit":                           schema_pkg_apis_jenkinsio_v1_Presubmit(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Presubmits":                          schema_pkg_apis_jenkinsio_v1_Presubmits(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PreviewActivityStep":                 schema_pkg_apis_jenkinsio_v1_PreviewActivityStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PreviewGitSpec":                      schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteActivityStep":                 schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromotePullRequestStep":              schema_pkg_apis_jenkinsio_v1_PromotePullRequestStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteUpdateStep":                   schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteWorkflowStep":                 schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicies":                  schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicy":                    schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PullRequestInfo":                     schema_pkg_apis_jenkinsio_v1_PullRequestInfo(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Query":                               schema_pkg_apis_jenkinsio_v1_Query(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.QuickStartLocation":                  schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RegexpChangeMatcher":                 schema_pkg_apis_jenkinsio_v1_RegexpChangeMatcher(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Release":                             schema_pkg_apis_jenkinsio_v1_Release(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseList":                         schema_pkg_apis_jenkinsio_v1_ReleaseList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseSpec":                         schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseStatus":                       schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy": schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString":        schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringString(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins":   schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings":           schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfStrings(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RepoContextPolicy":                   schema_pkg_apis_jenkinsio_v1_RepoContextPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference":                   schema_pkg_apis_jenkinsio_v1_ResourceReference(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Restrictions":                        schema_pkg_apis_jenkinsio_v1_Restrictions(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReviewPolicy":                        schema_pkg_apis_jenkinsio_v1_ReviewPolicy(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Scheduler":                           schema_pkg_apis_jenkinsio_v1_Scheduler(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerAgent":                      schema_pkg_apis_jenkinsio_v1_SchedulerAgent(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerList":                       schema_pkg_apis_jenkinsio_v1_SchedulerList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerSpec":                       schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepository":                    schema_pkg_apis_jenkinsio_v1_SourceRepository(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroup":               schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroup(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroupList":           schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec":           schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryList":                schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositorySpec":                schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.StageActivityStep":                   schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Statement":                           schema_pkg_apis_jenkinsio_v1_Statement(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.StorageLocation":                     schema_pkg_apis_jenkinsio_v1_StorageLocation(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Team":                                schema_pkg_apis_jenkinsio_v1_Team(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamList":                            schema_pkg_apis_jenkinsio_v1_TeamList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamSettings":                        schema_pkg_apis_jenkinsio_v1_TeamSettings(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamSpec":                            schema_pkg_apis_jenkinsio_v1_TeamSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamStatus":                          schema_pkg_apis_jenkinsio_v1_TeamStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Trigger":                             schema_pkg_apis_jenkinsio_v1_Trigger(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.User":                                schema_pkg_apis_jenkinsio_v1_User(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails":                         schema_pkg_apis_jenkinsio_v1_UserDetails(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserList":                            schema_pkg_apis_jenkinsio_v1_UserList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserSpec":                            schema_pkg_apis_jenkinsio_v1_UserSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Welcome":                             schema_pkg_apis_jenkinsio_v1_Welcome(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Workflow":                            schema_pkg_apis_jenkinsio_v1_Workflow(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowList":                        schema_pkg_apis_jenkinsio_v1_WorkflowList(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowPreconditions":               schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowSpec":                        schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowStatus":                      schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref),
+		"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowStep":                        schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref),
 	}
 }
 
@@ -214,14 +214,14 @@ func schema_pkg_apis_jenkinsio_v1_App(ref common.ReferenceCallback) common.OpenA
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AppSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AppSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -257,7 +257,7 @@ func schema_pkg_apis_jenkinsio_v1_AppList(ref common.ReferenceCallback) common.O
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.App"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.App"),
 									},
 								},
 							},
@@ -268,7 +268,7 @@ func schema_pkg_apis_jenkinsio_v1_AppList(ref common.ReferenceCallback) common.O
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.App", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.App", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -291,14 +291,14 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 					},
 					"pipelineExtension": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineExtension"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineExtension", "k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineExtension", "k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
 	}
 }
 
@@ -401,7 +401,7 @@ func schema_pkg_apis_jenkinsio_v1_BatchPipelineActivity(ref common.ReferenceCall
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PullRequestInfo"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PullRequestInfo"),
 									},
 								},
 							},
@@ -411,7 +411,7 @@ func schema_pkg_apis_jenkinsio_v1_BatchPipelineActivity(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PullRequestInfo"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PullRequestInfo"},
 	}
 }
 
@@ -457,7 +457,7 @@ func schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref common.Refer
 					"contexts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Contexts appends required contexts that must be green to merge",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"strict": {
@@ -471,7 +471,7 @@ func schema_pkg_apis_jenkinsio_v1_BranchProtectionContextPolicy(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -485,20 +485,20 @@ func schema_pkg_apis_jenkinsio_v1_Brancher(ref common.ReferenceCallback) common.
 					"skipBranches": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Do not run against these branches. Default is no branches.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"branches": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Only run against these branches. Default is all branches.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -531,14 +531,14 @@ func schema_pkg_apis_jenkinsio_v1_BuildPack(ref common.ReferenceCallback) common
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPackSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPackSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPackSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -574,7 +574,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPackList(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPack"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPack"),
 									},
 								},
 							},
@@ -585,7 +585,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPackList(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BuildPack", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BuildPack", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -620,7 +620,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.QuickStartLocation"),
 									},
 								},
 							},
@@ -630,7 +630,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.QuickStartLocation"},
 	}
 }
 
@@ -694,14 +694,14 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatus(ref common.ReferenceCallback) com
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -744,7 +744,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref common.ReferenceCallba
 				Properties: map[string]spec.Schema{
 					"pipelineActivity": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
 					"Items": {
@@ -753,7 +753,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref common.ReferenceCallba
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusItem"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusItem"),
 									},
 								},
 							},
@@ -767,7 +767,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref common.ReferenceCallba
 					},
 					"commit": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusCommitReference"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusCommitReference"),
 						},
 					},
 					"context": {
@@ -781,7 +781,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusCommitReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusItem", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusCommitReference", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusItem", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"},
 	}
 }
 
@@ -849,7 +849,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref common.ReferenceCallback)
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatus"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatus"),
 									},
 								},
 							},
@@ -860,7 +860,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -877,7 +877,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref common.ReferenceCallback)
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusDetails"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusDetails"),
 									},
 								},
 							},
@@ -888,7 +888,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitStatusDetails"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitStatusDetails"},
 	}
 }
 
@@ -919,12 +919,12 @@ func schema_pkg_apis_jenkinsio_v1_CommitSummary(ref common.ReferenceCallback) co
 					},
 					"author": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 						},
 					},
 					"committer": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 						},
 					},
 					"branch": {
@@ -950,7 +950,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitSummary(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"},
 	}
 }
 
@@ -1017,7 +1017,7 @@ func schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref common.ReferenceCallback) co
 							AdditionalProperties: &spec.SchemaOrBool{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigMapSpec"),
 									},
 								},
 							},
@@ -1037,14 +1037,14 @@ func schema_pkg_apis_jenkinsio_v1_ConfigUpdater(ref common.ReferenceCallback) co
 					},
 					"ConfigMap": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigMapSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigMapSpec"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigMapSpec"},
 	}
 }
 
@@ -1064,17 +1064,17 @@ func schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref common.ReferenceCallback) co
 					},
 					"requiredContexts": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"requiredIfPresentContexts": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"optionalContexts": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"fromBranchProtection": {
@@ -1088,7 +1088,7 @@ func schema_pkg_apis_jenkinsio_v1_ContextPolicy(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -1218,7 +1218,7 @@ func schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref common.ReferenceCallback)
 										Items: &spec.SchemaOrArray{
 											Schema: &spec.Schema{
 												SchemaProps: spec.SchemaProps{
-													Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails"),
+													Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DependencyUpdateDetails"),
 												},
 											},
 										},
@@ -1232,7 +1232,7 @@ func schema_pkg_apis_jenkinsio_v1_DependencyUpdate(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdateDetails"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DependencyUpdateDetails"},
 	}
 }
 
@@ -1374,19 +1374,19 @@ func schema_pkg_apis_jenkinsio_v1_Environment(ref common.ReferenceCallback) comm
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1468,7 +1468,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref common.ReferenceCallback) 
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Environment"),
 									},
 								},
 							},
@@ -1479,7 +1479,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Environment", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Environment", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -1544,19 +1544,19 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBinding(ref common.ReferenceCal
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBindingStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1592,7 +1592,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref common.Referenc
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding"),
 									},
 								},
 							},
@@ -1603,7 +1603,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRoleBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -1640,7 +1640,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref common.Referenc
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentFilter"),
 									},
 								},
 							},
@@ -1651,7 +1651,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentFilter", "k8s.io/api/rbac/v1.RoleRef", "k8s.io/api/rbac/v1.Subject"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentFilter", "k8s.io/api/rbac/v1.RoleRef", "k8s.io/api/rbac/v1.Subject"},
 	}
 }
 
@@ -1708,7 +1708,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref common.ReferenceCallback) 
 					},
 					"source": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRepository"),
 						},
 					},
 					"order": {
@@ -1731,12 +1731,12 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref common.ReferenceCallback) 
 					},
 					"teamSettings": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamSettings"),
 						},
 					},
 					"previewGitInfo": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PreviewGitSpec"),
 						},
 					},
 					"webHookEngine": {
@@ -1756,7 +1756,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentRepository", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewGitSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSettings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentRepository", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PreviewGitSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamSettings"},
 	}
 }
 
@@ -1834,14 +1834,14 @@ func schema_pkg_apis_jenkinsio_v1_Extension(ref common.ReferenceCallback) common
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1870,7 +1870,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref common.ReferenceCallback) 
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameterValue"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameterValue"),
 									},
 								},
 							},
@@ -1881,7 +1881,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameterValue"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameterValue"},
 	}
 }
 
@@ -1898,7 +1898,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref common.ReferenceCallba
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfig"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionConfig"),
 									},
 								},
 							},
@@ -1909,7 +1909,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionConfig"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionConfig"},
 	}
 }
 
@@ -1969,7 +1969,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref common.ReferenceCallba
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference"),
 									},
 								},
 							},
@@ -1987,7 +1987,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref common.ReferenceCallba
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameter"),
 									},
 								},
 							},
@@ -1998,7 +1998,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionChildReference", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameter"},
 	}
 }
 
@@ -2065,7 +2065,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref common.ReferenceCa
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinition"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinition"),
 									},
 								},
 							},
@@ -2076,7 +2076,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinition"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinition"},
 	}
 }
 
@@ -2120,7 +2120,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref common.Re
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference"),
 									},
 								},
 							},
@@ -2131,7 +2131,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref common.Re
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionDefinitionReference"},
 	}
 }
 
@@ -2166,7 +2166,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentVariable"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentVariable"),
 									},
 								},
 							},
@@ -2194,7 +2194,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.EnvironmentVariable"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.EnvironmentVariable"},
 	}
 }
 
@@ -2230,7 +2230,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionList(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Extension"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Extension"),
 									},
 								},
 							},
@@ -2241,7 +2241,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionList(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Extension", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Extension", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2329,14 +2329,14 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReference(ref common.Refere
 					},
 					"chart": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ChartRef"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ChartRef"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ChartRef"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ChartRef"},
 	}
 }
 
@@ -2352,7 +2352,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref common.Re
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference"),
 									},
 								},
 							},
@@ -2362,7 +2362,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref common.Re
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionRepositoryReference"},
 	}
 }
 
@@ -2422,7 +2422,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameter"),
 									},
 								},
 							},
@@ -2457,7 +2457,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionParameter"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionParameter"},
 	}
 }
 
@@ -2485,7 +2485,7 @@ func schema_pkg_apis_jenkinsio_v1_ExternalPlugin(ref common.ReferenceCallback) c
 					"events": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ReplaceableSliceOfStrings are the events that need to be demuxed by the hook server to the external plugin. If no events are specified, everything is sent.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 				},
@@ -2493,7 +2493,7 @@ func schema_pkg_apis_jenkinsio_v1_ExternalPlugin(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -2526,19 +2526,19 @@ func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.Open
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.FactStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2574,7 +2574,7 @@ func schema_pkg_apis_jenkinsio_v1_FactList(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Fact"),
 									},
 								},
 							},
@@ -2585,7 +2585,7 @@ func schema_pkg_apis_jenkinsio_v1_FactList(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Fact", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2614,7 +2614,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Measurement"),
 									},
 								},
 							},
@@ -2626,7 +2626,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Statement"),
 									},
 								},
 							},
@@ -2634,7 +2634,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 					},
 					"original": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Original"),
 						},
 					},
 					"tags": {
@@ -2652,7 +2652,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 					},
 					"subject": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
 				},
@@ -2660,7 +2660,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Measurement", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Original", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Statement"},
 	}
 }
 
@@ -2713,14 +2713,14 @@ func schema_pkg_apis_jenkinsio_v1_GitService(ref common.ReferenceCallback) commo
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitServiceSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitServiceSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2756,7 +2756,7 @@ func schema_pkg_apis_jenkinsio_v1_GitServiceList(ref common.ReferenceCallback) c
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitService"),
 									},
 								},
 							},
@@ -2767,7 +2767,7 @@ func schema_pkg_apis_jenkinsio_v1_GitServiceList(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitService", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2838,7 +2838,7 @@ func schema_pkg_apis_jenkinsio_v1_GlobalProtectionPolicy(ref common.ReferenceCal
 				Properties: map[string]spec.Schema{
 					"ProtectionPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
 						},
 					},
 					"protectTested": {
@@ -2851,7 +2851,7 @@ func schema_pkg_apis_jenkinsio_v1_GlobalProtectionPolicy(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicy"},
 	}
 }
 
@@ -2931,7 +2931,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 					},
 					"user": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 						},
 					},
 					"assignees": {
@@ -2940,7 +2940,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 									},
 								},
 							},
@@ -2948,7 +2948,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 					},
 					"closedBy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 						},
 					},
 					"creationTimestamp": {
@@ -2962,7 +2962,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueLabel"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueLabel"),
 									},
 								},
 							},
@@ -2972,7 +2972,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueLabel", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueLabel", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2993,7 +2993,7 @@ func schema_pkg_apis_jenkinsio_v1_JobBase(ref common.ReferenceCallback) common.O
 					"labels": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ReplaceableMapOfStringString are added to jobs and pods created for this job.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString"),
 						},
 					},
 					"maxConcurrency": {
@@ -3035,7 +3035,7 @@ func schema_pkg_apis_jenkinsio_v1_JobBase(ref common.ReferenceCallback) common.O
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString", "k8s.io/api/core/v1.PodSpec"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringString", "k8s.io/api/core/v1.PodSpec"},
 	}
 }
 
@@ -3172,14 +3172,14 @@ func schema_pkg_apis_jenkinsio_v1_Merger(ref common.ReferenceCallback) common.Op
 					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ContextOptions defines the default merge options. If not set it will infer the required and optional contexts from the jobs configured and use the Git Provider combined status; otherwise it may apply the branch protection setting or let user define their own options in case branch protection is not used.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy"},
 	}
 }
 
@@ -3231,7 +3231,7 @@ func schema_pkg_apis_jenkinsio_v1_Periodic(ref common.ReferenceCallback) common.
 				Properties: map[string]spec.Schema{
 					"JobBase": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase"),
 						},
 					},
 					"interval": {
@@ -3251,7 +3251,7 @@ func schema_pkg_apis_jenkinsio_v1_Periodic(ref common.ReferenceCallback) common.
 					"tags": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Tags for config entries",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 				},
@@ -3259,7 +3259,7 @@ func schema_pkg_apis_jenkinsio_v1_Periodic(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -3277,7 +3277,7 @@ func schema_pkg_apis_jenkinsio_v1_Periodics(ref common.ReferenceCallback) common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodic"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Periodic"),
 									},
 								},
 							},
@@ -3294,7 +3294,7 @@ func schema_pkg_apis_jenkinsio_v1_Periodics(ref common.ReferenceCallback) common
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodic"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Periodic"},
 	}
 }
 
@@ -3327,19 +3327,19 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref common.ReferenceCallback)
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivitySpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivitySpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3375,7 +3375,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref common.ReferenceCallb
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivity"),
 									},
 								},
 							},
@@ -3386,7 +3386,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivity", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -3437,7 +3437,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityStep"),
 									},
 								},
 							},
@@ -3552,7 +3552,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionExecution"),
 									},
 								},
 							},
@@ -3564,7 +3564,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Attachment"),
 									},
 								},
 							},
@@ -3572,7 +3572,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 					},
 					"batchPipelineActivity": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BatchPipelineActivity"),
 						},
 					},
 					"context": {
@@ -3591,7 +3591,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BatchPipelineActivity", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BatchPipelineActivity", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -3630,24 +3630,24 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref common.ReferenceCallb
 					},
 					"stage": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.StageActivityStep"),
 						},
 					},
 					"promote": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteActivityStep"),
 						},
 					},
 					"preview": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PreviewActivityStep"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PreviewActivityStep", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteActivityStep", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.StageActivityStep"},
 	}
 }
 
@@ -3746,7 +3746,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructureStage"),
 									},
 								},
 							},
@@ -3757,7 +3757,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructureStage", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3793,7 +3793,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref common.ReferenceCall
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructure"),
 									},
 								},
 							},
@@ -3804,7 +3804,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineStructure", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -3922,14 +3922,14 @@ func schema_pkg_apis_jenkinsio_v1_Plugin(ref common.ReferenceCallback) common.Op
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PluginSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PluginSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3965,7 +3965,7 @@ func schema_pkg_apis_jenkinsio_v1_PluginList(ref common.ReferenceCallback) commo
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Plugin"),
 									},
 								},
 							},
@@ -3976,7 +3976,7 @@ func schema_pkg_apis_jenkinsio_v1_PluginList(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Plugin", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -4005,7 +4005,7 @@ func schema_pkg_apis_jenkinsio_v1_PluginSpec(ref common.ReferenceCallback) commo
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Binary"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Binary"),
 									},
 								},
 							},
@@ -4033,7 +4033,7 @@ func schema_pkg_apis_jenkinsio_v1_PluginSpec(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Binary"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Binary"},
 	}
 }
 
@@ -4046,17 +4046,17 @@ func schema_pkg_apis_jenkinsio_v1_Postsubmit(ref common.ReferenceCallback) commo
 				Properties: map[string]spec.Schema{
 					"JobBase": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase"),
 						},
 					},
 					"RegexpChangeMatcher": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"),
 						},
 					},
 					"Brancher": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Brancher"),
 						},
 					},
 					"context": {
@@ -4078,7 +4078,7 @@ func schema_pkg_apis_jenkinsio_v1_Postsubmit(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Brancher", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"},
 	}
 }
 
@@ -4096,7 +4096,7 @@ func schema_pkg_apis_jenkinsio_v1_Postsubmits(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmit"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Postsubmit"),
 									},
 								},
 							},
@@ -4113,7 +4113,7 @@ func schema_pkg_apis_jenkinsio_v1_Postsubmits(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmit"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Postsubmit"},
 	}
 }
 
@@ -4126,17 +4126,17 @@ func schema_pkg_apis_jenkinsio_v1_Presubmit(ref common.ReferenceCallback) common
 				Properties: map[string]spec.Schema{
 					"JobBase": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase"),
 						},
 					},
 					"Brancher": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Brancher"),
 						},
 					},
 					"RegexpChangeMatcher": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RegexpChangeMatcher"),
 						},
 					},
 					"alwaysRun": {
@@ -4194,7 +4194,7 @@ func schema_pkg_apis_jenkinsio_v1_Presubmit(ref common.ReferenceCallback) common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Query"),
 									},
 								},
 							},
@@ -4202,13 +4202,13 @@ func schema_pkg_apis_jenkinsio_v1_Presubmit(ref common.ReferenceCallback) common
 					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicies"),
 						},
 					},
 					"context_options": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ContextOptions defines the merge options. If not set it will infer the required and optional contexts from the jobs configured and use the Git Provider combined status; otherwise it may apply the branch protection setting or let user define their own options in case branch protection is not used.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RepoContextPolicy"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RepoContextPolicy"),
 						},
 					},
 				},
@@ -4216,7 +4216,7 @@ func schema_pkg_apis_jenkinsio_v1_Presubmit(ref common.ReferenceCallback) common
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Brancher", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicies", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Query", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RegexpChangeMatcher", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.RepoContextPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Brancher", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.JobBase", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicies", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Query", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RegexpChangeMatcher", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.RepoContextPolicy"},
 	}
 }
 
@@ -4234,7 +4234,7 @@ func schema_pkg_apis_jenkinsio_v1_Presubmits(ref common.ReferenceCallback) commo
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmit"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Presubmit"),
 									},
 								},
 							},
@@ -4251,7 +4251,7 @@ func schema_pkg_apis_jenkinsio_v1_Presubmits(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmit"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Presubmit"},
 	}
 }
 
@@ -4337,7 +4337,7 @@ func schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref common.ReferenceCallback) c
 					},
 					"user": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserSpec"),
 						},
 					},
 					"title": {
@@ -4380,7 +4380,7 @@ func schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserSpec"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserSpec"},
 	}
 }
 
@@ -4427,12 +4427,12 @@ func schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref common.ReferenceCallba
 					},
 					"pullRequest": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromotePullRequestStep"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromotePullRequestStep"),
 						},
 					},
 					"update": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteUpdateStep"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteUpdateStep"),
 						},
 					},
 					"applicationURL": {
@@ -4445,7 +4445,7 @@ func schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromotePullRequestStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteUpdateStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromotePullRequestStep", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteUpdateStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -4545,7 +4545,7 @@ func schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitStatus"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitStatus"),
 									},
 								},
 							},
@@ -4555,7 +4555,7 @@ func schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GitStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -4588,7 +4588,7 @@ func schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref common.ReferenceCallbac
 				Properties: map[string]spec.Schema{
 					"ProtectionPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
 						},
 					},
 					"Replace": {
@@ -4603,7 +4603,7 @@ func schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref common.ReferenceCallbac
 							AdditionalProperties: &spec.SchemaOrBool{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicy"),
 									},
 								},
 							},
@@ -4613,7 +4613,7 @@ func schema_pkg_apis_jenkinsio_v1_ProtectionPolicies(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ProtectionPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ProtectionPolicy"},
 	}
 }
 
@@ -4634,7 +4634,7 @@ func schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref common.ReferenceCallback)
 					"requiredStatusChecks": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RequiredStatusChecks configures github contexts",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy"),
 						},
 					},
 					"enforceAdmins": {
@@ -4647,20 +4647,20 @@ func schema_pkg_apis_jenkinsio_v1_ProtectionPolicy(ref common.ReferenceCallback)
 					"restrictions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Restrictions limits who can merge",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Restrictions"),
 						},
 					},
 					"requiredPullRequestReviews": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RequiredPullRequestReviews specifies approval/review criteria.",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReviewPolicy"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReviewPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.BranchProtectionContextPolicy", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Restrictions", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReviewPolicy"},
 	}
 }
 
@@ -4707,22 +4707,22 @@ func schema_pkg_apis_jenkinsio_v1_Query(ref common.ReferenceCallback) common.Ope
 				Properties: map[string]spec.Schema{
 					"excludedBranches": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"includedBranches": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"labels": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"missingLabels": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"milestone": {
@@ -4741,7 +4741,7 @@ func schema_pkg_apis_jenkinsio_v1_Query(ref common.ReferenceCallback) common.Ope
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -4853,19 +4853,19 @@ func schema_pkg_apis_jenkinsio_v1_Release(ref common.ReferenceCallback) common.O
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReleaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReleaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -4901,7 +4901,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseList(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Release"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Release"),
 									},
 								},
 							},
@@ -4912,7 +4912,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseList(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Release", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Release", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -4953,7 +4953,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitSummary"),
 									},
 								},
 							},
@@ -4965,7 +4965,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueSummary"),
 									},
 								},
 							},
@@ -4977,7 +4977,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueSummary"),
 									},
 								},
 							},
@@ -4989,7 +4989,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DependencyUpdate"),
 									},
 								},
 							},
@@ -5017,7 +5017,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CommitSummary", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DependencyUpdate", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.IssueSummary"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CommitSummary", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DependencyUpdate", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.IssueSummary"},
 	}
 }
 
@@ -5060,7 +5060,7 @@ func schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref common
 							AdditionalProperties: &spec.SchemaOrBool{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy"),
 									},
 								},
 							},
@@ -5071,7 +5071,7 @@ func schema_pkg_apis_jenkinsio_v1_ReplaceableMapOfStringContextPolicy(ref common
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy"},
 	}
 }
 
@@ -5128,7 +5128,7 @@ func schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref common.R
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExternalPlugin"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExternalPlugin"),
 									},
 								},
 							},
@@ -5139,7 +5139,7 @@ func schema_pkg_apis_jenkinsio_v1_ReplaceableSliceOfExternalPlugins(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExternalPlugin"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ExternalPlugin"},
 	}
 }
 
@@ -5187,12 +5187,12 @@ func schema_pkg_apis_jenkinsio_v1_RepoContextPolicy(ref common.ReferenceCallback
 				Properties: map[string]spec.Schema{
 					"ContextPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy"),
 						},
 					},
 					"branches": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy"),
 						},
 					},
 				},
@@ -5200,7 +5200,7 @@ func schema_pkg_apis_jenkinsio_v1_RepoContextPolicy(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ContextPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ContextPolicy", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableMapOfStringContextPolicy"},
 	}
 }
 
@@ -5255,12 +5255,12 @@ func schema_pkg_apis_jenkinsio_v1_Restrictions(ref common.ReferenceCallback) com
 				Properties: map[string]spec.Schema{
 					"users": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"teams": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 				},
@@ -5268,7 +5268,7 @@ func schema_pkg_apis_jenkinsio_v1_Restrictions(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"},
 	}
 }
 
@@ -5282,7 +5282,7 @@ func schema_pkg_apis_jenkinsio_v1_ReviewPolicy(ref common.ReferenceCallback) com
 					"dismissalRestrictions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Restrictions appends users/teams that are allowed to merge",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Restrictions"),
 						},
 					},
 					"dismissStaleReviews": {
@@ -5310,7 +5310,7 @@ func schema_pkg_apis_jenkinsio_v1_ReviewPolicy(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Restrictions"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Restrictions"},
 	}
 }
 
@@ -5343,14 +5343,14 @@ func schema_pkg_apis_jenkinsio_v1_Scheduler(ref common.ReferenceCallback) common
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -5408,7 +5408,7 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerList(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Scheduler"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Scheduler"),
 									},
 								},
 							},
@@ -5419,7 +5419,7 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerList(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Scheduler", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Scheduler", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -5432,58 +5432,58 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) co
 				Properties: map[string]spec.Schema{
 					"schedulerAgent": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerAgent"),
 						},
 					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy"),
 						},
 					},
 					"presubmits": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Presubmits"),
 						},
 					},
 					"postsubmits": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Postsubmits"),
 						},
 					},
 					"trigger": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Trigger"),
 						},
 					},
 					"approve": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Approve"),
 						},
 					},
 					"lgtm": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Lgtm"),
 						},
 					},
 					"externalPlugins": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins"),
 						},
 					},
 					"merger": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Merger"),
 						},
 					},
 					"plugins": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Plugins is a list of plugin names enabled for a repo",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings"),
 						},
 					},
 					"configUpdater": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigUpdater"),
 						},
 					},
 					"welcome": {
@@ -5492,7 +5492,7 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Welcome"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Welcome"),
 									},
 								},
 							},
@@ -5500,7 +5500,7 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) co
 					},
 					"periodics": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodics"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Periodics"),
 						},
 					},
 					"attachments": {
@@ -5509,7 +5509,7 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Attachment"),
 									},
 								},
 							},
@@ -5519,7 +5519,7 @@ func schema_pkg_apis_jenkinsio_v1_SchedulerSpec(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Approve", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ConfigUpdater", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Lgtm", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Merger", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Periodics", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Postsubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Presubmits", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SchedulerAgent", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Trigger", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Welcome"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Approve", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ConfigUpdater", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.GlobalProtectionPolicy", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Lgtm", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Merger", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Periodics", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Postsubmits", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Presubmits", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfExternalPlugins", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ReplaceableSliceOfStrings", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SchedulerAgent", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Trigger", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Welcome"},
 	}
 }
 
@@ -5552,14 +5552,14 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepository(ref common.ReferenceCallback)
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositorySpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositorySpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositorySpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositorySpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -5591,14 +5591,14 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroup(ref common.ReferenceCall
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroupSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -5634,7 +5634,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupList(ref common.Reference
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroup"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroup"),
 									},
 								},
 							},
@@ -5645,7 +5645,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupList(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepositoryGroup", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepositoryGroup", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -5681,7 +5681,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref common.Reference
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"),
 									},
 								},
 							},
@@ -5689,7 +5689,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref common.Reference
 					},
 					"scheduler": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
 				},
@@ -5697,7 +5697,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryGroupSpec(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -5733,7 +5733,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref common.ReferenceCallb
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepository"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepository"),
 									},
 								},
 							},
@@ -5744,7 +5744,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.SourceRepository", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.SourceRepository", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -5818,14 +5818,14 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 					"scheduler": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Scheduler a reference to a custom scheduler otherwise we default to the Team's Scededuler",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"},
 	}
 }
 
@@ -5870,7 +5870,7 @@ func schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CoreActivityStep"),
 									},
 								},
 							},
@@ -5880,7 +5880,7 @@ func schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.CoreActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.CoreActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -5997,19 +5997,19 @@ func schema_pkg_apis_jenkinsio_v1_Team(ref common.ReferenceCallback) common.Open
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.TeamStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.TeamStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -6045,7 +6045,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamList(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Team"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Team"),
 									},
 								},
 							},
@@ -6056,7 +6056,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamList(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Team", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Team", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -6097,7 +6097,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.QuickStartLocation"),
 									},
 								},
 							},
@@ -6217,7 +6217,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.StorageLocation"),
 									},
 								},
 							},
@@ -6274,7 +6274,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 					},
 					"defaultScheduler": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference"),
 						},
 					},
 					"prowConfig": {
@@ -6301,14 +6301,14 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 					"deployOptions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployOptions configures options for how to deploy applications by default such as using canary rollouts (progressive delivery) or using horizontal pod autoscaler",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DeployOptions"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DeployOptions"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.DeployOptions", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.QuickStartLocation", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StorageLocation", "k8s.io/api/batch/v1.Job"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.DeployOptions", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.QuickStartLocation", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.StorageLocation", "k8s.io/api/batch/v1.Job"},
 	}
 }
 
@@ -6449,19 +6449,19 @@ func schema_pkg_apis_jenkinsio_v1_User(ref common.ReferenceCallback) common.Open
 					"user": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Deprecated, use Spec",
-							Ref:         ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+							Ref:         ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 						},
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.UserDetails", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.UserDetails", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -6519,7 +6519,7 @@ func schema_pkg_apis_jenkinsio_v1_UserDetails(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AccountReference"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AccountReference"),
 									},
 								},
 							},
@@ -6535,7 +6535,7 @@ func schema_pkg_apis_jenkinsio_v1_UserDetails(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AccountReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AccountReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -6571,7 +6571,7 @@ func schema_pkg_apis_jenkinsio_v1_UserList(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.User"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.User"),
 									},
 								},
 							},
@@ -6582,7 +6582,7 @@ func schema_pkg_apis_jenkinsio_v1_UserList(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.User", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.User", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -6673,19 +6673,19 @@ func schema_pkg_apis_jenkinsio_v1_Workflow(ref common.ReferenceCallback) common.
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowSpec"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStatus"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowSpec", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -6721,7 +6721,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowList(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Workflow"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Workflow"),
 									},
 								},
 							},
@@ -6732,7 +6732,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowList(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Workflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.Workflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -6783,7 +6783,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStep"),
+										Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowStep"),
 									},
 								},
 							},
@@ -6793,7 +6793,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowStep"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowStep"},
 	}
 }
 
@@ -6844,18 +6844,18 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref common.ReferenceCallback) com
 					},
 					"trigger": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowPreconditions"),
 						},
 					},
 					"promote": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep"),
+							Ref: ref("github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteWorkflowStep"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteWorkflowStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.WorkflowPreconditions"},
+			"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PromoteWorkflowStep", "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.WorkflowPreconditions"},
 	}
 }

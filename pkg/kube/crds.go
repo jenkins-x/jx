@@ -6,20 +6,20 @@ import (
 	"reflect"
 	"time"
 
-	openapi "github.com/jenkins-x/jx/pkg/client/openapi/all"
+	openapi "github.com/jenkins-x/jx/v2/pkg/client/openapi/all"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-openapi/pkg/common"
 
 	"github.com/go-openapi/jsonreference"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/go-openapi/spec"
 	"github.com/pkg/errors"
 
 	"github.com/cenkalti/backoff"
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
@@ -572,7 +572,7 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 func RegisterCRD(apiClient apiextensionsclientset.Interface, name string,
 	names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition, groupName string,
 	pkg string, version string) error {
-	//"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity":
+	//"github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.PipelineActivity":
 	schemaPath := fmt.Sprintf("%s/%s/%s.%s", pkg, groupName, version, names.Kind)
 
 	schema, err := getOpenAPISchema(schemaPath)

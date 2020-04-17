@@ -3,7 +3,7 @@ package iks
 import (
 	"runtime"
 
-	"github.com/jenkins-x/jx/pkg/packages"
+	"github.com/jenkins-x/jx/v2/pkg/packages"
 )
 
 // InstallIBMCloudWithVersion  installs a specific version of IBM cloud CLI

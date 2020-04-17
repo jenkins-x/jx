@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/cluster"
-	"github.com/jenkins-x/jx/pkg/cmd/step/e2e"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/e2e"
 	"github.com/stretchr/testify/assert"
 )
 

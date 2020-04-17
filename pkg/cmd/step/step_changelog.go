@@ -13,29 +13,29 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/users"
+	"github.com/jenkins-x/jx/v2/pkg/users"
 
 	"github.com/ghodss/yaml"
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/issues"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/issues"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 

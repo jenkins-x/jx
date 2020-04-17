@@ -10,14 +10,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/get"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/get"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )

@@ -5,7 +5,7 @@ package builds_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -10,13 +10,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	"github.com/jenkins-x/jx/pkg/gits"
+	cmd_mocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/versionstream"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -7,10 +7,10 @@ import (
 
 	"github.com/pborman/uuid"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 
-	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
-	"github.com/jenkins-x/jx/pkg/pipelinescheduler/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/pipelinescheduler"
+	"github.com/jenkins-x/jx/v2/pkg/pipelinescheduler/testhelpers"
 	"github.com/stretchr/testify/assert"
 )
 

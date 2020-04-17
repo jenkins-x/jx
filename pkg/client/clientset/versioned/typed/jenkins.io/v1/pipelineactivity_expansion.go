@@ -3,8 +3,8 @@ package v1
 import (
 	"bytes"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	util "github.com/jenkins-x/jx/pkg/util/json"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	util "github.com/jenkins-x/jx/v2/pkg/util/json"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )

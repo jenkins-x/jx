@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"

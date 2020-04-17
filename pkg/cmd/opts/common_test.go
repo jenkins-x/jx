@@ -9,13 +9,13 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	clientmocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
+	clientmocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubemocks "k8s.io/client-go/kubernetes/fake"

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/dependencymatrix"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 	"github.com/stretchr/testify/assert"
 )
 

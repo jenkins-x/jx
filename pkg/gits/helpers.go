@@ -15,9 +15,9 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
-	jxconfig "github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	jxconfig "github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/pkg/errors"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"

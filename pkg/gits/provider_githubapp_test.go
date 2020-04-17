@@ -5,11 +5,11 @@ package gits_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/gits"
-	mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
-	utiltests "github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	mocks "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	utiltests "github.com/jenkins-x/jx/v2/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

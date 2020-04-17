@@ -5,14 +5,14 @@ package step_test
 import (
 	"testing"
 
-	step2 "github.com/jenkins-x/jx/pkg/cmd/opts/step"
-	"github.com/jenkins-x/jx/pkg/cmd/step"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	step2 "github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/config"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

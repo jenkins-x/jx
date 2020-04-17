@@ -6,7 +6,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -1,13 +1,13 @@
 package resources
 
 import (
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 const kubeCtlBinary = "kubectl"
 
 // Installer provides support for installing Kuberntes resources directly from files
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/kube/resources Installer -o mocks/installer.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/kube/resources Installer -o mocks/installer.go
 type Installer interface {
 	// Install installs the Kubernetes resources provided in the file
 	Install(file string) (string, error)

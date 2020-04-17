@@ -8,18 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 
-	"github.com/jenkins-x/jx/pkg/cmd/deletecmd"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/deletecmd"
 
-	"github.com/jenkins-x/jx/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 
 	"github.com/stretchr/testify/assert"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cmd/create"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 )
 
 // PLM: This passes if it's run against Fake Kubernetes

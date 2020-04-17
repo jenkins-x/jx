@@ -5,7 +5,7 @@
 package config
 
 import (
-	jenkinsfile "github.com/jenkins-x/jx/pkg/jenkinsfile"
+	jenkinsfile "github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 	v1 "k8s.io/api/core/v1"
 )
 

@@ -16,29 +16,29 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
 	"github.com/Netflix/go-expect"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	clients_test "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
+	clients_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	vault_test "github.com/jenkins-x/jx/v2/pkg/vault/mocks"
 
-	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/v2/pkg/io/secrets"
 	"github.com/petergtz/pegomock"
 )
 

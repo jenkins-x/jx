@@ -18,31 +18,31 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	"github.com/jenkins-x/jx/pkg/cmd/add"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/add"
 
 	expect "github.com/Netflix/go-expect"
-	"github.com/jenkins-x/jx/pkg/apps"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/apps"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
-	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 
 	"github.com/petergtz/pegomock"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/ghodss/yaml"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 
 	"github.com/stretchr/testify/assert"
 

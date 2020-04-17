@@ -3,9 +3,9 @@ package opts
 import (
 	"fmt"
 
-	jxv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/config"
+	jxv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1fake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -15,8 +15,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 )
 
 // SetFakeKubeClient creates a fake KubeClient for CommonOptions

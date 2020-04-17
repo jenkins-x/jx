@@ -1,7 +1,7 @@
 package amazon
 
 import (
-	"github.com/jenkins-x/jx/pkg/packages"
+	"github.com/jenkins-x/jx/v2/pkg/packages"
 )
 
 // InstallAwsIamAuthenticatorWithVersion install a specific version of iam authenticator for AWS

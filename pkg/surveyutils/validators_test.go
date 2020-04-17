@@ -5,7 +5,7 @@ package surveyutils_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/surveyutils"
+	"github.com/jenkins-x/jx/v2/pkg/surveyutils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1"
 )

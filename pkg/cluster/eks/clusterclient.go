@@ -3,13 +3,13 @@ package eks
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/pkg/errors"
 
 	awsAPI "github.com/aws/aws-sdk-go/aws"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
 )
 
 // awsClusterClient that will provide functions to interact with EKS through the AWS API or the AWS CLI
