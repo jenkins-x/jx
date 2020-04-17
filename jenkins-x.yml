@@ -129,6 +129,10 @@ pipelineConfig:
                 - "make mod"
                 - --repo
                 - https://github.com/jenkins-x/lighthouse.git
+                # Disable GOPROXY for go module updates to deal with go 1.13 semver resolution issue
+                env:
+                - name: GOPROXY
+                  value: ""
 
               - name: update-jxui-backend
                 image: gcr.io/jenkinsxio/builder-go
@@ -146,3 +150,7 @@ pipelineConfig:
                 - "make build"
                 - --repo
                 - https://github.com/cloudbees/jxui-backend.git
+                # Disable GOPROXY for go module updates to deal with go 1.13 semver resolution issue
+                env:
+                  - name: GOPROXY
+                    value: ""
