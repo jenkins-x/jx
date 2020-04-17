@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	vault_const "github.com/jenkins-x/jx/pkg/vault"
+	vault_const "github.com/jenkins-x/jx/v2/pkg/vault"
 
 	expect "github.com/Netflix/go-expect"
-	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
-	"github.com/jenkins-x/jx/pkg/tests"
+	kubevault "github.com/jenkins-x/jx/v2/pkg/kube/vault"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
 

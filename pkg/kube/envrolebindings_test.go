@@ -5,8 +5,8 @@ package kube_test
 import (
 	"testing"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/stretchr/testify/assert"
 )
 

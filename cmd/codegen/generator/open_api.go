@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/util"
 
 	"github.com/ghodss/yaml"
 
@@ -78,7 +78,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/generator"
 )
 
 func main() {
@@ -302,7 +302,7 @@ func WriteSchemaToDisk(outputDir string, title string, version string, definitio
 		},
 		GetDefinitions: definitions,
 		GetDefinitionName: func(name string) (string, spec.Extensions) {
-			// For example "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.AppSpec"
+			// For example "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1.AppSpec"
 			parts := strings.Split(name, "/")
 			if len(parts) < 3 {
 				// Can't do anything with it, return raw

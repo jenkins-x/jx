@@ -13,10 +13,10 @@ import (
 
 	"github.com/acarl005/stripansi"
 	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	log2 "github.com/jenkins-x/jx/pkg/log"
-	reportingtools_test "github.com/jenkins-x/jx/pkg/reportingtools/mocks"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	log2 "github.com/jenkins-x/jx/v2/pkg/log"
+	reportingtools_test "github.com/jenkins-x/jx/v2/pkg/reportingtools/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )

@@ -1,10 +1,10 @@
 package opts
 
 import (
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/jenkins-x/jx/pkg/log"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube/services"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 // RegisterEnvironmentCRD registers the CRD for environmnt

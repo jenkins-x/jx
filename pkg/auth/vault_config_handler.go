@@ -3,7 +3,7 @@ package auth
 import (
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 	"github.com/pkg/errors"
 
 	"sigs.k8s.io/yaml"

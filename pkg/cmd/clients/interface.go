@@ -3,21 +3,21 @@ package clients
 import (
 	"io"
 
-	"github.com/jenkins-x/jx/pkg/kustomize"
+	"github.com/jenkins-x/jx/v2/pkg/kustomize"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/io/secrets"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/heptio/sonobuoy/pkg/client"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/table"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -34,7 +34,7 @@ import (
 )
 
 // Factory is the interface defined for jx interactions via the cli
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/cmd/clients Factory -o mocks/factory.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/cmd/clients Factory -o mocks/factory.go
 type Factory interface {
 	//
 	// Constructors

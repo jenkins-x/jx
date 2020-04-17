@@ -1,8 +1,8 @@
 package metapipeline
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 )
 
 // PipelineCreateParam wraps all parameters needed for creating the meta pipeline CRDs.

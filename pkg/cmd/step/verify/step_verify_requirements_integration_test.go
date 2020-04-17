@@ -6,19 +6,19 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/verify"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/verify"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/require"
 
 	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

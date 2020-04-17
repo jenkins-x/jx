@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	kube_test "github.com/jenkins-x/jx/pkg/kube/mocks"
+	kube_test "github.com/jenkins-x/jx/v2/pkg/kube/mocks"
 
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/stretchr/testify/assert"
 
-	mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+	mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
 	. "github.com/petergtz/pegomock"
 )
 

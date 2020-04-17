@@ -4,19 +4,19 @@
 package openapi
 
 import (
-	openapicore "github.com/jenkins-x/jx/pkg/client/openapi/core"
+	openapicore "github.com/jenkins-x/jx/v2/pkg/client/openapi/core"
 
-	openapi0 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_apimachinery_meta_v1"
+	openapi0 "github.com/jenkins-x/jx/v2/pkg/client/openapi/k8s_io_apimachinery_meta_v1"
 
-	openapi1 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_apimachinery_resource_unversioned"
+	openapi1 "github.com/jenkins-x/jx/v2/pkg/client/openapi/k8s_io_apimachinery_resource_unversioned"
 
-	openapi2 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_apimachinery_intstr_unversioned"
+	openapi2 "github.com/jenkins-x/jx/v2/pkg/client/openapi/k8s_io_apimachinery_intstr_unversioned"
 
-	openapi3 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_api_batch_v1"
+	openapi3 "github.com/jenkins-x/jx/v2/pkg/client/openapi/k8s_io_api_batch_v1"
 
-	openapi4 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_api_core_v1"
+	openapi4 "github.com/jenkins-x/jx/v2/pkg/client/openapi/k8s_io_api_core_v1"
 
-	openapi5 "github.com/jenkins-x/jx/pkg/client/openapi/k8s_io_api_rbac_v1"
+	openapi5 "github.com/jenkins-x/jx/v2/pkg/client/openapi/k8s_io_api_rbac_v1"
 
 	"k8s.io/kube-openapi/pkg/common"
 )

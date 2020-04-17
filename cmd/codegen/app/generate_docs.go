@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/cmd/codegen/generator"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/util"
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"

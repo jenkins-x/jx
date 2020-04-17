@@ -8,9 +8,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/importcmd"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

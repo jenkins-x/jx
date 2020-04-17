@@ -7,19 +7,19 @@ import (
 	"os"
 	"path"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	helmfile2 "github.com/jenkins-x/jx/v2/pkg/helmfile"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

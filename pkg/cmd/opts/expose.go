@@ -1,8 +1,8 @@
 package opts
 
 import (
-	"github.com/jenkins-x/jx/pkg/expose"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/expose"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/pkg/errors"
 )
 

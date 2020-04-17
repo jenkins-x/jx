@@ -7,13 +7,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/builds"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

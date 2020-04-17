@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/secreturl"
-	"github.com/jenkins-x/jx/pkg/secreturl/fakevault"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl"
+	"github.com/jenkins-x/jx/v2/pkg/secreturl/fakevault"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

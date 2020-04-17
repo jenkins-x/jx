@@ -11,8 +11,8 @@ import (
 	"reflect"
 	"testing"
 
-	buckets_test "github.com/jenkins-x/jx/pkg/cloud/buckets/mocks"
-	"github.com/jenkins-x/jx/pkg/util"
+	buckets_test "github.com/jenkins-x/jx/v2/pkg/cloud/buckets/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )

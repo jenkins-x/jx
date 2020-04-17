@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/get"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/get"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/pkg/gits"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 

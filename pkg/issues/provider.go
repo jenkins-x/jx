@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 )
 
 type IssueProvider interface {

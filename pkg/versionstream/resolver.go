@@ -3,8 +3,8 @@ package versionstream
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // VersionResolver resolves versions of charts, packages or docker images

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pkg/errors"

@@ -5,7 +5,7 @@ package gke_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 )
 
 func TestParseContext(t *testing.T) {

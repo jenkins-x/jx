@@ -1,8 +1,8 @@
 package extensions
 
 import (
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/log"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 // GetAndDeduplicateChildrenRecursively will walk a tree of extensions rooted at ext and add them to the flattened

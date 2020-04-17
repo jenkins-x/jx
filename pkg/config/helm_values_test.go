@@ -9,7 +9,7 @@ import (
 
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 

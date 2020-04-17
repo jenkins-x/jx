@@ -1,7 +1,7 @@
 package externaldns
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 )

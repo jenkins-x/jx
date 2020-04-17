@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/cmd"
+	cmd_mocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"

@@ -2,11 +2,11 @@ package eks
 
 import (
 	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/jenkins-x/jx/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
 )
 
 // EKSer is an interface that abstracts the use of the EKS API
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/cloud/amazon/eks EKSer -o mocks/ekserMock.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/cloud/amazon/eks EKSer -o mocks/ekserMock.go
 type EKSer interface {
 	// EksClusterExists returns whether a cluster exists
 	EksClusterExists(clusterName string, profile string, region string) (bool, error)

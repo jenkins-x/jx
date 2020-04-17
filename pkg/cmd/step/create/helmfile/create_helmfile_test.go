@@ -11,18 +11,18 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	mocks "github.com/jenkins-x/jx/pkg/cmd/clients/mocks"
-	helmfile2 "github.com/jenkins-x/jx/pkg/helmfile"
-	kube_test "github.com/jenkins-x/jx/pkg/kube/mocks"
+	mocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
+	helmfile2 "github.com/jenkins-x/jx/v2/pkg/helmfile"
+	kube_test "github.com/jenkins-x/jx/v2/pkg/kube/mocks"
 	. "github.com/petergtz/pegomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 
-	"github.com/jenkins-x/jx/pkg/cmd/create/options"
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"

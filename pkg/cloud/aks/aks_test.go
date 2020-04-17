@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cloud/aks"
+	"github.com/jenkins-x/jx/v2/pkg/cloud/aks"
 	"github.com/stretchr/testify/assert"
 
-	mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+	mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
 	. "github.com/petergtz/pegomock"
 )
 

@@ -5,7 +5,7 @@ package gits_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/stretchr/testify/assert"
 )
 

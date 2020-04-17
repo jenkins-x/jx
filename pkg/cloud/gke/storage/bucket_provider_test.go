@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	gke_test "github.com/jenkins-x/jx/pkg/cloud/gke/mocks"
-	"github.com/jenkins-x/jx/pkg/config"
+	gke_test "github.com/jenkins-x/jx/v2/pkg/cloud/gke/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )

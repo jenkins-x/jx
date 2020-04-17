@@ -6,7 +6,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
+	"github.com/jenkins-x/jx/v2/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
 )

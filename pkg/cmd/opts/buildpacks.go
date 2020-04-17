@@ -6,18 +6,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/buildpacks"
+	"github.com/jenkins-x/jx/v2/pkg/buildpacks"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	jxdraft "github.com/jenkins-x/jx/pkg/draft"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	jxdraft "github.com/jenkins-x/jx/v2/pkg/draft"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile/gitresolver"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 // InvokeDraftPack used to pass arguments into the draft pack invocation

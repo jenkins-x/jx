@@ -5,19 +5,19 @@ package users_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx/pkg/users"
+	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/users"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,19 +5,19 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/cmd/promote"
-	"github.com/jenkins-x/jx/pkg/cmd/step/post"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/promote"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/step/post"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	helm_cmd "github.com/jenkins-x/jx/pkg/cmd/step/helm"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	helm_cmd "github.com/jenkins-x/jx/v2/pkg/cmd/step/helm"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

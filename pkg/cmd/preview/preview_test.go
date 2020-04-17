@@ -6,13 +6,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/cmd/preview"
-	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/preview"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/config"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/config"
+	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {

@@ -7,37 +7,37 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/kube/naming"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 
-	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/prow/config"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
+	"github.com/jenkins-x/jx/v2/pkg/prow/config"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
 
-	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/v2/pkg/prow"
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/extensions"
+	"github.com/jenkins-x/jx/v2/pkg/extensions"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/v2/pkg/builds"
 
 	corev1 "k8s.io/api/core/v1"
 
-	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	jenkinsv1client "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 
 	"github.com/spf13/cobra"
 )

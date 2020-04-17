@@ -12,7 +12,7 @@ import (
 	"github.com/Azure/draft/pkg/draft/pack/repo"
 
 	"github.com/Azure/draft/pkg/linguist"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 )
 
 // copied from draft so we can change the $DRAFT_HOME to ~/.jx/draft and lookup jx draft packs

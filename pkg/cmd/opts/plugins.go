@@ -8,16 +8,16 @@ import (
 	"runtime"
 	"strings"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	"github.com/jenkins-x/jx/pkg/log"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
-	"github.com/jenkins-x/jx/pkg/extensions"
+	"github.com/jenkins-x/jx/v2/pkg/extensions"
 
-	"github.com/jenkins-x/jx/pkg/cmd/templates"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 )
 
 func (o *CommonOptions) isManagedPluginsEnabled() bool {

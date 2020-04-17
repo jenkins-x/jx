@@ -8,8 +8,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	"github.com/jenkins-x/jx/pkg/cluster"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cluster"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/aws/aws-sdk-go/aws"
 

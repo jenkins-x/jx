@@ -6,14 +6,14 @@ import (
 	"io/ioutil"
 	"strings"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
+	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/pkg/errors"
 
 	"github.com/ghodss/yaml"
-	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
+	prowconfig "github.com/jenkins-x/jx/v2/pkg/prow/config"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

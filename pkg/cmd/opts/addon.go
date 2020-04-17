@@ -3,8 +3,8 @@ package opts
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 	"github.com/pkg/errors"
 )
 
