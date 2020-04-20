@@ -206,8 +206,8 @@ func createSourceRepositoryCallback(client versioned.Interface, namespace string
 	return answer, nil
 }
 
-// IsEnvironmentRepository returns true if the given repository is an environment repository
-func IsEnvironmentRepository(environments map[string]*v1.Environment, repository *v1.SourceRepository) bool {
+// IsRemoteEnvironmentRepository returns true if the given repository is a remote environment
+func IsRemoteEnvironmentRepository(environments map[string]*v1.Environment, repository *v1.SourceRepository) bool {
 	gitURL, err := GetRepositoryGitURL(repository)
 	if err != nil {
 		return false
@@ -219,7 +219,9 @@ func IsEnvironmentRepository(environments map[string]*v1.Environment, repository
 			continue
 		}
 		if env.Spec.Source.URL == gitURL || env.Spec.Source.URL == u2 {
-			return true
+			if env.Spec.RemoteCluster {
+				return true
+			}
 		}
 	}
 	return false
