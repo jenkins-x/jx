@@ -413,23 +413,4 @@ func (o *StepNextVersionOptions) SetVersion() error {
 	return nil
 }
 
-func (o *StepNextVersionOptions) setPackageVersion(b []byte) error {
-	jsPackage := PackageJSON{}
-	err := json.Unmarshal(b, &jsPackage)
-	if err != nil {
-		return err
-	}
-	jsPackage.Version = o.NewVersion
-
-	return nil
-}
-
-func (o *StepNextVersionOptions) setChartVersion(b []byte) error {
-	return nil
-}
-
-func (o *StepNextVersionOptions) setPomVersion(b []byte) error {
-	return nil
-}
-
 // returns a string array containing the git owner and repo name for a given URL
