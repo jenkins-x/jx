@@ -1,13 +1,10 @@
 package get
 
 import (
-	"strings"
-
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 )
@@ -77,18 +74,4 @@ func (o *GetIssuesOptions) Run() error {
 	}
 	table.Render()
 	return nil
-}
-
-func (o *GetIssuesOptions) matchesFilter(job *gojenkins.Job) bool {
-	args := o.Args
-	if len(args) == 0 {
-		return true
-	}
-	name := job.FullName
-	for _, arg := range args {
-		if strings.Contains(name, arg) {
-			return true
-		}
-	}
-	return false
 }

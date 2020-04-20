@@ -6,17 +6,14 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/logs"
-	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
@@ -24,8 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetBuildLogsOptions the command line options
@@ -271,99 +266,4 @@ func (o *CLILogWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) e
 func (o *CLILogWriter) BytesLimit() int {
 	//We are not limiting bytes with this writer
 	return 0
-}
-
-// loadPipelines loads all available pipelines as PipelineRunInfos.
-func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) ([]string, string, map[string][]builds.BaseBuildInfo, error) {
-	defaultName := ""
-	names := []string{}
-	pipelineMap := map[string][]builds.BaseBuildInfo{}
-
-	labelSelectors := o.BuildFilter.LabelSelectorsForBuild()
-
-	listOptions := metav1.ListOptions{}
-	if len(labelSelectors) > 0 {
-		listOptions.LabelSelector = strings.Join(labelSelectors, ",")
-	}
-
-	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(listOptions)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Logger().Warnf("Failed to query PipelineRuns %s", err)
-		return names, defaultName, pipelineMap, err
-	}
-
-	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(listOptions)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Logger().Warnf("Failed to query PipelineStructures %s", err)
-		return names, defaultName, pipelineMap, err
-	}
-	// TODO: Remove this eventually - it's only here for structures created before we started applying labels to them in v2.0.216.
-	if len(prList.Items) > len(structures.Items) && len(labelSelectors) != 0 {
-		structures, err = jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
-		if err != nil && !apierrors.IsNotFound(err) {
-			log.Logger().Warnf("Failed to query PipelineStructures %s", err)
-			return names, defaultName, pipelineMap, err
-		}
-	}
-
-	buildInfos := []*tekton.PipelineRunInfo{}
-
-	podLabelSelector := pipeline.GroupName + pipeline.PipelineRunLabelKey
-	if len(labelSelectors) > 0 {
-		podLabelSelector += "," + strings.Join(labelSelectors, ",")
-	}
-	podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
-		LabelSelector: podLabelSelector,
-	})
-	if err != nil {
-		return names, defaultName, pipelineMap, err
-	}
-	for _, pr := range prList.Items {
-		var ps v1.PipelineStructure
-		for _, p := range structures.Items {
-			if p.Name == pr.Name {
-				ps = p
-			}
-		}
-		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, &ps, &pr)
-		if err != nil {
-			log.Logger().Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s", pr.Name, err)
-		}
-		if pri != nil && o.BuildFilter.BuildMatches(pri.ToBuildPodInfo()) {
-			buildInfos = append(buildInfos, pri)
-		}
-	}
-
-	tekton.SortPipelineRunInfos(buildInfos)
-	if len(buildInfos) == 0 {
-		return names, defaultName, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")
-	}
-
-	namesMap := make(map[string]bool, 0)
-	for _, build := range buildInfos {
-		buildName := build.Pipeline + " #" + build.Build
-		if build.Context != "" {
-			buildName += " " + build.Context
-		}
-		namesMap[buildName] = true
-		pipelineMap[buildName] = append(pipelineMap[buildName], build)
-
-		if build.Branch == "master" {
-			defaultName = buildName
-		}
-	}
-	for k := range namesMap {
-		names = append(names, k)
-	}
-
-	return names, defaultName, pipelineMap, nil
-}
-
-func (o *GetBuildLogsOptions) loadPipelineActivities(jxClient versioned.Interface, ns string) (*v1.PipelineActivityList, error) {
-	paList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "there was a problem getting the PipelineActivities")
-	}
-
-	return paList, nil
 }

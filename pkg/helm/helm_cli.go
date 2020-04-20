@@ -12,7 +12,6 @@ import (
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/kube"
 
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/pkg/util/slice"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -684,38 +683,6 @@ func addUsernamePasswordToURL(urlStr string, username string, password string) (
 		return u.String(), nil
 	}
 	return urlStr, nil
-}
-
-func (h *HelmCLI) getCurrentNamespace() (string, error) {
-	config, _, err := h.Kube().LoadConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "loading Kubernetes configuration")
-	}
-	currentNS := kube.CurrentNamespace(config)
-
-	return currentNS, nil
-}
-
-func (h *HelmCLI) setNamespace(namespace string) error {
-	config, pathOptions, err := h.Kube().LoadConfig()
-	if err != nil {
-		return errors.Wrap(err, "loading Kubernetes configuration")
-	}
-
-	newConfig := *config
-	ctx := kube.CurrentContext(config)
-	if ctx == nil {
-		return fmt.Errorf("unable to get context")
-	}
-	if ctx.Namespace == namespace {
-		return nil
-	}
-	ctx.Namespace = namespace
-	err = clientcmd.ModifyConfig(pathOptions, newConfig, false)
-	if err != nil {
-		return fmt.Errorf("failed to update the kube config %s", err)
-	}
-	return nil
 }
 
 // extractSemanticVersion tries to extract a semantic version string substring from the specified string

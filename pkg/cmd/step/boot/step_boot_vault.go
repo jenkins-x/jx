@@ -288,18 +288,6 @@ func (o *StepBootVaultOptions) installOperator(requirements *config.Requirements
 	return nil
 }
 
-func (o *StepBootVaultOptions) createIngressConfig(requirements *config.RequirementsConfig) (kube.IngressConfig, error) {
-	i := requirements.Ingress
-	tls := i.TLS
-	ic := kube.IngressConfig{
-		Domain:  i.Domain,
-		Exposer: "Ingress",
-		Email:   tls.Email,
-		TLS:     tls.Enabled,
-	}
-	return ic, nil
-}
-
 // verifyVaultIngress verifies there is a Vault ingress and if not create one if there is a file at
 func (o *StepBootVaultOptions) verifyVaultIngress(requirements *config.RequirementsConfig, kubeClient kubernetes.Interface, ns string, systemVaultName string) (bool, error) {
 	fileName := filepath.Join(o.Dir, "vault-ing.tmpl.yaml")

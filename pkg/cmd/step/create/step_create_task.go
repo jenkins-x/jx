@@ -1445,25 +1445,6 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*syntax.Step) error {
 	return nil
 }
 
-func (o *StepCreateTaskOptions) dockerImage(projectConfig *config.ProjectConfig, gitInfo *gits.GitRepository) string {
-	dockerRegistry := o.getDockerRegistry(projectConfig)
-
-	dockerRegistryOrg := o.DockerRegistryOrg
-	if dockerRegistryOrg == "" {
-		dockerRegistryOrg = o.GetDockerRegistryOrg(projectConfig, gitInfo)
-	}
-	appName := gitInfo.Name
-	return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
-}
-
-func (o *StepCreateTaskOptions) getDockerRegistry(projectConfig *config.ProjectConfig) string {
-	dockerRegistry := o.DockerRegistry
-	if dockerRegistry == "" {
-		dockerRegistry = o.GetDockerRegistry(projectConfig)
-	}
-	return dockerRegistry
-}
-
 func (o *StepCreateTaskOptions) getClientsAndNamespace() (tektonclient.Interface, jxclient.Interface, kubeclient.Interface, string, error) {
 	tektonClient, _, err := o.TektonClient()
 	if err != nil {

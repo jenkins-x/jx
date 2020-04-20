@@ -429,19 +429,6 @@ func (o *ControllerEnvironmentOptions) isReady() bool {
 	return true
 }
 
-func (o *ControllerEnvironmentOptions) unmarshalBody(w http.ResponseWriter, r *http.Request, result interface{}) error {
-	// TODO assume JSON for now
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return errors.Wrap(err, "reading the JSON request body")
-	}
-	err = json.Unmarshal(data, result)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling the JSON request body")
-	}
-	return nil
-}
-
 func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *http.Request, payload interface{}) error {
 	data, err := json.Marshal(payload)
 	if err != nil {

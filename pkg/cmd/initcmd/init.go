@@ -609,14 +609,6 @@ controller:
 	return nil
 }
 
-func (o *InitOptions) ingressNamespace() string {
-	ingressNamespace := "kube-system"
-	if !o.Flags.GlobalTiller {
-		ingressNamespace = o.Flags.Namespace
-	}
-	return ingressNamespace
-}
-
 // ValidateGit validates that git is configured correctly
 func (o *InitOptions) ValidateGit() error {
 	// lets ignore errors which indicate no value set

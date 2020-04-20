@@ -25,17 +25,6 @@ type response struct {
 	AppName      string
 }
 
-func (gh *GithubApp) isGithubAppEnabled() (bool, error) {
-	requirementConfig, err := gh.getRequirementConfig()
-	if err != nil {
-		return false, err
-	}
-	if requirementConfig != nil && requirementConfig.GithubApp != nil {
-		return requirementConfig.GithubApp.Enabled, nil
-	}
-	return false, nil
-}
-
 // Install - confirms that the github app is installed and if it isn't then prints out a url for the user to install
 func (gh *GithubApp) Install(owner string, repo string, fileHandles util.IOFileHandles, newRepo bool) (bool, error) {
 	installed, accessToRepo, url, appName, err := gh.isInstalled(owner, repo)

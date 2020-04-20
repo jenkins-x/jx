@@ -120,11 +120,6 @@ func (j *JenkinsConverter) println(text string) {
 	j.writeString("\n")
 }
 
-func (j *JenkinsConverter) printf(format string, args ...interface{}) {
-	j.writeIndent()
-	j.writeString(fmt.Sprintf(format, args...))
-}
-
 func (j *JenkinsConverter) String() string {
 	j.writer.Flush()
 	return j.buffer.String()
