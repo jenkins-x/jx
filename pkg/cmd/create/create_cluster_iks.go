@@ -3,7 +3,6 @@ package create
 import (
 	"math"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -84,23 +83,7 @@ var (
 		jx create cluster iks
 
 `)
-	re = regexp.MustCompile("^([0-9]+)")
 )
-
-type byNumberIndex []string
-
-func (s byNumberIndex) Len() int {
-	return len(s)
-}
-func (s byNumberIndex) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s byNumberIndex) Less(i, j int) bool {
-	var left, right int = 0, 0
-	left, _ = strconv.Atoi(re.FindAllString(s[i], -1)[0])
-	right, _ = strconv.Atoi(re.FindAllString(s[j], -1)[0])
-	return left < right
-}
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.

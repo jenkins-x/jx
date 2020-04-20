@@ -126,24 +126,6 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyEnvironmentsOptions) prDevEnvironment(gitRepoName string, environmentsOrg string, privateRepo bool, user *auth.UserAuth, requirements *config.RequirementsConfig, server *auth.AuthServer, createPr bool) error {
-	fromGitURL := os.Getenv(boot.ConfigRepoURLEnvVarName)
-	gitRef := os.Getenv(boot.ConfigBaseRefEnvVarName)
-
-	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)
-	log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigBaseRefEnvVarName, gitRef)
-
-	_, err := gits.ParseGitURL(fromGitURL)
-	if err != nil {
-		return err
-	}
-
-	log.Logger().Infof("The environment git repositories look good\n")
-	fmt.Println()
-
-	return nil
-}
-
 func (o *StepVerifyEnvironmentsOptions) storeRequirementsInTeamSettings(requirements *config.RequirementsConfig) error {
 	log.Logger().Infof("Storing the requirements in team settings in the dev environment\n")
 	err := o.ModifyDevEnvironment(func(env *v1.Environment) error {

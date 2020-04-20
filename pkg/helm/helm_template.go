@@ -1053,27 +1053,6 @@ func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
 	return h.Runner.RunWithoutRetry()
 }
 
-// getChartNameAndVersion returns the chart name and version for the current chart folder
-func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) (string, string, error) {
-	versionText := ""
-	if version != nil && *version != "" {
-		versionText = *version
-	}
-	file := filepath.Join(chartDir, ChartFileName)
-	if !filepath.IsAbs(chartDir) {
-		file = filepath.Join(h.Runner.CurrentDir(), file)
-	}
-	exists, err := util.FileExists(file)
-	if err != nil {
-		return "", versionText, err
-	}
-	if !exists {
-		return "", versionText, fmt.Errorf("No file %s found!", file)
-	}
-	chartName, versionText, err := LoadChartNameAndVersion(file)
-	return chartName, versionText, err
-}
-
 // getChart returns the chart metadata for the given dir
 func (h *HelmTemplate) getChart(chartDir string, version string) (*chart.Metadata, string, error) {
 	file := filepath.Join(chartDir, ChartFileName)

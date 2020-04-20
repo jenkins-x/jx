@@ -375,25 +375,3 @@ func (o *StepReportImageVersionOptions) createStashContainer(volumeMounts []core
 		VolumeMounts: volumeMounts,
 	}
 }
-
-func (o *StepReportImageVersionOptions) getPackageVersion(name string) (string, error) {
-	args := []string{"version"}
-	switch name {
-	case "jx":
-		args = []string{"--version"}
-	case "kubectl":
-		args = append(args, "--client", "--short")
-	case "helm":
-		args = append(args, "--client", "--short")
-	case "helm3":
-		args = append(args, "--short")
-	}
-	version, err := o.GetCommandOutput("", name, args...)
-
-	// lets trim non-numeric prefixes such as for `git version` returning `git version 1.2.3`
-	idxs := numberRegex.FindStringIndex(version)
-	if len(idxs) > 0 {
-		return version[idxs[0]:], err
-	}
-	return version, err
-}

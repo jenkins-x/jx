@@ -572,10 +572,6 @@ func (g *GitFake) LoadFileFromBranch(dir string, branch string, file string) (st
 	return "", nil
 }
 
-func (g *GitFake) notFound() error {
-	return fmt.Errorf("Not found")
-}
-
 // FetchUnshallow deepens a shallow git clone
 func (g *GitFake) FetchUnshallow(dir string) error {
 	return nil

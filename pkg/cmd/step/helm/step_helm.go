@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/jenkins-x/jx/pkg/cmd/step/git/credentials"
-
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
 
 	"github.com/ghodss/yaml"
@@ -18,8 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/spf13/cobra"
-
-	"os"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -83,134 +79,6 @@ func (o *StepHelmOptions) addStepHelmFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.https, "clone-https", "", true, "Clone the environment Git repo over https rather than ssh which uses `git@foo/bar.git`")
 	cmd.Flags().BoolVarP(&o.RemoteCluster, "remote", "", false, "If enabled assume we are in a remote cluster such as a stand alone Staging/Production cluster")
 	cmd.Flags().StringVarP(&o.GitProvider, "git-provider", "", "github.com", "The Git provider for the environment Git repository")
-}
-
-func (o *StepHelmOptions) dropRepositories(repoIds []string, message string) error {
-	var answer error
-	for _, repoId := range repoIds {
-		err := o.dropRepository(repoId, message)
-		if err != nil {
-			log.Logger().Warnf("Failed to drop repository %s: %s", util.ColorInfo(repoIds), util.ColorError(err))
-			if answer == nil {
-				answer = err
-			}
-		}
-	}
-	return answer
-}
-
-func (o *StepHelmOptions) dropRepository(repoId string, message string) error {
-	if repoId == "" {
-		return nil
-	}
-	log.Logger().Infof("Dropping helm release repository %s", util.ColorInfo(repoId))
-	err := o.RunCommand("mvn",
-		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-drop",
-		"-DserverId=oss-sonatype-staging",
-		"-DhelmUrl=https://oss.sonatype.org",
-		"-DstagingRepositoryId="+repoId,
-		"-Ddescription=\""+message+"\" -DstagingProgressTimeoutMinutes=60")
-	if err != nil {
-		log.Logger().Warnf("Failed to drop repository %s due to: %s", repoId, err)
-	} else {
-		log.Logger().Infof("Dropped repository %s", util.ColorInfo(repoId))
-	}
-	return err
-}
-
-func (o *StepHelmOptions) releaseRepository(repoId string) error {
-	if repoId == "" {
-		return nil
-	}
-	log.Logger().Infof("Releasing helm release repository %s", util.ColorInfo(repoId))
-	options := o
-	err := options.RunCommand("mvn",
-		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-release",
-		"-DserverId=oss-sonatype-staging",
-		"-DhelmUrl=https://oss.sonatype.org",
-		"-DstagingRepositoryId="+repoId,
-		"-Ddescription=\"Next release is ready\" -DstagingProgressTimeoutMinutes=60")
-	if err != nil {
-		log.Logger().Infof("Failed to release repository %s due to: %s", repoId, err)
-	} else {
-		log.Logger().Infof("Released repository %s", util.ColorInfo(repoId))
-	}
-	return err
-}
-
-func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string, error) {
-
-	stepOpts := step.StepOptions{
-		CommonOptions: o.CommonOptions,
-	}
-	gitOpts := credentials.StepGitCredentialsOptions{
-		StepOptions: stepOpts,
-	}
-
-	err := gitOpts.Run()
-	if err != nil {
-		return "", fmt.Errorf("failed to create Git credentials file: %v", err)
-	}
-
-	org := os.Getenv(REPO_OWNER)
-	if org == "" {
-		return "", fmt.Errorf("no %s env var found", REPO_OWNER)
-	}
-
-	repo := os.Getenv(REPO_NAME)
-	if org == "" {
-		return "", fmt.Errorf("no %s env var found", REPO_NAME)
-	}
-
-	var gitURL string
-	if o.https {
-		gitURL = fmt.Sprintf("https://%s/%s/%s.git", gitProvider, org, repo)
-	} else {
-		gitURL = fmt.Sprintf("git@%s:%s/%s.git", gitProvider, org, repo)
-	}
-
-	err = o.RunCommand("git", "clone", gitURL)
-	if err != nil {
-		return "", err
-	}
-
-	prCommit := os.Getenv(PULL_PULL_SHA)
-	if org == "" {
-		return "", fmt.Errorf("no %s env var found", PULL_PULL_SHA)
-	}
-
-	if dir != "" {
-		dir = filepath.Join(dir, repo)
-	} else {
-		pwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		dir = filepath.Join(pwd, repo)
-	}
-
-	err = o.RunCommandFromDir(dir, "git", "checkout", prCommit)
-	if err != nil {
-		return "", err
-	}
-
-	err = o.RunCommand("cd", repo)
-	if err != nil {
-		return "", err
-	}
-
-	err = o.RunCommandFromDir(dir, "git", "checkout", "-b", "pr")
-	if err != nil {
-		return "", err
-	}
-	exists, err := util.DirExists(filepath.Join(dir, "env"))
-	if err != nil {
-		return "", err
-	}
-	if exists {
-		dir = filepath.Join(dir, "env")
-	}
-	return dir, nil
 }
 
 func (o *StepHelmOptions) discoverValuesFiles(dir string) ([]string, error) {

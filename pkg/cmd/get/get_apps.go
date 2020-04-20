@@ -1,7 +1,6 @@
 package get
 
 import (
-	"encoding/json"
 	"fmt"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -177,15 +176,6 @@ func (o *GetAppsOptions) Run() error {
 	return nil
 }
 
-func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
-	name := app.Labels[helm.LabelReleaseName]
-	output, err := o.Helm().StatusReleaseWithOutput(o.Namespace, name, "json")
-	if err != nil {
-		return err
-	}
-	return o.printHelmResourcesWithFormat(output)
-}
-
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
@@ -247,20 +237,6 @@ func (o *GetAppsOptions) generateTableHeaders(apps *v1.AppList) table.Table {
 	titles := []string{"Name", "Version", "Chart Repository", "Namespace", "Status", "Description"}
 	t.AddRow(titles...)
 	return t
-}
-
-func (o *GetAppsOptions) printHelmResourcesWithFormat(helmOutputJSON string) error {
-	h := HelmOutput{}
-	err := json.Unmarshal([]byte(helmOutputJSON), &h)
-	if err != nil {
-		return err
-	}
-	if o.Output == "" {
-		fmt.Fprintln(o.Out, h.helmInfoStatus.Resources)
-		return nil
-	}
-	return o.renderResult(h, o.Output)
-
 }
 
 func (o *GetAppsOptions) getAppsStatus(gitOps bool, namespace string, apps *v1.AppList) (map[string]string, error) {

@@ -253,9 +253,3 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 
 	return o.RunCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, remoteDir)
 }
-
-func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {
-	if err := cmd.Process.Kill(); err != nil {
-		log.Logger().Warnf("failed to kill 'ksync watch' process: %s", err)
-	}
-}
