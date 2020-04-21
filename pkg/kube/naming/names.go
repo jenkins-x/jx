@@ -36,6 +36,12 @@ func ToValidNameTruncated(name string, maxLength int) string {
 	return toValidName(name, false, maxLength)
 }
 
+// ToValidNameWithDotsTruncated converts the given string into a valid Kubernetes resource name,
+// truncating the result if it is more than maxLength characters.
+func ToValidNameWithDotsTruncated(name string, maxLength int) string {
+	return toValidName(name, true, maxLength)
+}
+
 // ToValidGCPServiceAccount converts the given string into a valid GCP service account name,
 // truncating the result if it is more than 30 characters.
 func ToValidGCPServiceAccount(name string) string {

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -105,6 +106,72 @@ type CreateDevPodOptions struct {
 	GitCredentials credentials.StepGitCredentialsOptions
 
 	Results CreateDevPodResults
+}
+
+// devPodLabels split gitInfo labels
+type devPodLabels struct {
+	gitSchemeLabelKey   string
+	gitSchemeLabelValue string
+	gitHostLabelKey     string
+	gitHostLabelValue   string
+	gitOrgLabelKey      string
+	gitOrgLabelValue    string
+	gitRepoLabelKey     string
+	gitRepoLabelValue   string
+
+	gitLabels map[string]string
+}
+
+// populateFromGitInfo populate this struct with the git repository elements (scheme, host, org and repo)
+func (d *devPodLabels) populateFromGitInfo(gitInfo *gits.GitRepository) error {
+	d.gitSchemeLabelKey = fmt.Sprintf("%s-scheme", kube.LabelDevPodGitPrefix)
+	d.gitSchemeLabelValue = naming.ToValidNameWithDotsTruncated(gitInfo.Scheme, 63)
+	d.gitHostLabelKey = fmt.Sprintf("%s-host", kube.LabelDevPodGitPrefix)
+	d.gitHostLabelValue = naming.ToValidNameWithDotsTruncated(gitInfo.Host, 63)
+
+	d.gitOrgLabelKey = fmt.Sprintf("%s-organisation", kube.LabelDevPodGitPrefix)
+	d.gitOrgLabelValue = naming.ToValidNameWithDots(gitInfo.Organisation)
+	d.gitRepoLabelKey = fmt.Sprintf("%s-name", kube.LabelDevPodGitPrefix)
+	d.gitRepoLabelValue = naming.ToValidNameWithDots(gitInfo.Name)
+
+	if len(d.gitOrgLabelValue) > 63 {
+		return errors.New("git organization label or value exceed length")
+	}
+
+	if len(d.gitRepoLabelValue) > 63 {
+		return errors.New("git repo label or value exceed length")
+	}
+
+	d.gitLabels = make(map[string]string)
+
+	if len(d.gitSchemeLabelValue) > 0 {
+		d.gitLabels[d.gitSchemeLabelKey] = d.gitSchemeLabelValue
+	}
+	if len(d.gitHostLabelValue) > 0 {
+		d.gitLabels[d.gitHostLabelKey] = d.gitHostLabelValue
+	}
+	if len(d.gitOrgLabelValue) > 0 {
+		d.gitLabels[d.gitOrgLabelKey] = d.gitOrgLabelValue
+	}
+	if len(d.gitRepoLabelValue) > 0 {
+		d.gitLabels[d.gitRepoLabelKey] = d.gitRepoLabelValue
+	}
+
+	return nil
+}
+
+// getLabels return a map with the labels
+func (d *devPodLabels) getLabels() map[string]string {
+	return d.gitLabels
+}
+
+// mergeLabels return a map with the labels
+func (d *devPodLabels) mergeLabels(labels map[string]string) map[string]string {
+	l := d.getLabels()
+	for k, v := range labels {
+		l[k] = v
+	}
+	return l
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -237,21 +304,25 @@ func (o *CreateDevPodOptions) Run() error {
 	name := ""
 	podResources := client.CoreV1().Pods(ns)
 	var exposeServicePorts []int
+	var gitLabels devPodLabels
 
-	gitLabelKey := ""
-	gitLabelValue := ""
 	if importURL != "" && o.Reuse {
 		gitInfo, err := gits.ParseGitURL(importURL)
 		if err != nil {
 			log.Logger().Warnf("could not parse the git URL %s: %s", importURL, err.Error())
 		} else {
-			gitLabelKey = fmt.Sprintf("%s-%s-%s-%s", kube.LabelDevPodGitPrefix, gitInfo.Host, gitInfo.Organisation, gitInfo.Name)
-			gitLabelValue = naming.ToValidNameWithDots(importURL)
+			err = gitLabels.populateFromGitInfo(gitInfo)
+			if err != nil {
+				return errors.Wrapf(err, "populating labels from git info %s", err.Error())
+			}
+
 			// lets query to see if there is a DevPod already for this URL
 			matchLabels := map[string]string{
 				kube.LabelDevPodUsername: userName,
-				gitLabelKey:              gitLabelValue,
 			}
+
+			matchLabels = gitLabels.mergeLabels(matchLabels)
+
 			pod, err = o.findDevPodBySelector(podResources, matchLabels, dir)
 			if err != nil {
 				return errors.Wrapf(err, "finding DevPod by selector: %v", matchLabels)
@@ -342,9 +413,8 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Labels[kube.LabelPodTemplate] = label
 		pod.Labels[kube.LabelDevPodName] = name
 		pod.Labels[kube.LabelDevPodUsername] = userName
-		if gitLabelKey != "" && gitLabelValue != "" {
-			pod.Labels[gitLabelKey] = gitLabelValue
-		}
+
+		pod.Labels = gitLabels.mergeLabels(pod.Labels)
 
 		if len(pod.Spec.Containers) == 0 {
 			return fmt.Errorf("no containers specified for label %s with pod: %#v", label, pod)
@@ -639,12 +709,13 @@ func (o *CreateDevPodOptions) Run() error {
 				name = pod.Name
 				create = false
 
-				// lets add the label if its not already
-				if gitLabelKey != "" && gitLabelValue != "" && pod.Labels[gitLabelKey] != gitLabelValue {
-					pod.Labels[gitLabelKey] = gitLabelValue
+				newLabels := gitLabels.mergeLabels(pod.Labels)
+
+				if !reflect.DeepEqual(pod.Labels, newLabels) {
+					pod.Labels = newLabels
 					_, err = podResources.Update(pod)
 					if err != nil {
-						log.Logger().Warnf("Failed to update label of pod %s: %s", pod.Name, err.Error())
+						log.Logger().Warnf("Failed to update git labels of pod %s: %s", pod.Name, err.Error())
 					}
 				}
 			}
