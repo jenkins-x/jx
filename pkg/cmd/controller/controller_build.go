@@ -147,15 +147,6 @@ func NewCmdControllerBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *ControllerBuildOptions) Run() error {
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
