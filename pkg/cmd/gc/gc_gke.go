@@ -49,7 +49,7 @@ var (
 		jx gc gke
 `)
 
-	ServiceAccountSuffixes = []string{"-vt", "-ko", "-tf", "-dn", "-ex", "-jb", "-st", "-tk", "-vo", "-bc"}
+	ServiceAccountSuffixes = []string{"-vt", "-ko", "-tf", "-dn", "-ex", "-jb", "-st", "-tk", "-vo", "-bc", "-tekton"}
 )
 
 type Rules struct {
@@ -507,12 +507,16 @@ func (o *GCGKEOptions) getServiceAccounts() ([]serviceAccount, error) {
 		return nil, err
 	}
 
+	var modifiedSAs []serviceAccount
 	for _, sa := range serviceAccounts {
-		if sa.DisplayName == "" {
+		// If there isn't a display name or the display name contains spaces, which is the case for Terraform-created
+		// SAs, just split the email instead.
+		if sa.DisplayName == "" || strings.Contains(sa.DisplayName, " ") {
 			sa.DisplayName = sa.Email[:strings.IndexByte(sa.Email, '@')]
 		}
+		modifiedSAs = append(modifiedSAs, sa)
 	}
-	return serviceAccounts, nil
+	return modifiedSAs, nil
 }
 
 func (o *GCGKEOptions) clusterExistsWithPrefix(clusters []cluster, clusterNamePrefix string) bool {
