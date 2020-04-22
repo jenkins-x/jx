@@ -534,6 +534,9 @@ func (o *StepVerifyEnvironmentsOptions) createEnvironmentHelmValues(requirements
 		tlsAcme = "true"
 	}
 	exposer := "Ingress"
+	if requirements.Ingress.Exposer != "" {
+		exposer = requirements.Ingress.Exposer
+	}
 	helmValues := config.HelmValuesConfig{
 		ExposeController: &config.ExposeController{
 			Config: config.ExposeControllerConfig{

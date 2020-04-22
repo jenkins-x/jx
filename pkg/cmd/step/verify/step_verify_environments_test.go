@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/boot"
 	"github.com/jenkins-x/jx/pkg/cmd/clients/fake"
@@ -265,6 +267,41 @@ func Test_getEnvironmentURLTemplate(t *testing.T) {
 			assert.Equal(t, test.expectedTemplate, getEnvironmentURLTemplate(test.cfg), "The returned template should be the expected based on input")
 		})
 	}
+}
+
+func Test_getEnvironmentExposer(t *testing.T) {
+	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
+	options := &commonOpts
+	testhelpers.ConfigureTestOptions(options, options.Git(), options.Helm())
+
+	testOptions := &StepVerifyEnvironmentsOptions{
+		StepVerifyOptions: StepVerifyOptions{
+			StepOptions: step.StepOptions{
+				CommonOptions: options,
+			},
+		},
+	}
+
+	requirementsYamlFile := path.Join("test_data", "verify_ingress", "exposer", "jx-requirements.yml")
+	exists, err := util.FileExists(requirementsYamlFile)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	bytes, err := ioutil.ReadFile(requirementsYamlFile)
+	assert.NoError(t, err)
+	requirements := &config.RequirementsConfig{}
+	err = yaml.Unmarshal(bytes, requirements)
+	assert.NoError(t, err)
+
+	environment := &v1.Environment{
+		ObjectMeta: v12.ObjectMeta{
+			Name: "dev",
+		},
+	}
+
+	valuesConfig, err := testOptions.createEnvironmentHelmValues(requirements, environment)
+	assert.NoError(t, err)
+	assert.Equal(t, "Route", valuesConfig.ExposeController.Config.Exposer, "the configured helm values should contain Route")
 }
 
 func pipelineEnvValueForKey(envVars []corev1.EnvVar, key string) string {
