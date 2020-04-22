@@ -31,8 +31,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/experimental"
 	"github.com/jenkins-x/jx/pkg/cmd/profile"
 	"github.com/jenkins-x/jx/pkg/cmd/ui"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/boot"
@@ -345,67 +343,6 @@ func setLoggingLevel(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
-
-	logWarningForRemovalOfStaticMasters(cmd, args)
-}
-
-func logWarningForRemovalOfStaticMasters(cmd *cobra.Command, args []string) {
-	// If we're running in a cluster, just don't do anything. There's no reason to flood the build logs, and BDD tests
-	// can depend on parsing specific output.
-	if cluster.IsInCluster() {
-		return
-	}
-
-	// Just return if this is "jx completion (shell)".
-	if commandHasParentName(cmd, "completion") {
-		return
-	}
-
-	shouldWarn := false
-	if commandHasParentName(cmd, "create cluster") {
-		shouldWarn = isStaticMasterInstall(cmd)
-	} else if commandHasParentName(cmd, "install") {
-		shouldWarn = isStaticMasterInstall(cmd)
-	} else {
-		clientFactory := clients.NewFactory()
-		jxClient, ns, err := clientFactory.CreateJXClient()
-
-		// If the jxClient is nil or we got an error, don't bother continuing, something else is wrong enough that it's not worth warning about
-		// removal.
-		if err != nil || jxClient == nil {
-			return
-		}
-
-		// Try to get the dev env.
-		env, err := jxClient.JenkinsV1().Environments(ns).Get(kube.LabelValueDevEnvironment, metav1.GetOptions{})
-
-		// If we get an error or the dev env is nil, just ignore it and move on - something else is wrong enough that it's not worth worrying about
-		// whether we should be warning about removal.
-		if err != nil || env == nil {
-			return
-		}
-
-		teamSettings := &env.Spec.TeamSettings
-		shouldWarn = !teamSettings.IsJenkinsXPipelines()
-	}
-
-	if shouldWarn {
-		cmd.Println("WARNING")
-		cmd.Println("")
-		cmd.Println("Traditional Jenkins masters are being deprecated and removed from all new Jenkins X releases starting on April 20, 2020.")
-		cmd.Println("We strongly recommend using the default Tekton-based configuration instead for all Jenkins X activity going forward. We do not recommend using the Jenkins X workflow based around Jenkins masters.")
-		cmd.Println("")
-		cmd.Println("For more information: https://jenkins-x.io/blog/2020/03/11/tekton/")
-	}
-}
-
-func isStaticMasterInstall(cmd *cobra.Command) bool {
-	isTekton, _ := cmd.Flags().GetBool("tekton")
-	isProw, _ := cmd.Flags().GetBool("prow")
-	isStatic, _ := cmd.Flags().GetBool("static-jenkins")
-	isSkipInstall, _ := cmd.Flags().GetBool("skip-installation")
-
-	return (!isSkipInstall && !(isTekton || isProw)) || isStatic
 }
 
 func runHelp(cmd *cobra.Command, args []string) {
