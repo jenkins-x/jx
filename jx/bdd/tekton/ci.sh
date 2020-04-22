@@ -17,6 +17,8 @@ KUBECONFIG="/tmp/jxhome/config"
 
 mkdir -p $JX_HOME
 
+jx install dependencies --all
+
 # Disable coverage for jx version as we don't validate the output at all
 COVER_JX_BINARY=false jx version
 #jx step git credentials

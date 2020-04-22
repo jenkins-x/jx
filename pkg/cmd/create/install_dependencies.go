@@ -12,6 +12,7 @@ import (
 // InstallDependenciesFlags flags for the install command
 type InstallDependenciesFlags struct {
 	Dependencies []string
+	All          bool
 }
 
 // InstallDependenciesOptions options for install dependencies
@@ -37,19 +38,10 @@ var (
 		"kubectl",
 		"gcloud",
 		"helm",
-		"ibmcloud",
 		"tiller",
 		"helm3",
-		"kops",
-		"kvm",
-		"kvm2",
 		"ksync",
 		"oc",
-		"virtualbox",
-		"xhyve",
-		"hyperv",
-		"terraform",
-		"oci",
 		"aws",
 		"eksctl",
 		"aws-iam-authenticator",
@@ -77,6 +69,7 @@ func NewCmdInstallDependencies(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringArrayVarP(&options.Flags.Dependencies, "dependencies", "d", []string{}, "The dependencies to install")
+	cmd.Flags().BoolVarP(&options.Flags.All, "all", "", false, "Install all dependencies")
 
 	return cmd
 }
@@ -93,18 +86,23 @@ func CreateInstallDependenciesOptions(commonOpts *opts.CommonOptions) InstallDep
 func (options *InstallDependenciesOptions) Run() error {
 	install := []string{}
 
-	if len(options.Flags.Dependencies) == 0 {
+	if !options.Flags.All {
+		if len(options.Flags.Dependencies) == 0 {
 
-		prompt := &survey.MultiSelect{
-			Message: "What dependencies would you like to install:",
-			Options: availableDependencies,
+			prompt := &survey.MultiSelect{
+				Message: "What dependencies would you like to install:",
+				Options: availableDependencies,
+			}
+
+			surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+
+			survey.AskOne(prompt, &install, nil, surveyOpts)
+		} else {
+			install = append(install, options.Flags.Dependencies...)
 		}
-
-		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
-
-		survey.AskOne(prompt, &install, nil, surveyOpts)
 	} else {
-		install = append(install, options.Flags.Dependencies...)
+		install = availableDependencies
+		options.NoBrew = true
 	}
 
 	if len(install) > 0 {
