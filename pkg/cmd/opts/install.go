@@ -3,7 +3,6 @@ package opts
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -11,12 +10,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/openshift"
 	"github.com/jenkins-x/jx/pkg/dependencymatrix"
-
-	"github.com/jenkins-x/jx/pkg/virtualmachines/kvm"
-
-	"github.com/jenkins-x/jx/pkg/virtualmachines/kvm2"
-
-	"github.com/jenkins-x/jx/pkg/virtualmachines/virtualbox"
 
 	"github.com/jenkins-x/jx/pkg/brew"
 
@@ -92,11 +85,11 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 		var err error
 		switch i {
 		case "az":
-			err = o.InstallAzureCli()
+			o.InstallAzureCli()
 		case "kubectl":
 			err = packages.InstallKubectl(false)
 		case "gcloud":
-			err = o.InstallGcloud()
+			o.InstallGcloud()
 		case "helm":
 			err = o.InstallHelm()
 		case "ibmcloud":
@@ -107,22 +100,10 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 			err = o.InstallTiller()
 		case "helm3":
 			err = o.InstallHelm3()
-		case "kops":
-			err = amazon.InstallKops()
-		case "kvm":
-			err = kvm.InstallKvm()
-		case "kvm2":
-			err = kvm2.InstallKvm2()
 		case "ksync":
 			_, err = ksync.InstallKSync()
 		case "oc":
 			err = openshift.InstallOc()
-		case "virtualbox":
-			err = virtualbox.InstallVirtualBox()
-		case "xhyve":
-			err = o.InstallXhyve()
-		case "hyperv":
-			err = o.Installhyperv()
 		case "terraform":
 			err = o.InstallTerraform()
 		case "oci":
@@ -145,21 +126,8 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 	return nil
 }
 
-// InstallBrew installs brew
-func (o *CommonOptions) InstallBrew() error {
-	if runtime.GOOS != "darwin" {
-		return nil
-	}
-	log.Logger().Infof("Please enter your root password when prompted by the %s installation", util.ColorInfo("brew"))
-	//Make sure to run command through sh in order to get $() expanded.
-	return o.RunCommand("sh", "-c", "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
-}
-
 // InstallGlooctl Installs glooctl tool
 func (o *CommonOptions) InstallGlooctl() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "install", "glooctl")
-	}
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
@@ -195,10 +163,6 @@ func (o *CommonOptions) InstallGlooctl() error {
 
 // InstallKustomize installs kustomize
 func (o *CommonOptions) InstallKustomize() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "install", "kustomize")
-	}
-
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return errors.Wrapf(err, "unable to find JXBinLocation")
@@ -265,88 +229,9 @@ func (o *CommonOptions) InstallKustomize() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-// InstallXhyve installs xhyve
-func (o *CommonOptions) InstallXhyve() error {
-	info, err := o.GetCommandOutput("", "brew", "info", "docker-machine-driver-xhyve")
-
-	if err != nil || strings.Contains(info, "Not installed") {
-		err = o.RunCommand("brew", "install", "docker-machine-driver-xhyve")
-		if err != nil {
-			return err
-		}
-
-		brewPrefix, err := o.GetCommandOutput("", "brew", "--prefix")
-		if err != nil {
-			return err
-		}
-
-		file := brewPrefix + "/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve"
-		err = o.RunCommand("sudo", "chown", "root:wheel", file)
-		if err != nil {
-			return err
-		}
-
-		err = o.RunCommand("sudo", "chmod", "u+s", file)
-		if err != nil {
-			return err
-		}
-		log.Logger().Info("xhyve driver installed")
-	} else {
-		pgmPath, _ := exec.LookPath("docker-machine-driver-xhyve")
-		log.Logger().Infof("xhyve driver is already available on your PATH at %s", pgmPath)
-	}
-	return nil
-}
-
-// Installhyperv installs hyperv
-func (o *CommonOptions) Installhyperv() error {
-	info, err := o.GetCommandOutput("", "powershell", "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
-
-	if err != nil {
-		return err
-	}
-	if strings.Contains(info, "Disabled") {
-
-		log.Logger().Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted command.")
-
-		message := fmt.Sprintf("Would you like to restart your computer?")
-
-		if answer, err := util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.GetIOFileHandles()); err != nil {
-			return err
-		} else if answer {
-
-			err = o.RunCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
-			if err != nil {
-				return err
-			}
-			err = o.RunCommand("powershell", "Restart-Computer")
-			if err != nil {
-				return err
-			}
-
-		} else {
-			err = errors.New("hyperv was not Disabled")
-			return err
-		}
-
-	} else {
-		log.Logger().Info("hyperv is already Enabled")
-	}
-	return nil
-}
-
 // InstallHelm install helm cli
 func (o *CommonOptions) InstallHelm() error {
 	binary := "helm"
-
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		err := o.RunCommand("brew", "install", "helm@2")
-		if err != nil {
-			return err
-		}
-		return o.installHelmSecretsPlugin(binary, true)
-	}
-
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
@@ -517,10 +402,6 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 
 // InstallTerraform installs terraform
 func (o *CommonOptions) InstallTerraform() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "install", "terraform")
-	}
-
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
@@ -717,16 +598,13 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 }
 
 // InstallGcloud installs gcloud cli
-func (o *CommonOptions) InstallGcloud() error {
-	if runtime.GOOS != "darwin" || o.NoBrew {
-		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
-	}
-	return o.RunCommand("brew", "cask", "install", "google-cloud-sdk")
+func (o *CommonOptions) InstallGcloud() {
+	log.Logger().Infof("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 }
 
 // InstallAzureCli installs azure cli
-func (o *CommonOptions) InstallAzureCli() error {
-	return o.RunCommand("brew", "install", "azure-cli")
+func (o *CommonOptions) InstallAzureCli() {
+	log.Logger().Infof("please install missing azure cli https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest")
 }
 
 // InstallOciCli installs oci cli
