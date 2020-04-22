@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"time"
 
@@ -1401,8 +1402,13 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 
 	commandText := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
+	name := "/bin/sh"
+	if runtime.GOOS == "windows" {
+		name = "sh"
+	}
+
 	cmd := util.Command{
-		Name: "/bin/sh",
+		Name: name,
 		Args: []string{"-c", commandText},
 		Out:  o.Out,
 		Err:  o.Err,
