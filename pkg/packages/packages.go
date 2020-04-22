@@ -25,6 +25,26 @@ const IamAuthenticatorAwsVersion = "1.12.7"
 // KubectlVersion binary version to use
 const KubectlVersion = "1.13.2"
 
+// Helm2Version binary version to use
+const Helm2Version = "2.12.2"
+
+// Helm3Version binary version to use
+const Helm3Version = "3.2.0"
+
+// KustomizeVersion binary version to use
+const KustomizeVersion = "3.5.1"
+
+// GlooVersion binary version to use
+const GlooVersion = "1.3.23"
+
+// GlobalBinaryPathWhitelist binaries that require to be on the path but do not need to exist in JX_HOME/bin
+var GlobalBinaryPathWhitelist = []string{
+	"az",
+	"gcloud",
+	"oc",
+	"brew",
+}
+
 func BinaryWithExtension(binary string) string {
 	if runtime.GOOS == "windows" {
 		if binary == "gcloud" {

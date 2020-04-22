@@ -1,13 +1,7 @@
 package amazon
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-
 	"github.com/jenkins-x/jx/pkg/packages"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // InstallAwsIamAuthenticatorWithVersion install a specific version of iam authenticator for AWS
@@ -43,33 +37,4 @@ func InstallEksCtlWithVersion(version string, skipPathScan bool) error {
 // InstallEksCtl installs eks cli
 func InstallEksCtl(skipPathScan bool) error {
 	return InstallEksCtlWithVersion("", skipPathScan)
-}
-
-// InstallKops installs kops
-func InstallKops() error {
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	binary := "kops"
-	flag, err := packages.ShouldInstallBinary(binary)
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestVersionStringFromGitHub("kubernetes", "kops")
-	if err != nil {
-		return err
-	}
-	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, binary)
-	tmpFile := fullPath + ".tmp"
-	err = packages.DownloadFile(clientURL, tmpFile)
-	if err != nil {
-		return err
-	}
-	err = util.RenameFile(tmpFile, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
 }
