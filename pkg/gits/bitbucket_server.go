@@ -746,6 +746,7 @@ func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) 
 		State:       stateMap[buildStatus.State],
 		TargetURL:   buildStatus.Url,
 		Description: buildStatus.Description,
+		Context:     buildStatus.Name,
 	}
 }
 

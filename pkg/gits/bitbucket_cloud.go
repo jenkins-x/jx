@@ -675,6 +675,7 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 				State:       stateMap[status.State],
 				TargetURL:   status.Links.Self.Href,
 				Description: status.Description,
+				Context:     status.Name,
 			}
 			statuses = append(statuses, newStatus)
 		}
