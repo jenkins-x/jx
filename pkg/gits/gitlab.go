@@ -292,9 +292,12 @@ func (g *GitlabProvider) UpdatePullRequest(data *GitPullRequestArguments, number
 	base := data.Base
 
 	o := &gitlab.UpdateMergeRequestOptions{
-		Title:        &title,
-		Description:  &body,
-		TargetBranch: &base,
+		Title:       &title,
+		Description: &body,
+	}
+
+	if base != "" {
+		o.TargetBranch = &base
 	}
 
 	pid, err := g.projectId(owner, g.Username, repo)
