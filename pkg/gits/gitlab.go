@@ -483,8 +483,12 @@ func (g *GitlabProvider) UpdateCommitStatus(owner string, repo string, sha strin
 	if err != nil {
 		return nil, err
 	}
+	glState := gitlab.BuildStateValue(status.State)
+	if status.State == "failure" {
+		glState = gitlab.Failed
+	}
 	statusOptions := &gitlab.SetCommitStatusOptions{
-		State:       gitlab.BuildStateValue(status.State),
+		State:       glState,
 		Name:        &status.Context,
 		Context:     &status.Context,
 		Description: &status.Description,
@@ -504,10 +508,14 @@ func (g *GitlabProvider) UpdateCommitStatus(owner string, repo string, sha strin
 }
 
 func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
+	jxState := status.Status
+	if status.Status == "failed" {
+		jxState = "failure"
+	}
 	return &GitRepoStatus{
 		ID:          string(status.ID),
 		URL:         status.TargetURL,
-		State:       status.Status,
+		State:       jxState,
 		Description: status.Description,
 		Context:     status.Name,
 	}
