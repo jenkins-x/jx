@@ -1336,6 +1336,10 @@ definitions:
         type: array
       author:
         type: string
+      authorAvatarURL:
+        type: string
+      authorURL:
+        type: string
       baseSHA:
         type: string
       batchPipelineActivity:
