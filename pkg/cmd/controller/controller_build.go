@@ -419,6 +419,8 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		}
 		if pr.Author != nil {
 			activity.Spec.Author = pr.Author.Login
+			activity.Spec.AuthorAvatarURL = pr.Author.AvatarURL
+			activity.Spec.AuthorURL = pr.Author.URL
 		}
 		activity.Spec.PullTitle = pr.Title
 		log.Logger().Infof("[BuildInfo] PipelineActivity set with author=%s and PR title=%s", activity.Spec.Author, activity.Spec.PullTitle)
@@ -435,6 +437,8 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		if len(gitCommits) > 0 {
 			if gitCommits[0] != nil && gitCommits[0].Author != nil {
 				activity.Spec.Author = gitCommits[0].Author.Login
+				activity.Spec.AuthorAvatarURL = gitCommits[0].Author.AvatarURL
+				activity.Spec.AuthorURL = gitCommits[0].Author.URL
 				activity.Spec.LastCommitMessage = gitCommits[0].Message
 			}
 		}

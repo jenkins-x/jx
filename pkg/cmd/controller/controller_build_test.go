@@ -72,6 +72,8 @@ func TestCompleteBuildSourceInfo(t *testing.T) {
 	o.completeBuildSourceInfo(act)
 
 	assert.Equal(t, act.Spec.Author, "john.doe")
+	assert.Equal(t, act.Spec.AuthorAvatarURL, "http://avatarURL.com")
+	assert.Equal(t, act.Spec.AuthorURL, "http://AuthorURL.com")
 	assert.Equal(t, act.Spec.LastCommitMessage, "This is a commit message")
 
 	act = &v1.PipelineActivity{
@@ -87,6 +89,8 @@ func TestCompleteBuildSourceInfo(t *testing.T) {
 	o.completeBuildSourceInfo(act)
 
 	assert.Equal(t, act.Spec.Author, "john.doe.pr")
+	assert.Equal(t, act.Spec.AuthorAvatarURL, "http://avatarURL-PR.com")
+	assert.Equal(t, act.Spec.AuthorURL, "http://AuthorURL-PR.com")
 	assert.Equal(t, act.Spec.PullTitle, "This is the PR title")
 }
 
@@ -321,7 +325,9 @@ func getFakeRepository() *gits.FakeRepository {
 					SHA:     "ba3ae9923ecc1264ccaa668317fb9276d8b1b5ff",
 					Message: "This is a commit message",
 					Author: &gits.GitUser{
-						Login: "john.doe",
+						Login:     "john.doe",
+						AvatarURL: "http://avatarURL.com",
+						URL:       "http://AuthorURL.com",
 					},
 				},
 			},
@@ -330,7 +336,9 @@ func getFakeRepository() *gits.FakeRepository {
 			4: {
 				PullRequest: &gits.GitPullRequest{
 					Author: &gits.GitUser{
-						Login: "john.doe.pr",
+						Login:     "john.doe.pr",
+						AvatarURL: "http://avatarURL-PR.com",
+						URL:       "http://AuthorURL-PR.com",
 					},
 					Title: "This is the PR title",
 				},

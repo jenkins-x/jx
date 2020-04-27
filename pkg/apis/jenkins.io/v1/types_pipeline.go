@@ -49,6 +49,8 @@ type PipelineActivitySpec struct {
 	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,12,opt,name=gitOwner"`
 	GitBranch          string                 `json:"gitBranch,omitempty" protobuf:"bytes,13,opt,name=gitBranch"`
 	Author             string                 `json:"author,omitempty" protobuf:"bytes,14,opt,name=author"`
+	AuthorAvatarURL    string                 `json:"authorAvatarURL,omitempty" protobuf:"bytes,14,opt,name=authorAvatarURL"`
+	AuthorURL          string                 `json:"authorURL,omitempty" protobuf:"bytes,14,opt,name=authorURL"`
 	PullTitle          string                 `json:"pullTitle,omitempty" protobuf:"bytes,15,opt,name=pullTitle"`
 	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,16,opt,name=releaseNotesURL"`
 	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,17,opt,name=lastCommitSHA"`
