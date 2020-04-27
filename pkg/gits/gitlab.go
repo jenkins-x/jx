@@ -334,6 +334,7 @@ func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullReque
 		Repo:           repo,
 		Number:         &mr.IID,
 		State:          &mr.State,
+		Labels:         convertPullRequestLabels(mr.Labels),
 		Title:          mr.Title,
 		Body:           mr.Description,
 		MergeCommitSHA: &mr.MergeCommitSHA,
@@ -884,4 +885,15 @@ func (g *GitlabProvider) ConfigureFeatures(owner string, repo string, issues *bo
 // IsWikiEnabled returns true if a wiki is enabled for owner/repo
 func (g *GitlabProvider) IsWikiEnabled(owner string, repo string) (bool, error) {
 	return false, nil
+}
+
+func convertPullRequestLabels(from gitlab.Labels) []*Label {
+	var labels []*Label
+	for _, label := range from {
+		l := label
+		labels = append(labels, &Label{
+			Name: &l,
+		})
+	}
+	return labels
 }
