@@ -780,6 +780,20 @@ func (g *GitlabProvider) UserAuth() auth.UserAuth {
 	return g.User
 }
 
+func (g *GitlabProvider) getUserID(username string) (*int, error) {
+	users, _, err := g.Client.Users.ListUsers(&gitlab.ListUsersOptions{Username: &username})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(users) == 0 {
+		return nil, nil
+	}
+
+	user := users[0]
+	return &user.ID, nil
+}
+
 func (g *GitlabProvider) UserInfo(username string) *GitUser {
 	users, _, err := g.Client.Users.ListUsers(&gitlab.ListUsersOptions{Username: &username})
 
@@ -814,8 +828,22 @@ func (g *GitlabProvider) IssueURL(org string, name string, number int, isPull bo
 
 // AddCollaborator adds a collaborator
 func (g *GitlabProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.", user)
-	return nil
+	pid, err := g.projectId(organisation, g.Username, repo)
+	if err != nil {
+		return err
+	}
+
+	userId, err := g.getUserID(user)
+	if err != nil {
+		return err
+	}
+	accessLevel := gitlab.DeveloperPermissions
+	opts := &gitlab.AddProjectMemberOptions{
+		UserID:      userId,
+		AccessLevel: &accessLevel,
+	}
+	_, _, err = g.Client.ProjectMembers.AddProjectMember(pid, opts)
+	return err
 }
 
 // ListInvitations lists pending invites
