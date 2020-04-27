@@ -509,6 +509,7 @@ func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
 		URL:         status.TargetURL,
 		State:       status.Status,
 		Description: status.Description,
+		Context:     status.Name,
 	}
 }
 
