@@ -883,7 +883,44 @@ func (g *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 
 // AddLabelsToIssue adds labels to issues or pullrequests
 func (g *GitlabProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
-	log.Logger().Warnf("Adding labels not supported on gitlab yet for repo %s/%s issue %d labels %v", owner, repo, number, labels)
+	pr, err := g.GetPullRequest(owner, &GitRepository{Name: repo}, number)
+	if err != nil {
+		return err
+	}
+	labelMap := make(map[string]struct{})
+	for _, l := range pr.Labels {
+		if l.Name != nil {
+			labelMap[*l.Name] = struct{}{}
+		}
+	}
+	for _, l := range labels {
+		labelMap[l] = struct{}{}
+	}
+
+	glLabels := gitlab.Labels{}
+
+	for l := range labelMap {
+		glLabels = append(glLabels, l)
+	}
+	o := &gitlab.UpdateMergeRequestOptions{
+		Labels: &glLabels,
+	}
+
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return err
+	}
+	_, resp, err := g.Client.MergeRequests.UpdateMergeRequest(pid, number, o)
+	if err != nil {
+		if resp != nil && resp.Body != nil {
+			data, err2 := ioutil.ReadAll(resp.Body)
+			if err2 == nil && len(data) > 0 {
+				return errors2.Wrapf(err, "response: %s", string(data))
+			}
+		}
+		return err
+	}
+
 	return nil
 }
 
