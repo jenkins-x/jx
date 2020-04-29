@@ -157,8 +157,14 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		s.Flags.DefaultAdminPassword, _ = generator.Generate(20, 4, 2, false, true)
 	}
 
-	s.setDefaultSecrets()
-	s.NewMavenSettingsXML()
+	err := s.setDefaultSecrets()
+	if err != nil {
+		return errors.Wrap(err, "unable to set default secrets")
+	}
+	err = s.NewMavenSettingsXML()
+	if err != nil {
+		return errors.Wrap(err, "unable to generate maven settings")
+	}
 	s.newIngressBasicAuth()
 	s.newKanikoSecret()
 
@@ -197,7 +203,10 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecretsFi
 	s.Secrets = a
 	s.Flags.DefaultAdminPassword = s.Secrets.Jenkins.JenkinsSecret.Password
 
-	s.setDefaultSecrets()
+	err = s.setDefaultSecrets()
+	if err != nil {
+		return errors.Wrap(err, "unable to set default secrets")
+	}
 	s.updateIngressBasicAuth()
 
 	return nil

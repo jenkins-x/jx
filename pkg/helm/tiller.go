@@ -48,7 +48,10 @@ func StartLocalTiller(lazy bool) error {
 // RestartLocalTiller resttarts locall tiller
 func RestartLocalTiller() error {
 	log.Logger().Info("checking if we need to kill a local tiller process")
-	util.KillProcesses("tiller")
+	err := util.KillProcesses("tiller")
+	if err != nil {
+		return errors.Wrap(err, "unable to kill local tiller process")
+	}
 	return StartLocalTiller(false)
 }
 

@@ -23,7 +23,10 @@ func InstallMavenIfRequired() error {
 	if err != nil {
 		panic(err)
 	}
-	m.Lock()
+	err = m.Lock()
+	if err != nil {
+		return err
+	}
 
 	cmd := util.Command{
 		Name: "mvn",
@@ -31,7 +34,10 @@ func InstallMavenIfRequired() error {
 	}
 	_, err = cmd.RunWithoutRetry()
 	if err == nil {
-		m.Unlock()
+		err = m.Unlock()
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	// lets assume maven is not installed so lets download it
@@ -45,21 +51,30 @@ func InstallMavenIfRequired() error {
 
 	err = os.MkdirAll(mvnDir, util.DefaultWritePermissions)
 	if err != nil {
-		m.Unlock()
+		err = m.Unlock()
+		if err != nil {
+			return err
+		}
 		return err
 	}
 
 	log.Logger().Info("\ndownloadFile")
 	err = packages.DownloadFile(clientURL, zipFile)
 	if err != nil {
-		m.Unlock()
+		err = m.Unlock()
+		if err != nil {
+			return err
+		}
 		return err
 	}
 
 	log.Logger().Info("\nutil.Unzip")
 	err = util.Unzip(zipFile, mvnTmpDir)
 	if err != nil {
-		m.Unlock()
+		err = m.Unlock()
+		if err != nil {
+			return err
+		}
 		return err
 	}
 
@@ -67,35 +82,59 @@ func InstallMavenIfRequired() error {
 	log.Logger().Info("\nReadDir")
 	files, err := ioutil.ReadDir(mvnTmpDir)
 	if err != nil {
-		m.Unlock()
+		err = m.Unlock()
+		if err != nil {
+			return err
+		}
 		return err
 	}
 	for _, f := range files {
 		name := f.Name()
 		if f.IsDir() && strings.HasPrefix(name, "apache-maven") {
-			os.RemoveAll(mvnDir)
+			err = os.RemoveAll(mvnDir)
+			if err != nil {
+				return err
+			}
 
 			err = os.Rename(filepath.Join(mvnTmpDir, name), mvnDir)
 			if err != nil {
-				m.Unlock()
+				err = m.Unlock()
+				if err != nil {
+					return err
+				}
 				return err
 			}
 			log.Logger().Infof("Apache Maven is installed at: %s", util.ColorInfo(mvnDir))
-			m.Unlock()
+			err = m.Unlock()
+			if err != nil {
+				return err
+			}
 			err = os.Remove(zipFile)
 			if err != nil {
-				m.Unlock()
+				err = m.Unlock()
+				if err != nil {
+					return err
+				}
 				return err
 			}
 			err = os.RemoveAll(mvnTmpDir)
 			if err != nil {
-				m.Unlock()
+				err = m.Unlock()
+				if err != nil {
+					return err
+				}
 				return err
 			}
-			m.Unlock()
+			err = m.Unlock()
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 	}
-	m.Unlock()
+	err = m.Unlock()
+	if err != nil {
+		return err
+	}
 	return fmt.Errorf("Could not find an apache-maven folder inside the unzipped maven distro at %s", mvnTmpDir)
 }

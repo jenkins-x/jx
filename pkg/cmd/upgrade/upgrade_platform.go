@@ -133,7 +133,10 @@ func (o *UpgradePlatformOptions) Run() error {
 			Options: cloud.KubernetesProviders,
 			Default: "",
 		}
-		survey.AskOne(prompt, &provider, nil, surveyOpts)
+		err = survey.AskOne(prompt, &provider, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 
 		err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
 			settings = &env.Spec.TeamSettings
@@ -270,7 +273,10 @@ func (o *UpgradePlatformOptions) Run() error {
 			return errors.Wrap(err, "failed to create the admin secret config service from the secrets file")
 		}
 
-		o.AdminSecretsService.NewMavenSettingsXML()
+		err = o.AdminSecretsService.NewMavenSettingsXML()
+		if err != nil {
+			return err
+		}
 		adminSecrets := &o.AdminSecretsService.Secrets
 
 		log.Logger().Debugf("Rewriting secrets file to %s", util.ColorInfo(adminSecretsFileName))
@@ -340,7 +346,10 @@ func (o *UpgradePlatformOptions) Run() error {
 			Message: fmt.Sprintf("Would you like to repair the file?"),
 			Default: true,
 		}
-		survey.AskOne(prompt, &confirm, nil, surveyOpts)
+		err = survey.AskOne(prompt, &confirm, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 
 		if confirm {
 			err = o.repairAdminSecrets(adminSecretsFileName)

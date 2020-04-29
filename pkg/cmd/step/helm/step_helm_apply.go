@@ -131,7 +131,7 @@ func (o *StepHelmApplyOptions) Run() error {
 					CommonOptions: &opts.CommonOptions{},
 				},
 			},
-		}).Run()
+		}).Run() //nolint:errcheck
 	}
 	helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 	if err != nil {
@@ -186,7 +186,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrapf(err, "failed to create a temporary directory to apply the helm chart")
 	}
 	if os.Getenv("JX_NO_DELETE_TMP_DIR") != "true" {
-		defer os.RemoveAll(rootTmpDir)
+		defer os.RemoveAll(rootTmpDir) //nolint:errcheck
 	}
 
 	if os.Getenv(kube.DisableBuildLockEnvKey) == "" {
@@ -194,7 +194,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "fail to acquire the lock")
 		}
-		defer release()
+		defer release() //nolint:errcheck
 	}
 
 	// lets use the same child dir name as the original as helm is quite particular about the name of the directory it runs from
@@ -336,11 +336,11 @@ func (o *StepHelmApplyOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "removing %s", src)
 		}
-		filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
+		err = filepath.Walk(dest, func(path string, info os.FileInfo, err error) error {
 			if filepath.Base(path) == helm.ValuesFileName {
 
 				newFiles, cleanup, err := helm.DecorateWithSecrets([]string{path}, secretURLClient)
-				defer cleanup()
+				defer cleanup() //nolint:errcheck
 				if err != nil {
 					return errors.Wrapf(err, "decorating %s with secrets", path)
 				}
@@ -351,6 +351,9 @@ func (o *StepHelmApplyOptions) Run() error {
 			}
 			return nil
 		})
+		if err != nil {
+			return err
+		}
 		dirs, err := filepath.Glob(filepath.Join(dest, "*"))
 		if err != nil {
 			return errors.Wrapf(err, "list %s", filepath.Join(dest, "*"))
@@ -485,9 +488,15 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 					if len(chartArchives) == 1 {
 						log.Logger().Debugf("Exploding chart %s", chartArchives[0])
-						archiver.Unarchive(chartArchives[0], depChartsDir)
+						err = archiver.Unarchive(chartArchives[0], depChartsDir)
+						if err != nil {
+							return errors.Wrapf(err, "unable to unarchive %s to destination %s", chartArchives[0], depChartDir)
+						}
 						// Remove the unexploded chart
-						os.Remove(chartArchives[0])
+						err = os.Remove(chartArchives[0])
+						if err != nil {
+							return errors.Wrapf(err, "unable to remove chart %s", chartArchives[0])
+						}
 					}
 				}
 				overrideDst := filepath.Join(depChartDir, "templates", templateName)

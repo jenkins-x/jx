@@ -166,7 +166,7 @@ func GetLatestBackupFromBackupResource(apiClient apiextensionsclientset.Interfac
 
 		backups, err := GetBackupsFromBackupResource(apiClient, namespace)
 		if err != nil {
-			errors.Wrap(err, "when attempting to retrieve velero backup list")
+			return "", errors.Wrap(err, "when attempting to retrieve velero backup list")
 		}
 
 		return backups[len(backups)-1], nil

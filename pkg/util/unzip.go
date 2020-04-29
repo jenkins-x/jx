@@ -89,7 +89,10 @@ func extractFile(dest string, f *zip.File) error {
 	defer rc.Close()
 
 	if f.FileInfo().IsDir() {
-		os.MkdirAll(name, os.ModePerm)
+		err := os.MkdirAll(name, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	} else {
 		var fdir string
 		if lastIndex := strings.LastIndex(name, string(os.PathSeparator)); lastIndex > -1 {

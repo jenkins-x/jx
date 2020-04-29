@@ -1175,12 +1175,16 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 func (options *InstallOptions) configureTillerNamespace() error {
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	initOpts := &options.InitOptions
-	if initOpts.Flags.TillerNamespace != "" {
+	tillerNameSpace := initOpts.Flags.TillerNamespace
+	if tillerNameSpace != "" {
 		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
 			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
 		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
-		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
+		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = tillerNameSpace
+		err := os.Setenv("TILLER_NAMESPACE", tillerNameSpace)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set env variable TILLER_NAMESPACE to %s", tillerNameSpace)
+		}
 	}
 	return nil
 }
@@ -1777,7 +1781,10 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 		if applyEnv {
 			// Reset the secret location cached in memory before creating the dev
 			// environment. The location might have been changed in the cluster configuration.
-			options.ResetSecretsLocation()
+			err := options.ResetSecretsLocation()
+			if err != nil {
+				return errors.Wrap(err, "unable to reset the secret location in memory")
+			}
 
 			envApplyOptions := &env.StepEnvApplyOptions{
 				StepEnvOptions: env.StepEnvOptions{
@@ -1792,7 +1799,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 				ReleaseName: "jenkins-x",
 			}
 
-			err := envApplyOptions.Run()
+			err = envApplyOptions.Run()
 			if err != nil {
 				return errors.Wrap(err, "applying the dev environment configuration")
 			}
@@ -1817,7 +1824,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 				return errors.Wrap(err, "reading the team settings")
 			}
 
-			prow.AddDummyApplication(client, devNamespace, settings)
+			err = prow.AddDummyApplication(client, devNamespace, settings)
 			if err != nil {
 				return errors.Wrap(err, "adding dummy application")
 			}
@@ -2154,7 +2161,7 @@ func (options *InstallOptions) ConfigureKaniko() error {
 		if err != nil {
 			return errors.Wrap(err, "creating a temporary folder where the service account will be stored")
 		}
-		defer os.RemoveAll(serviceAccountDir)
+		defer os.RemoveAll(serviceAccountDir) //nolint:errcheck
 
 		clusterName := options.installValues[kube.ClusterName]
 		projectID := options.installValues[kube.ProjectID]

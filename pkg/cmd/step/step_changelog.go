@@ -833,7 +833,7 @@ func fullCommitMessageText(commit *object.Commit) string {
 		}
 		return nil
 	}
-	fn(commit)
+	fn(commit) //nolint:errcheck
 	return answer
 
 }

@@ -3,6 +3,8 @@ package gc
 import (
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -155,9 +157,16 @@ func (o *GCGKEOptions) Run() error {
 	}
 
 	path := util.UrlJoin(dir, "gc_gke.sh")
-	util.FileExists(path)
-
-	os.Remove(path)
+	exists, err := util.FileExists(path)
+	if err != nil {
+		return errors.Wrapf(err, "checking if file %s exists", path)
+	}
+	if exists {
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
+	}
 
 	message := `#!/bin/bash
 

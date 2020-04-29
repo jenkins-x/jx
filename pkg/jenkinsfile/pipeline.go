@@ -631,7 +631,10 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 	base.defaultContainerAndDir()
 	c.defaultContainerAndDir()
 	c.Env = syntax.CombineEnv(c.Env, base.Env)
-	c.Pipelines.Extend(&base.Pipelines)
+	err = c.Pipelines.Extend(&base.Pipelines)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

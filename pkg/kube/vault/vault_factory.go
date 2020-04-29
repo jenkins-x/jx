@@ -157,7 +157,10 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIng
 
 	if insecureSSLWebhook {
 		t := api.TLSConfig{Insecure: true}
-		cfg.ConfigureTLS(&t)
+		err = cfg.ConfigureTLS(&t)
+		if err != nil {
+			return nil, "", "", errors.Wrap(err, "unable to configure tls")
+		}
 	}
 
 	return cfg, token, serviceAccount.Name, err

@@ -568,7 +568,7 @@ func (t TektonLogger) retrieveLogsFromPod(pod *corev1.Pod, container *corev1.Con
 
 func downloadLogFile(logsURL string, authSvc auth.ConfigService) ([]byte, error) {
 	f, _ := ioutil.TempFile("", uuid.New().String())
-	defer util.DeleteFile(f.Name())
+	defer util.DeleteFile(f.Name()) //nolint:errcheck
 
 	err := step.Unstash(logsURL, f.Name(), time.Second*30, authSvc)
 	if err != nil {

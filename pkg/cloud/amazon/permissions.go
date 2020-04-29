@@ -59,7 +59,7 @@ func CreateIRSAManagedServiceAccounts(requirements *config.RequirementsConfig, k
 	if err != nil {
 		return errors.Wrap(err, "there was a problem processing the IRSA template with the provided values")
 	}
-	defer util.DeleteFile(processedTemplateFile.Name())
+	defer util.DeleteFile(processedTemplateFile.Name()) //nolint:errcheck
 
 	err = deleteIAMServiceAccount(processedTemplateFile)
 	if err != nil {

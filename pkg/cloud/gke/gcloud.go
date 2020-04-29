@@ -221,7 +221,7 @@ func (g *GCloud) GetManagedZoneNameServers(projectID string, domain string) (str
 			return "", []string{}, errors.Wrap(err, "executing gcloud dns managed-zones list command ")
 		}
 
-		json.Unmarshal([]byte(output), &managedZone)
+		err = json.Unmarshal([]byte(output), &managedZone)
 		if err != nil {
 			return "", []string{}, errors.Wrap(err, "unmarshalling gcloud response when returning managed-zone nameservers")
 		}
@@ -711,7 +711,10 @@ func (g *GCloud) GetOrCreateServiceAccount(serviceAccount string, projectID stri
 		log.Logger().Info("Service Account exists")
 	}
 
-	os.MkdirAll(clusterConfigDir, os.ModePerm)
+	err := os.MkdirAll(clusterConfigDir, os.ModePerm)
+	if err != nil {
+		return "", errors.Wrapf(err, "Failed to create directory: %s", clusterConfigDir)
+	}
 	keyPath := filepath.Join(clusterConfigDir, fmt.Sprintf("%s.key.json", serviceAccount))
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
@@ -1098,7 +1101,7 @@ func (g *GCloud) Login(serviceAccountKeyPath string, skipLogin bool) error {
 		}
 
 		// GCP IAM changes can take up to 80 seconds to propagate
-		retry(10, 10*time.Second, func() error {
+		err = retry(10, 10*time.Second, func() error {
 			log.Logger().Infof("Checking for readiness...")
 
 			projects, err := GetGoogleProjects()
@@ -1112,6 +1115,9 @@ func (g *GCloud) Login(serviceAccountKeyPath string, skipLogin bool) error {
 
 			return nil
 		})
+		if err != nil {
+			return err
+		}
 
 	} else if !skipLogin {
 		cmd := util.Command{

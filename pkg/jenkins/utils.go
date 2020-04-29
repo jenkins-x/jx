@@ -74,7 +74,7 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 			return nil, fmt.Errorf("No valid Username and API Token specified for Jenkins server: %s\n", url)
 		} else {
 			log.Logger().Warnf("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!")
-			PrintGetTokenFromURL(os.Stdout, tokenUrl)
+			PrintGetTokenFromURL(os.Stdout, tokenUrl) //nolint:errcheck
 			if batch {
 				log.Logger().Infof("Then run this command on your terminal and try again:\n")
 				log.Logger().Infof("export JENKINS_TOKEN=myApiToken\n")

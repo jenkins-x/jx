@@ -119,7 +119,7 @@ func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir strin
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	header := fmt.Sprintf(gendocFrontmatterTemplate, date, "deprecated commands",
 		basename, "/commands/"+strings.ToLower(basename)+"/", "list of jx commands which have been deprecated")
@@ -136,11 +136,15 @@ func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir strin
 	buf.WriteString("|----------------|----------------|--------------|\n")
 	o.genMarkdownTableRows(cmd, buf)
 
-	buf.WriteTo(f)
+	_, err = buf.WriteTo(f)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
+//nolint:errcheck
 func (o *CreateDocsOptions) genMarkdownTableRows(cmd *cobra.Command, buf io.StringWriter) {
 	if cmd.Deprecated != "" {
 		buf.WriteString(fmt.Sprintf("| %s | %s | %s |\n",

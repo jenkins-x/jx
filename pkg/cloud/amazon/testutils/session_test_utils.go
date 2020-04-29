@@ -33,18 +33,18 @@ region = qux`), 0644); err != nil {
 
 func SetUserHomeDir(newHome string) {
 	if runtime.GOOS == "windows" {
-		os.Setenv("USERPROFILE", newHome)
+		os.Setenv("USERPROFILE", newHome) //nolint:errcheck
 	}
 	// *nix
-	os.Setenv("HOME", newHome)
+	os.Setenv("HOME", newHome) //nolint:errcheck
 }
 
 func RestoreHome(oldHome string) {
-	os.Setenv("HOME", oldHome)
+	os.Setenv("HOME", oldHome) //nolint:errcheck
 }
 
 func ConfigureEnv(region string, defaultRegion string, profile string) {
-	os.Setenv("AWS_REGION", region)
-	os.Setenv("AWS_DEFAULT_REGION", defaultRegion)
-	os.Setenv("AWS_PROFILE", profile)
+	os.Setenv("AWS_REGION", region)                //nolint:errcheck
+	os.Setenv("AWS_DEFAULT_REGION", defaultRegion) //nolint:errcheck
+	os.Setenv("AWS_PROFILE", profile)              //nolint:errcheck
 }

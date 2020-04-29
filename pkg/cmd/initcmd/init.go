@@ -337,7 +337,7 @@ func (o *InitOptions) configureOptionsForExternalDNS() {
 			Help:    "",
 		}
 
-		survey.AskOne(prompt, &ExternalDNSDomain, nil, surveyOpts)
+		survey.AskOne(prompt, &ExternalDNSDomain, nil, surveyOpts) //nolint:errcheck
 
 		o.Flags.Domain = ExternalDNSDomain
 	}
@@ -394,7 +394,7 @@ func (o *InitOptions) configureForICP() {
 			Default: "", // Would be useful to set this as the public IP automatically
 			Help:    "",
 		}
-		survey.AskOne(prompt, &ICPExternalIP, nil, surveyOpts)
+		survey.AskOne(prompt, &ICPExternalIP, nil, surveyOpts) //nolint:errcheck
 
 		o.Flags.ExternalIP = ICPExternalIP
 
@@ -404,7 +404,7 @@ func (o *InitOptions) configureForICP() {
 			Help:    "",
 		}
 
-		survey.AskOne(prompt, &ICPDomain, nil, surveyOpts)
+		survey.AskOne(prompt, &ICPDomain, nil, surveyOpts) //nolint:errcheck
 
 		o.Flags.Domain = ICPDomain
 	}

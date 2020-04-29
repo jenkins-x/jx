@@ -34,13 +34,19 @@ func LoadCacheData(fileName string, loader CacheLoader) ([]byte, error) {
 		}
 	}
 	data, err := loader()
-	if err == nil {
-		err2 := ioutil.WriteFile(fileName, data, defaultFileWritePermisons)
-		if err2 != nil {
-			log.Logger().Warnf("Failed to update cache file %s due to %s", fileName, err2)
-		}
-		writeTimeToFile(timecheckFileName, time.Now())
+	if err != nil {
+		return nil, err
 	}
+
+	err2 := ioutil.WriteFile(fileName, data, defaultFileWritePermisons)
+	if err2 != nil {
+		log.Logger().Warnf("Failed to update cache file %s due to %s", fileName, err2)
+	}
+	err = writeTimeToFile(timecheckFileName, time.Now())
+	if err != nil {
+		return nil, err
+	}
+
 	return data, err
 }
 

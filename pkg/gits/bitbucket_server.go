@@ -469,8 +469,8 @@ func getMergeCommitSHAFromPRActivity(prActivity map[string]interface{}) *string 
 	var activity []map[string]interface{}
 	var mergeCommit map[string]interface{}
 
-	mapstructure.Decode(prActivity["values"], &activity)
-	mapstructure.Decode(activity[0]["commit"], &mergeCommit)
+	mapstructure.Decode(prActivity["values"], &activity)     //nolint:errcheck
+	mapstructure.Decode(activity[0]["commit"], &mergeCommit) //nolint:errcheck
 	commitSHA := mergeCommit["id"].(string)
 
 	return &commitSHA
@@ -482,7 +482,7 @@ func getLastCommitSHAFromPRCommits(prCommits map[string]interface{}) string {
 
 func getLastCommitFromPRCommits(prCommits map[string]interface{}) *bitbucket.Commit {
 	var commits []bitbucket.Commit
-	mapstructure.Decode(prCommits["values"], &commits)
+	mapstructure.Decode(prCommits["values"], &commits) //nolint:errcheck
 	return &commits[0]
 }
 
@@ -517,7 +517,10 @@ func (b *BitbucketServerProvider) UpdatePullRequestStatus(pr *GitPullRequest) er
 			return err
 		}
 
-		mapstructure.Decode(apiResponse.Values, &prActivity)
+		err = mapstructure.Decode(apiResponse.Values, &prActivity)
+		if err != nil {
+			return err
+		}
 		pr.MergeCommitSHA = getMergeCommitSHAFromPRActivity(prActivity)
 	}
 	diffURL := bitbucketPR.Links.Self[0].Href + "/diff"
@@ -527,7 +530,10 @@ func (b *BitbucketServerProvider) UpdatePullRequestStatus(pr *GitPullRequest) er
 	if err != nil {
 		return err
 	}
-	mapstructure.Decode(apiResponse.Values, &prCommits)
+	err = mapstructure.Decode(apiResponse.Values, &prCommits)
+	if err != nil {
+		return err
+	}
 	pr.LastCommitSha = getLastCommitSHAFromPRCommits(prCommits)
 
 	return nil
@@ -686,7 +692,10 @@ func (b *BitbucketServerProvider) PullRequestLastCommitStatus(pr *GitPullRequest
 	if err != nil {
 		return "", err
 	}
-	mapstructure.Decode(apiResponse.Values, &prCommits)
+	err = mapstructure.Decode(apiResponse.Values, &prCommits)
+	if err != nil {
+		return "", err
+	}
 	lastCommit := getLastCommitFromPRCommits(prCommits)
 	lastCommitSha := lastCommit.ID
 
@@ -695,7 +704,10 @@ func (b *BitbucketServerProvider) PullRequestLastCommitStatus(pr *GitPullRequest
 		return "", err
 	}
 
-	mapstructure.Decode(apiResponse.Values, &buildStatusesPage)
+	err = mapstructure.Decode(apiResponse.Values, &buildStatusesPage)
+	if err != nil {
+		return "", err
+	}
 	if buildStatusesPage.Size == 0 {
 		return "success", nil
 	}
@@ -720,7 +732,10 @@ func (b *BitbucketServerProvider) ListCommitStatus(org, repo, sha string) ([]*Gi
 			return nil, err
 		}
 
-		mapstructure.Decode(apiResponse.Values, &buildStatusesPage)
+		err = mapstructure.Decode(apiResponse.Values, &buildStatusesPage)
+		if err != nil {
+			return nil, err
+		}
 
 		for _, buildStatus := range buildStatusesPage.Values {
 			statuses = append(statuses, convertBitBucketBuildStatusToGitStatus(&buildStatus))
@@ -760,7 +775,10 @@ func (b *BitbucketServerProvider) MergePullRequest(pr *GitPullRequest, message s
 		return err
 	}
 
-	mapstructure.Decode(apiResponse.Values, &currentPR)
+	err = mapstructure.Decode(apiResponse.Values, &currentPR)
+	if err != nil {
+		return err
+	}
 	queryParams["version"] = currentPR.Version
 
 	var options = map[string]interface{}{

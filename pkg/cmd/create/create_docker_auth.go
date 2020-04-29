@@ -93,14 +93,20 @@ func (o *CreateDockerAuthOptions) Run() error {
 		prompt := &survey.Password{
 			Message: "Please provide secret for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &secret, nil, surveyOpts)
+		err := survey.AskOne(prompt, &secret, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 	email := o.Email
 	if email == "" {
 		prompt := &survey.Input{
 			Message: "Please provide email ID for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &email, nil, surveyOpts)
+		err := survey.AskOne(prompt, &email, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -137,6 +143,9 @@ func (o *CreateDockerAuthOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient.CoreV1().Secrets(currentNs).Update(secretFromConfig)
+	_, err = kubeClient.CoreV1().Secrets(currentNs).Update(secretFromConfig)
+	if err != nil {
+		return err
+	}
 	return nil
 }

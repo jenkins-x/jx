@@ -53,5 +53,5 @@ func Run() error {
 }
 
 func runHelp(cmd *cobra.Command, _args []string) {
-	cmd.Help()
+	cmd.Help() //nolint:errcheck
 }

@@ -68,7 +68,10 @@ func (o *TeamOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
 	_, teamNames, err := kube.GetTeams(kubeClient)
 	if err != nil {
 		return err

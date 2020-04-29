@@ -213,6 +213,9 @@ importfmt: get-fmt-deps
 lint: ## Lint the code
 	./hack/gofmt.sh
 	./hack/linter.sh
+
+.PHONY: code-generate
+code-generate:
 	./hack/generate.sh
 
 include Makefile.docker

@@ -93,7 +93,7 @@ func (o *FromBackupOptions) Run() error {
 	// check if a velero schedule exists
 	scheduleExists, err := velero.DoesVeleroBackupScheduleExist(apiClient, o.Namespace)
 	if err != nil {
-		errors.Wrap(err, "when trying to check for velero schedules")
+		return errors.Wrap(err, "when trying to check for velero schedules")
 	}
 
 	// However, if a Velero Schedule exists then we should be confident that this is an existing operational cluster
@@ -107,7 +107,7 @@ func (o *FromBackupOptions) Run() error {
 	}
 	latestBackupName, err := velero.GetLatestBackupFromBackupResource(apiClient, o.Namespace)
 	if err != nil {
-		errors.Wrap(err, "when trying to get the latest backup")
+		return errors.Wrap(err, "when trying to get the latest backup")
 	}
 	if o.UseLatestBackup {
 		if latestBackupName == "" {

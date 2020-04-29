@@ -204,7 +204,10 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 		log.Logger().Debugf("found %s", packagejson)
 
 		var jsPackage PackageJSON
-		json.Unmarshal(p, &jsPackage)
+		err = json.Unmarshal(p, &jsPackage)
+		if err != nil {
+			return "", err
+		}
 
 		if jsPackage.Version != "" {
 			log.Logger().Debugf("existing version %s", jsPackage.Version)
@@ -220,7 +223,10 @@ func (o *StepNextVersionOptions) GetVersion() (string, error) {
 
 		log.Logger().Debugf("found pom.xml")
 		var project Project
-		xml.Unmarshal(p, &project)
+		err = xml.Unmarshal(p, &project)
+		if err != nil {
+			return "", err
+		}
 		if project.Version != "" {
 			log.Logger().Debugf("existing version %s", project.Version)
 			return project.Version, nil

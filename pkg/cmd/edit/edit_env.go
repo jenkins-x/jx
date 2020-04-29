@@ -115,7 +115,10 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
 
 	ns, currentEnv, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {

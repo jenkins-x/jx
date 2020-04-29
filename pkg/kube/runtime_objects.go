@@ -36,7 +36,7 @@ func SortListWatchByName(listWatch *cache.ListWatch) {
 			initialItems, err := meta.ExtractList(result)
 			if err == nil {
 				SortRuntimeObjectsByName(initialItems)
-				meta.SetList(result, initialItems)
+				meta.SetList(result, initialItems) //nolint:errcheck
 			}
 		}
 		return result, err

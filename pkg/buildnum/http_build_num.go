@@ -107,5 +107,5 @@ func (s *HTTPBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *ht
 	}
 
 	log.Logger().Infof("Vending build number %s for pipeline %s to %s.", buildNum, pipeline, r.RemoteAddr)
-	fmt.Fprintf(w, "%s", buildNum)
+	fmt.Fprintf(w, "%s", buildNum) //nolint:errcheck
 }

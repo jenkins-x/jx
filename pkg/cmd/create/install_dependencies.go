@@ -93,10 +93,11 @@ func (options *InstallDependenciesOptions) Run() error {
 				Message: "What dependencies would you like to install:",
 				Options: availableDependencies,
 			}
-
 			surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
-
-			survey.AskOne(prompt, &install, nil, surveyOpts)
+			err := survey.AskOne(prompt, &install, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
 		} else {
 			install = append(install, options.Flags.Dependencies...)
 		}

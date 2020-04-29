@@ -412,7 +412,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 			log.Logger().Debugf("pod watcher: Not updating or creating pipeline activity %s", pipelineActName)
 		}
 	} else {
-		errors.New("commit status controller: Must supply name")
+		return errors.New("commit status controller: Must supply name")
 	}
 	return nil
 }

@@ -77,7 +77,10 @@ func (o *GetVaultConfigOptions) Run() error {
 	}
 
 	// Install the vault CLI for the user
-	vault.InstallVaultCli()
+	err = vault.InstallVaultCli()
+	if err != nil {
+		return err
+	}
 
 	url, token, err := vaultClient.Config()
 	// Echo the client config out to the command line to be piped into bash

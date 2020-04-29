@@ -104,12 +104,21 @@ func (o *ConsoleOptions) open(name string, label string) error {
 	}
 	if o.OnlyViewHost {
 		host := util.URLToHostName(svcURL)
-		fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(host))
+		_, err = fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(host))
+		if err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullURL))
+		_, err = fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullURL))
+		if err != nil {
+			return err
+		}
 	}
 	if !o.OnlyViewURL && !o.OnlyViewHost {
-		browser.OpenURL(fullURL)
+		err = browser.OpenURL(fullURL)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

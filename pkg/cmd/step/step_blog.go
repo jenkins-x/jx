@@ -464,10 +464,11 @@ func (o *StepBlogOptions) createNewCommitters() string {
 	out := bufio.NewWriter(&buffer)
 	o.printUserMap(out, "committers", o.State.NewCommitters)
 	o.printUserMap(out, "contributors", o.State.NewContributors)
-	out.Flush()
+	out.Flush() //nolint:errcheck
 	return buffer.String()
 }
 
+//nolint:errcheck
 func (o *StepBlogOptions) printUserMap(out io.Writer, role string, newUsers map[string]*v1.UserDetails) {
 	if len(newUsers) > 0 {
 		out.Write([]byte(`
@@ -486,7 +487,7 @@ Welcome to our new ` + role + `!
 		for _, k := range keys {
 			user := newUsers[k]
 			if user != nil {
-				out.Write([]byte("* " + o.formatUser(user) + "\n"))
+				out.Write([]byte("* " + o.formatUser(user) + "\n")) //nolint:errcheck
 			}
 		}
 	}

@@ -116,7 +116,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "creating the API extensions client")
 	}
-	kube.RegisterAllCRDs(apisClient)
+	err = kube.RegisterAllCRDs(apisClient)
 	if err != nil {
 		return errors.Wrap(err, "registering all CRDs")
 	}
@@ -157,8 +157,8 @@ func (o *StepEnvApplyOptions) Run() error {
 
 		// disable the modify of the Dev Environment lazily...
 		o.ModifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
-			callback(&env)
-			return nil
+			err = callback(&env)
+			return err
 		}
 
 		helm := o.NewHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
@@ -185,7 +185,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	if o.ChangeNs {
 		_, currentNs, err := o.KubeClientAndNamespace()
 		if err != nil {
-			errors.Wrap(err, "creating the kube client")
+			return errors.Wrap(err, "creating the kube client")
 		}
 		if currentNs != ns {
 			nsOptions := &namespace.NamespaceOptions{

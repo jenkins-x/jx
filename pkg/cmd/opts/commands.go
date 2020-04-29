@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -20,8 +22,11 @@ func (o *CommonOptions) RunCommandFromDir(dir, name string, args ...string) erro
 	}
 	e.Stdout = o.Out
 	e.Stderr = o.Err
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Run()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -34,8 +39,11 @@ func (o *CommonOptions) RunCommand(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Run()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -48,8 +56,11 @@ func (o *CommonOptions) RunCommandVerbose(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Run()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -65,8 +76,11 @@ func (o *CommonOptions) RunCommandVerboseAt(dir string, name string, args ...str
 	}
 	e.Stdout = o.Out
 	e.Stderr = o.Err
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Run()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -79,7 +93,10 @@ func (o *CommonOptions) RunCommandQuietly(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = ioutil.Discard
 	e.Stderr = ioutil.Discard
-	os.Setenv("PATH", util.PathWithBinary())
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
 	return e.Run()
 }
 
@@ -92,8 +109,11 @@ func (o *CommonOptions) RunCommandInteractive(interactive bool, name string, arg
 	if interactive {
 		e.Stdin = os.Stdin
 	}
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Run()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -112,8 +132,11 @@ func (o *CommonOptions) RunCommandInteractiveInDir(interactive bool, dir string,
 	if dir != "" {
 		e.Dir = dir
 	}
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Run()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Run()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -123,7 +146,10 @@ func (o *CommonOptions) RunCommandInteractiveInDir(interactive bool, dir string,
 // GetCommandOutput evaluates the given command and returns the trimmed output
 // Deprecated use util.Command
 func (o *CommonOptions) GetCommandOutput(dir string, name string, args ...string) (string, error) {
-	os.Setenv("PATH", util.PathWithBinary())
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return "", errors.Wrap(err, "failed to set PATH env variable")
+	}
 	e := exec.Command(name, args...)
 	if dir != "" {
 		e.Dir = dir

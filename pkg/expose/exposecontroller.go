@@ -142,10 +142,10 @@ func RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressCo
 // CleanExposecontrollerReources cleans expose controller resources
 func CleanExposecontrollerReources(kubeClient kubernetes.Interface, ns string) {
 	// let's not error if nothing to cleanup
-	kubeClient.RbacV1().Roles(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	kubeClient.RbacV1().RoleBindings(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	kubeClient.RbacV1().ClusterRoleBindings().Delete(exposecontroller, &metav1.DeleteOptions{})
-	kubeClient.CoreV1().ConfigMaps(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	kubeClient.CoreV1().ServiceAccounts(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	kubeClient.BatchV1().Jobs(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	kubeClient.RbacV1().Roles(ns).Delete(exposecontroller, &metav1.DeleteOptions{})             //nolint:errcheck
+	kubeClient.RbacV1().RoleBindings(ns).Delete(exposecontroller, &metav1.DeleteOptions{})      //nolint:errcheck
+	kubeClient.RbacV1().ClusterRoleBindings().Delete(exposecontroller, &metav1.DeleteOptions{}) //nolint:errcheck
+	kubeClient.CoreV1().ConfigMaps(ns).Delete(exposecontroller, &metav1.DeleteOptions{})        //nolint:errcheck
+	kubeClient.CoreV1().ServiceAccounts(ns).Delete(exposecontroller, &metav1.DeleteOptions{})   //nolint:errcheck
+	kubeClient.BatchV1().Jobs(ns).Delete(exposecontroller, &metav1.DeleteOptions{})             //nolint:errcheck
 }

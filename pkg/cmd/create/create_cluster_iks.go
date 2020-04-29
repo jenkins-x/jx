@@ -526,7 +526,10 @@ L:
 
 	log.Logger().Info("Setting kube config file")
 	log.Logger().Infof("export KUBECONFIG=\"%s\"", kubeconfig)
-	os.Setenv("KUBECONFIG", kubeconfig)
+	err = os.Setenv("KUBECONFIG", kubeconfig)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set env variable KUBECONFIG to %s", kubeconfig)
+	}
 	log.Logger().Info("Initialising cluster ...")
 
 	return o.initAndInstall(cloud.IKS)

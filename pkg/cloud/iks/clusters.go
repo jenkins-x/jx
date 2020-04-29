@@ -72,8 +72,8 @@ func (r *clusters) GetClusterConfig(name string, target containerv1.ClusterTarge
 	if out, err = os.Create(downloadPath); err != nil {
 		return "", err
 	}
-	defer out.Close()
-	defer helpers.RemoveFile(downloadPath)
+	defer out.Close()                      //nolint:errcheck
+	defer helpers.RemoveFile(downloadPath) //nolint:errcheck
 	_, err = r.Client.Get(rawURL, out, target.ToMap())
 	if err != nil {
 		return "", err
@@ -82,7 +82,7 @@ func (r *clusters) GetClusterConfig(name string, target containerv1.ClusterTarge
 	if err = helpers.Unzip(downloadPath, resultDir); err != nil {
 		return "", err
 	}
-	defer helpers.RemoveFilesWithPattern(resultDir, "[^(.yml)|(.pem)]$")
+	defer helpers.RemoveFilesWithPattern(resultDir, "[^(.yml)|(.pem)]$") //nolint:errcheck
 	var kubedir, kubeyml string
 	files, _ := ioutil.ReadDir(resultDir)
 	for _, f := range files {

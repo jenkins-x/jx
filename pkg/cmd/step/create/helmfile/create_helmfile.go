@@ -270,7 +270,7 @@ func (o *CreateHelmfileOptions) ensureNamespaceExist(helmfileRepos []helmfile2.R
 
 				err := o.writeGeneratedNamespaceValues(release.Namespace, phase)
 				if err != nil {
-					errors.Wrapf(err, "failed to write generated namespace values file")
+					return nil, nil, errors.Wrapf(err, "failed to write generated namespace values file")
 				}
 
 				repository := helmfile2.RepositorySpec{

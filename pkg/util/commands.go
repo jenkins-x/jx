@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/cenkalti/backoff"
 )
 
@@ -138,7 +140,10 @@ func (c *Command) Error() error {
 
 // Run Execute the command and block waiting for return values
 func (c *Command) Run() (string, error) {
-	os.Setenv("PATH", PathWithBinary(c.Dir))
+	err := os.Setenv("PATH", PathWithBinary(c.Dir))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to set PATH env variable")
+	}
 	var r string
 	var e error
 
@@ -158,7 +163,7 @@ func (c *Command) Run() (string, error) {
 	}
 	c.ExponentialBackOff.MaxElapsedTime = c.Timeout
 	c.ExponentialBackOff.Reset()
-	err := backoff.Retry(f, c.ExponentialBackOff)
+	err = backoff.Retry(f, c.ExponentialBackOff)
 	if err != nil {
 		return "", err
 	}
@@ -167,7 +172,10 @@ func (c *Command) Run() (string, error) {
 
 // RunWithoutRetry Execute the command without retrying on failure and block waiting for return values
 func (c *Command) RunWithoutRetry() (string, error) {
-	os.Setenv("PATH", PathWithBinary(c.Dir))
+	err := os.Setenv("PATH", PathWithBinary(c.Dir))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to set PATH env variable")
+	}
 	var r string
 	var e error
 

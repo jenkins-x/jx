@@ -77,7 +77,10 @@ func InstallOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
 	variables := map[string]string{"version": options.Version, "os": runtime.GOOS, "osTitle": strings.Title(runtime.GOOS), "arch": runtime.GOARCH, "extension": extension}
-	urlTemplate.Execute(clientUrlBuffer, variables)
+	err = urlTemplate.Execute(clientUrlBuffer, variables)
+	if err != nil {
+		return err
+	}
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath
 	if options.Archived {
