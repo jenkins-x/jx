@@ -123,7 +123,10 @@ func (o *GetPipelineOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			o.dump(jenkins, job.Name, &table)
+			err = o.dump(jenkins, job.Name, &table)
+			if err != nil {
+				return err
+			}
 		}
 		table.Render()
 		return nil
@@ -152,9 +155,6 @@ func (o *GetPipelineOptions) Run() error {
 	table := createTable(o)
 
 	for _, j := range names {
-		if err != nil {
-			return err
-		}
 		table.AddRow(j, "N/A", "N/A", "N/A", "N/A")
 	}
 	table.Render()
@@ -176,7 +176,8 @@ func (o *GetPipelineOptions) dump(jenkinsClient gojenkins.JenkinsClient, name st
 
 	if job.Jobs != nil {
 		for _, child := range job.Jobs {
-			o.dump(jenkinsClient, job.FullName+"/"+child.Name, table)
+			//Todo: Recursive call
+			o.dump(jenkinsClient, job.FullName+"/"+child.Name, table) //nolint:errcheck
 		}
 		if len(job.Jobs) == 0 {
 			log.Logger().Warnf("Job %s has no children!", job.Name)

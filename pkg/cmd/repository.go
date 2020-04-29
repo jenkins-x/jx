@@ -76,12 +76,18 @@ func (o *RepoOptions) Run() error {
 		return fmt.Errorf("Could not find URL from Git repository %s", gitInfo.URL)
 	}
 	if o.Quiet {
-		fmt.Fprintln(o.Out, fullURL)
+		_, err = fmt.Fprintln(o.Out, fullURL)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	log.Logger().Infof("repository: %s", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
-		browser.OpenURL(fullURL)
+		err = browser.OpenURL(fullURL)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

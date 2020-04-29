@@ -160,14 +160,20 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 					Help:    "Enter an Extensions Repository URL to use",
 				}
 				surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-				survey.AskOne(prompt, &current.Url, nil, surveyOpts)
+				err = survey.AskOne(prompt, &current.Url, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 			} else if t == "GitHub" {
 				prompt := &survey.Input{
 					Message: "GitHub org/repo",
 					Help:    "Enter Github org and repo to use e.g. acme/myrepo",
 				}
 				surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-				survey.AskOne(prompt, &current.GitHub, nil, surveyOpts)
+				err = survey.AskOne(prompt, &current.GitHub, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 			} else if t == "Helm" {
 
 				prompt := &survey.Input{
@@ -175,34 +181,46 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 					Help:    "Enter the Helm Chart Repo Name to use e.g. acme-corp",
 				}
 				surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-				survey.AskOne(prompt, &current.Chart.RepoName, nil, surveyOpts)
+				err = survey.AskOne(prompt, &current.Chart.RepoName, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 				prompt = &survey.Input{
 					Message: "Helm Chart Repo",
 					Help:    "Enter the Helm Chart Repo to use e.g. storage.googleapis.com/jenkinsx-chartmuseum",
 				}
 				surveyOpts = survey.WithStdio(o.In, o.Out, o.Err)
-				survey.AskOne(prompt, &current.Chart.Repo, nil, surveyOpts)
+				err = survey.AskOne(prompt, &current.Chart.Repo, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 				confirmPrompt := &survey.Confirm{
 					Message: "Username/Password required?",
 					Help:    "Does the Chart Repo require a username and password?",
 					Default: true,
 				}
 				surveyOpts = survey.WithStdio(o.In, o.Out, o.Err)
-				survey.AskOne(confirmPrompt, &userpass, nil, surveyOpts)
+				err = survey.AskOne(confirmPrompt, &userpass, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 				if userpass {
 					prompt = &survey.Input{
 						Message: "Username",
 						Help:    "Enter the Helm Chart Name to use",
 					}
 					surveyOpts = survey.WithStdio(o.In, o.Out, o.Err)
-					survey.AskOne(prompt, &username, nil, surveyOpts)
+					err = survey.AskOne(prompt, &username, nil, surveyOpts)
+					if err != nil {
+						return err
+					}
 
 					promptPass := &survey.Password{
 						Message: "Password",
 						Help:    "Enter the Helm Chart Name to use",
 					}
 					surveyOpts = survey.WithStdio(o.In, o.Out, o.Err)
-					survey.AskOne(promptPass, &password, nil, surveyOpts)
+					err = survey.AskOne(promptPass, &password, nil, surveyOpts)
 					if err != nil {
 						return err
 					}
@@ -218,7 +236,10 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 					Help:    "Enter the Helm Chart Name to use",
 				}
 				surveyOpts = survey.WithStdio(o.In, o.Out, o.Err)
-				survey.AskOne(prompt, &current.Chart.Name, nil, surveyOpts)
+				err = survey.AskOne(prompt, &current.Chart.Name, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			current = askMap[r]

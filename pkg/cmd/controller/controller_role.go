@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"strings"
@@ -120,14 +122,20 @@ func (o *ControllerRoleOptions) Run() error {
 		return err
 	}
 	for _, role := range roles.Items {
-		o.UpsertRole(&role)
+		err = o.UpsertRole(&role)
+		if err != nil {
+			return errors.Wrap(err, "upserting role")
+		}
 	}
 	bindings, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for i := range bindings.Items {
-		o.UpsertEnvironmentRoleBinding(&bindings.Items[i])
+		err = o.UpsertEnvironmentRoleBinding(&bindings.Items[i])
+		if err != nil {
+			return errors.Wrap(err, "upsert environment role binding resource")
+		}
 	}
 	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -357,7 +365,8 @@ func (o *ControllerRoleOptions) removeEnvironment(kubeClient kubernetes.Interfac
 		for _, binding := range o.EnvRoleBindings {
 			if kube.EnvironmentMatchesAny(env, binding.Spec.Environments) {
 				// ignore errors
-				kubeClient.RbacV1().RoleBindings(ns).Delete(binding.Name, nil)
+				// ToDo: Evaluate why error is being ignored here
+				kubeClient.RbacV1().RoleBindings(ns).Delete(binding.Name, nil) //nolint:errcheck
 			}
 		}
 	}
@@ -376,7 +385,7 @@ func (o *ControllerRoleOptions) onEnvironmentRoleBinding(oldObj interface{}, new
 	}
 	if newObj != nil {
 		newEnv := newObj.(*v1.EnvironmentRoleBinding)
-		o.UpsertEnvironmentRoleBinding(newEnv)
+		o.UpsertEnvironmentRoleBinding(newEnv) //nolint:errcheck
 	}
 }
 
@@ -428,7 +437,7 @@ func (o *ControllerRoleOptions) onRole(oldObj interface{}, newObj interface{}) {
 	}
 	if newObj != nil {
 		newRole := newObj.(*rbacv1.Role)
-		o.UpsertRole(newRole)
+		o.UpsertRole(newRole) //nolint:errcheck
 	}
 }
 
@@ -540,7 +549,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versio
 							},
 						},
 					}
-					jxClient.JenkinsV1().EnvironmentRoleBindings(ns).Create(newEnvRoleBinding)
+					jxClient.JenkinsV1().EnvironmentRoleBindings(ns).Create(newEnvRoleBinding) //nolint:errcheck
 				}
 			}
 		}

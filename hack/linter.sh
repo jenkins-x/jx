@@ -14,7 +14,7 @@ if ! [ -x "$(command -v golangci-lint)" ]; then
 	${DIR}/install_golint.sh -b $GOPATH/bin v1.20.0
 fi
 
-export GO111MODULE=on
+export GOGC=10 GO111MODULE=on
 golangci-lint run \
 	--no-config \
   --disable-all \
@@ -28,12 +28,12 @@ golangci-lint run \
   -E structcheck \
   -E interfacer \
   -E typecheck \
-  --skip-dirs vendor \
-  --deadline 15m0s \
+  -E errcheck \
+  -E unused \
+  --timeout 15m \
   --verbose \
   --build-tags build
 
-# -E errcheck \
 # -E varcheck \
 # -E govet \
 # -E unparam \

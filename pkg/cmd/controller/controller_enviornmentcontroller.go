@@ -268,7 +268,7 @@ func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Requ
 // getIndex returns a simple home page
 func (o *ControllerEnvironmentOptions) getIndex(w http.ResponseWriter, r *http.Request) {
 	log.Logger().Debug("GET index")
-	w.Write([]byte(helloMessage))
+	w.Write([]byte(helloMessage)) //nolint:errcheck
 }
 
 // handle request for pipeline runs
@@ -437,7 +437,10 @@ func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *
 		return errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		return errors.Wrapf(err, "writing data %s", data)
+	}
 
 	log.Logger().Infof("completed request successfully and returned: %s", string(data))
 	return nil
@@ -478,11 +481,11 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		return
 	}
 	if eventType != "push" {
-		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType))
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType)) //nolint:errcheck
 		return
 	}
 	if len(data) == 0 {
-		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " as no payload"))
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " as no payload")) //nolint:errcheck
 		return
 	}
 
@@ -494,12 +497,12 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		return
 	}
 	if event.Ref != o.PushRef {
-		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " on refs: " + event.Ref))
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " on refs: " + event.Ref)) //nolint:errcheck
 		return
 	}
 
 	log.Logger().Infof("starting pipeline from event type %s UID %s valid %s method %s", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
-	w.Write([]byte("OK"))
+	w.Write([]byte("OK")) //nolint:errcheck
 
 	go o.startPipelineRun(w, r)
 }
@@ -557,7 +560,7 @@ func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret
 // the payload of the request, whether the webhook is valid or not,
 // and finally the resultant HTTP status code
 func ValidateWebhook(w http.ResponseWriter, r *http.Request, hmacSecret []byte, requireGitHubHeaders bool) (string, string, []byte, bool, int) {
-	defer r.Body.Close()
+	defer r.Body.Close() //nolint:errcheck
 
 	// Our health check uses GET, so just kick back a 200.
 	if r.Method == http.MethodGet {
@@ -619,7 +622,7 @@ func ValidatePayload(payload []byte, sig string, key []byte) bool {
 		return false
 	}
 	mac := hmac.New(sha1.New, key)
-	mac.Write(payload)
+	mac.Write(payload) //nolint:errcheck
 	expected := mac.Sum(nil)
 	return hmac.Equal(sb, expected)
 }
@@ -627,7 +630,7 @@ func ValidatePayload(payload []byte, sig string, key []byte) bool {
 // PayloadSignature returns the signature that matches the payload.
 func PayloadSignature(payload []byte, key []byte) string {
 	mac := hmac.New(sha1.New, key)
-	mac.Write(payload)
+	mac.Write(payload) //nolint:errcheck
 	sum := mac.Sum(nil)
 	return "sha1=" + hex.EncodeToString(sum)
 }

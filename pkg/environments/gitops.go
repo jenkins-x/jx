@@ -500,7 +500,10 @@ func EnhanceChartWithAppMetadata(chartDir string, app *jenkinsv1.App, repository
 		return err
 	}
 	if !templatesDirExists {
-		os.Mkdir(outputTemplateDir, os.ModePerm)
+		err = os.Mkdir(outputTemplateDir, os.ModePerm)
+		if err != nil {
+			return errors.Wrapf(err, "creating directory %s", outputTemplateDir)
+		}
 	}
 	outputFilename := filepath.Join(outputTemplateDir, filename)
 	err = AddAppMetaData(chartDir, app, repository)

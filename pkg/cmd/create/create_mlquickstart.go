@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -165,7 +167,10 @@ func (o *CreateMLQuickstartOptions) Run() error {
 				log.Logger().Infof("Adding the default ml quickstart repo %s", util.ColorInfo(util.UrlJoin(DefaultMLQuickstartLocation.GitURL, DefaultMLQuickstartLocation.Owner)))
 				return nil
 			}
-			o.ModifyDevEnvironment(callback)
+			err = o.ModifyDevEnvironment(callback)
+			if err != nil {
+				return errors.Wrap(err, "unable to modify dev environment settings")
+			}
 		}
 	}
 

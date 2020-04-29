@@ -765,7 +765,7 @@ func (f *factory) CreateHelm(verbose bool,
 	}
 	if noTiller && !helmTemplate && helmBinary != "helm3" {
 		h.SetHost(helm.GetTillerAddress())
-		helm.StartLocalTillerIfNotRunning()
+		helm.StartLocalTillerIfNotRunning() //nolint:errcheck
 	}
 	return h
 }

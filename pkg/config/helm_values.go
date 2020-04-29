@@ -109,8 +109,8 @@ func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreD
 	cmd.Flags().StringVarP(&c.ExposeController.Config.IngressClass, "ingress-class", "", "", "Used to set the ingress.class annotation in exposecontroller created ingress")
 	cmd.Flags().BoolVarP(&keepJob, "keep-exposecontroller-job", "", false, "Prevents Helm deleting the exposecontroller Job and Pod after running.  Useful for debugging exposecontroller logs but you will need to manually delete the job if you update an environment")
 
-	cmd.Flags().MarkDeprecated("http", "please use `jx upgrade ingress` after install instead")
-	cmd.Flags().MarkDeprecated("tls-acme", "please use `jx upgrade ingress` after install instead")
+	cmd.Flags().MarkDeprecated("http", "please use `jx upgrade ingress` after install instead")     //nolint:errcheck
+	cmd.Flags().MarkDeprecated("tls-acme", "please use `jx upgrade ingress` after install instead") //nolint:errcheck
 
 	annotations := make(map[string]string)
 	annotations["helm.sh/hook"] = "post-install,post-upgrade"

@@ -253,7 +253,7 @@ func (o *CreateEnvOptions) Run() error {
 
 	err = o.RegisterEnvironment(&env, gitProvider, authConfigSvc)
 	if err != nil {
-		errors.Wrapf(err, "registering the environment %s/%s", env.GetNamespace(), env.GetName())
+		return errors.Wrapf(err, "registering the environment %s/%s", env.GetNamespace(), env.GetName())
 	}
 
 	return nil

@@ -156,7 +156,10 @@ func (o *StepCreateValuesOptions) Run() error {
 
 	}
 	if !(o.SecretsScheme == "vault" || o.SecretsScheme == "local") {
-		util.InvalidArgf(optionSecretsScheme, "Use one of vault or local")
+		err = util.InvalidArgf(optionSecretsScheme, "Use one of vault or local")
+		if err != nil {
+			return err
+		}
 	}
 	if o.Schema == "" {
 		o.Schema = filepath.Join(o.Dir, fmt.Sprintf("%s.schema.json", o.Name))

@@ -549,7 +549,10 @@ func (o *CommonOptions) InstallOciCli() error {
 	if err != nil {
 		return err
 	}
-	os.Chmod(filePath, 0755)
+	err = os.Chmod(filePath, 0755)
+	if err != nil {
+		return err
+	}
 
 	err = o.RunCommandVerbose(filePath, "--accept-all-defaults")
 	if err != nil {
@@ -575,7 +578,10 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 			Help:    "Cloud service providing the Kubernetes cluster, Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
-		survey.AskOne(prompt, &p, nil, surveyOpts)
+		err := survey.AskOne(prompt, &p, nil, surveyOpts)
+		if err != nil {
+			return "", err
+		}
 	}
 	return p, nil
 }
@@ -627,7 +633,10 @@ func (o *CommonOptions) InstallMissingDependencies(providerSpecificDeps []string
 			Options: deps,
 			Default: deps,
 		}
-		survey.AskOne(prompt, &install, nil, surveyOpts)
+		err := survey.AskOne(prompt, &install, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	return o.DoInstallMissingDependencies(install)

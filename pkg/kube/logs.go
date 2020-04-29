@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 // TailLogs will tail the logs for the pod in ns with containerName,
@@ -25,8 +26,11 @@ func TailLogs(ns string, pod string, containerName string, errOut io.Writer, out
 	e.Stderr = errOut
 	stdout, _ := e.StdoutPipe()
 
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Start()
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Start()
 	if err != nil {
 		log.Logger().Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
@@ -35,11 +39,17 @@ func TailLogs(ns string, pod string, containerName string, errOut io.Writer, out
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		m := scanner.Text()
-		fmt.Fprintln(out, m)
+		_, err = fmt.Fprintln(out, m)
+		if err != nil {
+			return err
+		}
 		if m == "Finished: FAILURE" {
 			os.Exit(1)
 		}
 	}
-	e.Wait()
+	err = e.Wait()
+	if err != nil {
+		return err
+	}
 	return nil
 }

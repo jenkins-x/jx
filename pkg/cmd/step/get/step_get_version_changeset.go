@@ -87,14 +87,24 @@ func (o *StepGetVersionChangeSetOptions) Run() error {
 	}
 	if o.PR != "" {
 		o.TestingBranch = o.PR
-		o.Git().FetchBranch(o.VersionsDir, defaultRepoName, "pull/"+o.PR+"/head:"+o.PR)
+		err := o.Git().FetchBranch(o.VersionsDir, defaultRepoName, "pull/"+o.PR+"/head:"+o.PR)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	if o.StableBranch != defaultStableVersionBranch {
-		o.Git().FetchBranch(o.VersionsDir, defaultRepoName, o.StableBranch+":"+o.StableBranch)
+		err := o.Git().FetchBranch(o.VersionsDir, defaultRepoName, o.StableBranch+":"+o.StableBranch)
+		if err != nil {
+			return err
+		}
 	}
 
-	o.Git().Checkout(o.VersionsDir, o.TestingBranch)
+	err := o.Git().Checkout(o.VersionsDir, o.TestingBranch)
+	if err != nil {
+		return err
+	}
 	bulkChange, _ := o.Git().ListChangedFilesFromBranch(o.VersionsDir, o.StableBranch)
 	changeSets := strings.Split(bulkChange, "\n")
 	appUpdatedVersions := make([]string, 0)
@@ -124,8 +134,14 @@ func (o *StepGetVersionChangeSetOptions) Run() error {
 	}
 	updateEnv := strings.Join(appUpdatedVersions, ",")
 	previousEnv := strings.Join(appPreviousVersions, ",")
-	fmt.Fprintf(o.Out, "JX_CHANGED_VERSIONS=\"%s\"\n", updateEnv)
-	fmt.Fprintf(o.Out, "JX_STABLE_VERSIONS=\"%s\"\n", previousEnv)
+	_, err = fmt.Fprintf(o.Out, "JX_CHANGED_VERSIONS=\"%s\"\n", updateEnv)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(o.Out, "JX_STABLE_VERSIONS=\"%s\"\n", previousEnv)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

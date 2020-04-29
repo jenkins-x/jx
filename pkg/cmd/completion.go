@@ -165,7 +165,10 @@ func runCompletionBash(out io.Writer, cmd *cobra.Command) error {
 func runCompletionZsh(out io.Writer, cmd *cobra.Command) error {
 	zsh_head := "#compdef jx\n"
 
-	out.Write([]byte(zsh_head))
+	_, err := out.Write([]byte(zsh_head))
+	if err != nil {
+		return err
+	}
 
 	if boilerPlate != "" {
 		_, err := out.Write([]byte(boilerPlate))
@@ -298,11 +301,20 @@ __jx_convert_bash_to_zsh() {
 	-e "s/\\\$(type${RWORD}/\$(__jx_type/g" \
 	<<'BASH_COMPLETION_EOF'
 `
-	out.Write([]byte(zsh_initialization))
+	_, err = out.Write([]byte(zsh_initialization))
+	if err != nil {
+		return err
+	}
 
 	buf := new(bytes.Buffer)
-	cmd.GenBashCompletion(buf)
-	out.Write(buf.Bytes())
+	err = cmd.GenBashCompletion(buf)
+	if err != nil {
+		return err
+	}
+	_, err = out.Write(buf.Bytes())
+	if err != nil {
+		return err
+	}
 
 	zsh_tail := `
 BASH_COMPLETION_EOF
@@ -310,6 +322,9 @@ BASH_COMPLETION_EOF
 __jx_bash_source <(__jx_convert_bash_to_zsh)
 _complete jx 2>/dev/null
 `
-	out.Write([]byte(zsh_tail))
+	_, err = out.Write([]byte(zsh_tail))
+	if err != nil {
+		return err
+	}
 	return nil
 }

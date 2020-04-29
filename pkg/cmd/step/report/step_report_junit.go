@@ -141,7 +141,7 @@ func (o *StepReportJUnitOptions) Run() error {
 	}
 
 	targetFileName, err := generateTargetParsableReportName()
-	defer o.DeleteReportFn(targetFileName)
+	defer o.DeleteReportFn(targetFileName) //nolint:errcheck
 	if err != nil {
 		return logErrorAndExitGracefully("there was a problem generating a parsable temporary file", err)
 	}

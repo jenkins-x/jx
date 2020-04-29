@@ -71,7 +71,7 @@ func CopyFile(src, dst string) (err error) {
 	if err != nil {
 		return
 	}
-	defer in.Close()
+	defer in.Close() //nolint:errcheck
 
 	out, err := os.Create(dst)
 	if err != nil {
@@ -167,14 +167,14 @@ func DownloadFile(filepath string, url string) (err error) {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer out.Close() //nolint:errcheck
 
 	// Get the data
 	resp, err := GetClientWithTimeout(time.Hour * 2).Get(url)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("download of %s failed with return code %d", url, resp.StatusCode)
@@ -188,7 +188,7 @@ func DownloadFile(filepath string, url string) (err error) {
 	}
 
 	// make it executable
-	os.Chmod(filepath, 0755)
+	err = os.Chmod(filepath, 0755)
 	if err != nil {
 		return err
 	}

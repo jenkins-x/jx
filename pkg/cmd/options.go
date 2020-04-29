@@ -12,7 +12,7 @@ func NewCmdOptions(out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "options",
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Usage()
+			cmd.Usage() //nolint:errcheck
 		},
 	}
 

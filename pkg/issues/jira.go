@@ -100,7 +100,10 @@ func (i *JiraService) CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error) 
 	jira, resp, err := i.JiraClient.Issue.Create(ji)
 	if err != nil {
 		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
+		_, err = buf.ReadFrom(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 		msg := buf.String()
 		return nil, fmt.Errorf("Failed to create issue: %s due to: %s", msg, err)
 	}

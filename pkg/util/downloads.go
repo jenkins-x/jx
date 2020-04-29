@@ -30,14 +30,14 @@ func DownloadFile(filepath string, url string) (err error) {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer out.Close() //nolint:errcheck
 
 	// Get the data
 	resp, err := GetClientWithTimeout(time.Hour * 2).Get(url)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("download of %s failed with return code %d", url, resp.StatusCode)
@@ -51,7 +51,7 @@ func DownloadFile(filepath string, url string) (err error) {
 	}
 
 	// make it executable
-	os.Chmod(filepath, 0755)
+	err = os.Chmod(filepath, 0755)
 	if err != nil {
 		return err
 	}
@@ -254,12 +254,12 @@ func UnTargz(tarball, target string, onlyFiles []string) error {
 	if err != nil {
 		return err
 	}
-	defer zreader.Close()
+	defer zreader.Close() //nolint:errcheck
 
 	reader, err := gzip.NewReader(zreader)
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	tarReader := tar.NewReader(reader)
@@ -285,7 +285,10 @@ func UnTargz(tarball, target string, onlyFiles []string) error {
 		}
 
 		path := filepath.Join(target, path.Base(header.Name))
-		UnTarFile(header, path, tarReader)
+		err = UnTarFile(header, path, tarReader)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -316,7 +319,10 @@ func UnTargzAll(tarball, target string) error {
 		}
 
 		path := filepath.Join(target, header.Name)
-		UnTarFile(header, path, tarReader)
+		err = UnTarFile(header, path, tarReader)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

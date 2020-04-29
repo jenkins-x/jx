@@ -485,7 +485,10 @@ func ApplySchedulersDirectly(jxClient versioned.Interface, namespace string, sou
 		if scheduler.Name == "default-scheduler" {
 			devEnv.Spec.TeamSettings.DefaultScheduler.Name = scheduler.Name
 			devEnv.Spec.TeamSettings.DefaultScheduler.Kind = "Scheduler"
-			jxClient.JenkinsV1().Environments(namespace).PatchUpdate(devEnv)
+			_, err = jxClient.JenkinsV1().Environments(namespace).PatchUpdate(devEnv)
+			if err != nil {
+				return errors.Wrapf(err, "patch updating env %v", devEnv)
+			}
 		}
 	}
 	for _, repo := range sourceRepositories {

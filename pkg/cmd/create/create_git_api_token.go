@@ -195,8 +195,10 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	}
 
 	if login {
-		o.captureScreenshot(ctxt, c, "screenshot-git-login.png", "//div")
-
+		err = o.captureScreenshot(ctxt, c, "screenshot-git-login.png", "//div")
+		if err != nil {
+			return err
+		}
 		log.Logger().Infof("logging in")
 		err = c.Run(ctxt, chromedp.Tasks{
 			chromedp.WaitVisible("user_name", chromedp.ByID),
@@ -208,7 +210,10 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 		}
 	}
 
-	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
+	err = o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
+	if err != nil {
+		return err
+	}
 
 	log.Logger().Info("Generating new token")
 

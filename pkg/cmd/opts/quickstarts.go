@@ -41,7 +41,10 @@ func (o *CommonOptions) LoadQuickStartsModel(gitHubOrganisations []string, ignor
 		return nil, errors.Wrapf(err, "loading quickstarts from version stream in dir %s", resolver.VersionsDir)
 	}
 	quickstarts.DefaultMissingValues()
-	model.LoadQuickStarts(quickstarts)
+	err = model.LoadQuickStarts(quickstarts)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading quickstarts: %v", quickstarts)
+	}
 	return model, nil
 }
 

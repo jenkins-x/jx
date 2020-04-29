@@ -81,7 +81,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}
-	kube.RegisterAllCRDs(apisClient)
+	err = kube.RegisterAllCRDs(apisClient)
 	if err != nil {
 		return err
 	}

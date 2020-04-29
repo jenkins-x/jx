@@ -192,7 +192,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			jenkins.PrintGetTokenFromURL(o.Out, jenkins.JenkinsTokenURL(server.URL))
+			jenkins.PrintGetTokenFromURL(o.Out, jenkins.JenkinsTokenURL(server.URL)) //nolint:errcheck
 			log.Logger().Infof("Then COPY the token and enter in into the form below:\n")
 			return nil
 		}
@@ -352,13 +352,13 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 	}
 	req = req.WithContext(ctx)
 	if verbose {
-		req.Write(os.Stderr)
+		req.Write(os.Stderr) //nolint:errcheck
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "execute log in")
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	cookies := resp.Cookies()
 	decorator := func(req *http.Request) {
 		for _, c := range cookies {
@@ -385,15 +385,15 @@ func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator 
 	req = req.WithContext(ctx)
 	decorator(req)
 	if verbose {
-		req.Write(os.Stderr)
+		req.Write(os.Stderr) //nolint:errcheck
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "execute verify login")
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if verbose {
-		resp.Write(os.Stderr)
+		resp.Write(os.Stderr) //nolint:errcheck
 	}
 	if resp.StatusCode != 200 {
 		return errors.New(resp.Status)
@@ -412,14 +412,14 @@ func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorato
 	req = req.WithContext(ctx)
 	decorator(req)
 	if verbose {
-		req.Write(os.Stderr)
+		req.Write(os.Stderr) //nolint:errcheck
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Logger().Warnf("Failed to execute request to check for crumb: %s", err)
 		return decorator
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode == 404 {
 		log.Logger().Infof("Enable CSRF protection at: %s/configureSecurity/", serverURL)
 		return decorator
@@ -454,13 +454,13 @@ func generateNewAPIToken(ctx context.Context, serverURL string, verbose bool, de
 	req = req.WithContext(ctx)
 	decorator(req)
 	if verbose {
-		req.Write(os.Stderr)
+		req.Write(os.Stderr) //nolint:errcheck
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "execute generate API token request")
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "reading API token from response body")

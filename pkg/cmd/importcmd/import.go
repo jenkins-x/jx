@@ -844,7 +844,10 @@ func (options *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	options.Git().Add(dir, ".gitignore")
+	err = options.Git().Add(dir, ".gitignore")
+	if err != nil {
+		return err
+	}
 	err = options.Git().Add(dir, "*")
 	if err != nil {
 		return err

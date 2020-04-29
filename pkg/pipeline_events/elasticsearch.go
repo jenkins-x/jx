@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"fmt"
 
 	"bytes"
@@ -90,7 +92,10 @@ func (e ElasticsearchProvider) SendRelease(r *v1.Release) error {
 				r.Namespace: r.CreationTimestamp.String(),
 			},
 		}
-		e.SendIssue(&esissue)
+		err = e.SendIssue(&esissue)
+		if err != nil {
+			return errors.Wrapf(err, "send issue")
+		}
 	}
 	return nil
 }

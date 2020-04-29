@@ -140,7 +140,10 @@ func (o *UpgradeAddonsOptions) Run() error {
 			upgradeAddonProwOptions := &UpgradeAddonProwOptions{
 				UpgradeAddonsOptions: *o,
 			}
-			upgradeAddonProwOptions.Upgrade()
+			err = upgradeAddonProwOptions.Upgrade()
+			if err != nil {
+				return err
+			}
 			continue
 		}
 		chart := charts[k]

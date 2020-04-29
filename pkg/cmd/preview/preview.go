@@ -675,7 +675,10 @@ func (o *PreviewOptions) findPreviewURL(kubeClient kubernetes.Interface, kserveC
 		}
 		return false, nil
 	}
-	o.RetryUntilTrueOrTimeout(time.Minute, time.Second*5, fn)
+	err = o.RetryUntilTrueOrTimeout(time.Minute, time.Second*5, fn)
+	if err != nil {
+		return "", nil, err
+	}
 	return url, appNames, err
 }
 
@@ -726,17 +729,23 @@ func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns
 		propationPolicy := metav1.DeletePropagationForeground
 
 		// lets try delete it if it exists
-		jobResources.Delete(job2.Name, &metav1.DeleteOptions{
+		err = jobResources.Delete(job2.Name, &metav1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriod,
 			PropagationPolicy:  &propationPolicy,
 		})
+		if err != nil {
+			return err
+		}
 
 		// lets wait for the resource to be gone
 		hasJob := func() (bool, error) {
 			job, err := jobResources.Get(job.Name, metav1.GetOptions{})
 			return job == nil || err != nil, nil
 		}
-		o.RetryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
+		err = o.RetryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
+		if err != nil {
+			return err
+		}
 
 		createdJob, err := jobResources.Create(job2)
 		if err != nil {
@@ -781,7 +790,10 @@ func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv
 		count += 1
 		if count > 1 {
 			// TODO we could maybe do better - using a prefix on all logs maybe with the job name?
-			o.RunCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
+			err = o.RunCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
+			if err != nil {
+				return false, err
+			}
 		}
 		return false, nil
 	}

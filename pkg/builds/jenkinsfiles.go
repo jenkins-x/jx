@@ -121,12 +121,12 @@ func (j *JenkinsConverter) println(text string) {
 }
 
 func (j *JenkinsConverter) String() string {
-	j.writer.Flush()
+	j.writer.Flush() //nolint:errcheck
 	return j.buffer.String()
 }
 
 func (j *JenkinsConverter) writeString(text string) {
-	j.writer.WriteString(text)
+	j.writer.WriteString(text) //nolint:errcheck
 }
 
 func (j *JenkinsConverter) startContainer() {

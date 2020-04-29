@@ -124,7 +124,7 @@ func (az *AzureRunner) AssignRole(client string, registry string) {
 	if client == "" || registry == "" {
 		return
 	}
-	az.azureCLI("role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry)
+	az.azureCLI("role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry) //nolint:errcheck
 }
 
 // getRegistryID returns acrRG, acrName, acrID, error

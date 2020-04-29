@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -16,8 +17,12 @@ func RunCommandBackground(name string, output io.Writer, verbose bool, args ...s
 	e := exec.Command(name, args...)
 	e.Stdout = output
 	e.Stderr = output
-	os.Setenv("PATH", PathWithBinary())
-	err := e.Start()
+	err := os.Setenv("PATH", PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Start()
+	//Todo: Could be simplified, and also we should either return or log, not both
 	if err != nil && verbose {
 		log.Logger().Errorf("Error: Command failed to start  %s %s", name, strings.Join(args, " "))
 	}

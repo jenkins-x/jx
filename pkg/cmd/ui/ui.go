@@ -215,12 +215,21 @@ func (o *UIOptions) decideLocalForwardPort() error {
 func (o *UIOptions) openURL(url string, label string) error {
 	// TODO Logger
 	if o.HideURLLabel {
-		fmt.Fprintf(o.Out, "%s\n", util.ColorInfo(url))
+		_, err := fmt.Fprintf(o.Out, "%s\n", util.ColorInfo(url))
+		if err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
+		_, err := fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
+		if err != nil {
+			return err
+		}
 	}
 	if !o.OnlyViewURL {
-		browser.OpenURL(url)
+		err := browser.OpenURL(url)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

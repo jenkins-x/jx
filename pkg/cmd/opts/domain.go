@@ -75,7 +75,10 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 						Message: "Your custom DNS name: ",
 						Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
 					}
-					survey.AskOne(prompt, &customDomain, nil, surveyOpts)
+					err = survey.AskOne(prompt, &customDomain, nil, surveyOpts)
+					if err != nil {
+						return "", err
+					}
 					if customDomain != "" {
 						err := amazon.RegisterAwsCustomDomain(customDomain, address)
 						return customDomain, err
@@ -137,7 +140,10 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 					}
 					return fmt.Errorf("Address cannot be resolved yet %s", address)
 				}
-				o.RetryQuiet(5*6, time.Second*10, f)
+				err := o.RetryQuiet(5*6, time.Second*10, f)
+				if err != nil {
+					return "", err
+				}
 			}
 			if addressIP == "" {
 				addNip = false
@@ -169,8 +175,11 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				Default: defaultDomain,
 				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic DNS nip.io",
 			}
-			survey.AskOne(prompt, &domain,
+			err := survey.AskOne(prompt, &domain,
 				survey.ComposeValidators(survey.Required, surveyutils.NoWhiteSpaceValidator()), surveyOpts)
+			if err != nil {
+				return "", err
+			}
 		}
 		if domain == "" {
 			domain = defaultDomain

@@ -253,7 +253,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			return errors.Wrapf(err, "Failed to install team %s", team)
 		}
 
-		defer o.deleteTeam(team)
+		defer o.deleteTeam(team) //nolint:errcheck
 
 		defaultOptions.SetDevNamespace(team)
 
@@ -386,7 +386,10 @@ func (o *StepBDDOptions) teamNameSuffix() string {
 
 func (o *StepBDDOptions) runTests(gopath string) error {
 	// clear the CHART_REPOSITORY env repo to avoid passing in a bogus chart repo to manual `jx promote` commands
-	os.Unsetenv("CHART_REPOSITORY")
+	err := os.Unsetenv("CHART_REPOSITORY")
+	if err != nil {
+		return errors.Wrap(err, "unset env variable CHART_REPOSITORY")
+	}
 
 	gitURL := o.Flags.TestRepoGitCloneUrl
 	gitRepository, err := gits.ParseGitURL(gitURL)
@@ -468,9 +471,11 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	_, err = c.RunWithoutRetry()
 
 	err = o.reportStatus(testDir, err)
+	if err != nil {
+		return err
+	}
 
-	o.copyReports(testDir, err)
-
+	err = o.copyReports(testDir, err)
 	if o.Flags.IgnoreTestFailure && err != nil {
 		log.Logger().Infof("Ignoring test failure %s", err)
 		return nil
@@ -705,11 +710,20 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 	e := exec.Command(binary, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
-	os.Setenv("PATH", util.PathWithBinary())
+	err = os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
 
 	// work around for helm apply with GitOps using a k8s local Service URL
-	os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
-	os.Setenv(boot.OverrideTLSWarningEnvVarName, "true")
+	err = os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set env variable CHART_REPOSITORY to %s", kube.DefaultChartMuseumURL)
+	}
+	err = os.Setenv(boot.OverrideTLSWarningEnvVarName, "true")
+	if err != nil {
+		return errors.Wrapf(err, "failed to set env variable %s to %s", boot.OverrideTLSWarningEnvVarName, "true")
+	}
 
 	err = e.Run()
 	if err != nil {
@@ -723,14 +737,21 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 		e := exec.Command(c.Command, c.Args...) // #nosec
 		e.Stdout = o.Out
 		e.Stderr = o.Err
-		os.Setenv("PATH", util.PathWithBinary())
+		err := os.Setenv("PATH", util.PathWithBinary())
+		if err != nil {
+			return errors.Wrap(err, "failed to set PATH env variable")
+		}
 
 		// work around for helm apply with GitOps using a k8s local Service URL
-		os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
+		err = os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
+		if err != nil {
+
+		}
 
 		log.Logger().Infof("running command: %s", util.ColorInfo(fmt.Sprintf("%s %s", c.Command, strings.Join(c.Args, " "))))
 
-		err := e.Run()
+		err = e.Run()
+		// Todo: Weird, not a good idea to log the error and return it, just do one thing
 		if err != nil {
 			log.Logger().Errorf("Error: Command failed  %s %s", c.Command, strings.Join(c.Args, " "))
 		}

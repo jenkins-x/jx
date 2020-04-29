@@ -462,7 +462,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			err := o.PromoteViaPullRequest(env, releaseInfo)
 			if err == nil {
 				startPromotePR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
-					kube.StartPromotionPullRequest(a, s, ps, p)
+					err = kube.StartPromotionPullRequest(a, s, ps, p)
+					if err != nil {
+						return err
+					}
 					pr := releaseInfo.PullRequestInfo
 					if pr != nil && pr.PullRequest != nil && p.PullRequestURL == "" {
 						p.PullRequestURL = pr.PullRequest.URL
@@ -498,13 +501,19 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 
 	startPromote := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
-		kube.StartPromotionUpdate(a, s, ps, p)
+		err = kube.StartPromotionUpdate(a, s, ps, p)
+		if err != nil {
+			return err
+		}
 		if version != "" && a.Spec.Version == "" {
 			a.Spec.Version = version
 		}
 		return nil
 	}
-	promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, startPromote)
+	err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, startPromote)
+	if err != nil {
+		return nil, err
+	}
 
 	setValues, setStrings := o.GetEnvChartValues(o.Namespace, env)
 
@@ -656,7 +665,10 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration, promoteKey)
 		if err != nil {
 			// TODO based on if the PR completed or not fail the PR or the Promote?
-			promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, kube.FailedPromotionPullRequest)
+			err = promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, kube.FailedPromotionPullRequest)
+			if err != nil {
+				return err
+			}
 			return err
 		}
 	}
@@ -707,19 +719,27 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							log.Logger().Infof("Pull Request %s is merged at sha %s", util.ColorInfo(pr.URL), util.ColorInfo(mergeSha))
 
 							mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
-								kube.CompletePromotionPullRequest(a, s, ps, p)
+								err = kube.CompletePromotionPullRequest(a, s, ps, p)
+								if err != nil {
+									return errors.Wrap(err, "unable to complete promotion pull request")
+								}
 								p.MergeCommitSHA = mergeSha
 								return nil
 							}
-							promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, mergedPR)
-
+							err = promoteKey.OnPromotePullRequest(kubeClient, jxClient, o.Namespace, mergedPR)
+							if err != nil {
+								return errors.Wrap(err, "unable to update activities on a promote pull request")
+							}
 							if o.NoWaitAfterMerge {
 								log.Logger().Infof("Pull requests are merged, No wait on promotion to complete")
 								return err
 							}
 						}
 
-						promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.StartPromotionUpdate)
+						err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, kube.StartPromotionUpdate)
+						if err != nil {
+							return errors.Wrap(err, "unable to update activities on a promote update")
+						}
 
 						if o.NoWaitForUpdatePipeline {
 							log.Logger().Info("Pull Request merged but we are not waiting for the update pipeline to complete!")
@@ -778,8 +798,10 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, updateStatuses)
-
+								err = promoteKey.OnPromoteUpdate(kubeClient, jxClient, o.Namespace, updateStatuses)
+								if err != nil {
+									return err
+								}
 								succeeded := true
 								for _, v := range urlStatusMap {
 									if v != GitStatusSuccess {

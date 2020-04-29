@@ -26,16 +26,21 @@ pipelineConfig:
                     cpu: 3
                     memory: 6Gi
             steps:
-              - name: fmt
-                image: golang:1.12.10
-                command: ./hack/gofmt.sh
-                dir: /workspace/source
-              - name: lint
-                image: golang:1.12.10
-                command: ./hack/linter.sh
-                dir: /workspace/source
-              - name: ensure-test-classification
+              - name: mk-jx-project-dir
                 image: bash
-                command: ./hack/ensure-test-classification.sh
+                command: mkdir
+                args:
+                  - -p
+                  - /workspace/go/src/github.com/jenkins-x/jx
+              - name: copy-jx-project-to-gopath
+                image: bash
+                command: cp
+                args:
+                  - -Rv
+                  - "./"
+                  - "/workspace/go/src/github.com/jenkins-x/jx"
                 dir: /workspace/source
-
+              - name: generate
+                image: golang:1.12.10
+                command: ./hack/generate.sh
+                dir: /workspace/go/src/github.com/jenkins-x/jx

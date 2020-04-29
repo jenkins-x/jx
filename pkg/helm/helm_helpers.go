@@ -558,13 +558,16 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		log.Logger().Debugf("Helm repository update done.")
 	}
 	cleanup, err := options.DecorateWithSecrets(secretURLClient)
-	defer cleanup()
+	defer cleanup() //nolint:errcheck
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	if options.Ns != "" {
 		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
-		kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
+		err = kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
+		if err != nil {
+			return errors.Wrap(err, "error creating namespace")
+		}
 	}
 	timeout, err := strconv.Atoi(installTimeout)
 	if err != nil {

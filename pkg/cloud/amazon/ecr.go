@@ -58,6 +58,7 @@ read from ConfigMap (see RememberRegion function). To keep backwards compatibili
 function will be kept for a while and it will perform migration to config map. Eventually it will be removed from a
 codebase.
 */
+//nolint
 func GetRegionFromContainerRegistryHost(kubeClient kubernetes.Interface, namespace string, dockerRegistry string) string {
 	submatch := regexp.MustCompile(`\.ecr\.(.*)\.amazonaws\.com$`).FindStringSubmatch(dockerRegistry)
 	if len(submatch) > 1 {

@@ -81,7 +81,10 @@ func (o *DeleteTeamOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
 	_, teamNames, err := kube.GetTeams(kubeClient)
 	if err != nil {
 		return err
@@ -172,11 +175,15 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	}
 	err = uninstall.Run()
 	if err != nil {
-		o.ModifyTeam(ns, name, func(team *v1.Team) error {
+		err = o.ModifyTeam(ns, name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 			team.Status.Message = fmt.Sprintf("Failed to delete team resources: %s", err)
 			return nil
 		})
+		if err != nil {
+			return err
+		}
+		//Todo: Why do we need the else statement?
 	} else {
 		err = kube.DeleteTeam(jxClient, ns, name)
 	}

@@ -346,7 +346,7 @@ func setLoggingLevel(cmd *cobra.Command, args []string) {
 }
 
 func runHelp(cmd *cobra.Command, args []string) {
-	cmd.Help()
+	cmd.Help() //nolint:errcheck
 }
 
 // PluginHandler is capable of parsing command line arguments

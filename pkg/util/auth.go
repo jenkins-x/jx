@@ -14,8 +14,8 @@ func BasicAuth(username, password string) string {
 
 // HashPassword hashes the given password with SHA1
 func HashPassword(password string) string {
-	s := sha1.New() // #nosec
-	s.Write([]byte(password))
+	s := sha1.New()           // #nosec
+	s.Write([]byte(password)) //nolint:errcheck
 	passwordSum := s.Sum(nil)
 	return base64.StdEncoding.EncodeToString(passwordSum)
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/ksync"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -102,7 +103,7 @@ func (o *SyncOptions) Run() error {
 	// ksync is installed to the jx/bin dir, so we can add it for the user
 	err := os.Setenv("PATH", util.PathWithBinary())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to set PATH env variable")
 	}
 
 	client, err := o.KubeClient()
@@ -187,7 +188,10 @@ func (o *SyncOptions) KsyncWatch() error {
 func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name string, dir string, remoteDir string, username string) error {
 
 	// ksync is installed to the jx/bin dir, so we can add it for the user
-	os.Setenv("PATH", util.PathWithBinary())
+	err := os.Setenv("PATH", util.PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
 
 	info := util.ColorInfo
 	log.Logger().Infof("synchronizing directory %s to DevPod %s path %s", info(dir), info(name), info(remoteDir))
@@ -252,7 +256,10 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 		// ignore results as we may not have a spec yet for this name
 		log.Logger().Infof("Removing old ksync %s", n)
 
-		o.RunCommand("ksync", "delete", n)
+		err = o.RunCommand("ksync", "delete", n)
+		if err != nil {
+			return err
+		}
 	}
 
 	time.Sleep(1 * time.Second)

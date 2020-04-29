@@ -186,13 +186,16 @@ func untarResults(src io.Reader) (io.Reader, <-chan error) {
 		}
 		if strings.HasSuffix(header.Name, ".tar.gz") {
 			go func(writer *io.PipeWriter, ec chan error) {
-				defer writer.Close()
+				defer writer.Close() //nolint:errcheck
 				defer close(ec)
 				_, err := io.Copy(writer, tarReader)
 				if err != nil {
 					ec <- err
 				}
-				tarReader.Next()
+				_, err = tarReader.Next()
+				if err != nil {
+					ec <- err
+				}
 			}(writer, ec)
 			break
 		}

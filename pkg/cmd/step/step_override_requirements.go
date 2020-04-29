@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +63,10 @@ func (o *StepOverrideRequirementsOptions) overrideRequirements(requirements *con
 	})
 
 	log.Logger().Debugf("saving %s", requirementsFileName)
-	requirements.SaveConfig(requirementsFileName)
+	err := requirements.SaveConfig(requirementsFileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "save config %s", requirementsFileName)
+	}
 
 	return requirements, nil
 }

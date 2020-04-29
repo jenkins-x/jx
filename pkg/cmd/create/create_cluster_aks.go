@@ -217,7 +217,10 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			Default: "3",
 			Help:    "We recommend a minimum of 3 nodes for Jenkins X",
 		}
-		survey.AskOne(prompt, &nodeCount, nil, surveyOpts)
+		err := survey.AskOne(prompt, &nodeCount, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	pathToPublicKey := o.Flags.PathToPublicKey
