@@ -347,6 +347,8 @@ func (p *GitHubProvider) CreateRepository(owner string, name string, private boo
 		}
 		return nil, errors.New(msg)
 	}
+	// Sleep 5 seconds to ensure repository exists enough to be pushed to.
+	time.Sleep(5 * time.Second)
 	return toGitHubRepo(name, owner, repo), nil
 }
 
@@ -422,6 +424,8 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 			return nil, fmt.Errorf("failed to fork repository %s/%s%s due to: %s", originalOrg, name, msg, err)
 		}
 	}
+	// Sleep 5 seconds to ensure repository exists enough to be pushed to.
+	time.Sleep(5 * time.Second)
 	answer := &GitRepository{
 		Name:             name,
 		AllowMergeCommit: util.DereferenceBool(repo.AllowMergeCommit),
