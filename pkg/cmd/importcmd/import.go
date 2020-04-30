@@ -690,6 +690,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
+	log.Logger().Warnf("PUSH URL: %s", pushGitURL)
 	err = options.Git().AddRemote(dir, "origin", pushGitURL)
 	if err != nil {
 		return err

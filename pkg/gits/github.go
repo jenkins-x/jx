@@ -2,6 +2,7 @@ package gits
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -335,8 +336,11 @@ func (p *GitHubProvider) CreateRepository(owner string, name string, private boo
 	}
 
 	log.Logger().Debugf("creating %s repository %s with orgName '%s'", visibility, name, orgName)
-	repo, _, err := p.Client.Repositories.Create(p.Context, orgName, repoConfig)
+	repo, resp, err := p.Client.Repositories.Create(p.Context, orgName, repoConfig)
+	rj, _ := json.MarshalIndent(resp, "", "\t")
+	log.Logger().Warnf("REPO CREATE RESP: %s", string(rj))
 	if err != nil {
+		log.Logger().WithError(err).Warnf("ERROR CREATING GITHUB REPO")
 		msg := fmt.Sprintf("failed to create %s repository %s/%s due to: %s", visibility, owner, name, err)
 		if strings.Contains(err.Error(), "Visibility can't be private") {
 			msg = msg + "\ntip: free GitHub organization accounts do not allow private repositories"

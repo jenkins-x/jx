@@ -493,6 +493,7 @@ func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "creating the push URL for %q", repo.CloneURL)
 			}
+			log.Logger().Warnf("PUSH URL: %s", pushGitURL)
 			err = git.AddRemote(dir, "upstream", forkEnvGitURL)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "adding remote %q to forked env clone", forkEnvGitURL)
