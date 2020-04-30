@@ -19,6 +19,7 @@ import (
 
 const (
 	gitlabUserName       = "testperson"
+	gitlabSecondUserName = "raymond_smith"
 	gitlabOrgName        = "testorg"
 	gitlabProjectName    = "test-project"
 	gitlabProjectID      = "5690870"
@@ -107,6 +108,12 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		fmt.Sprintf("/api/v4/projects/%s/merge_requests", gitlabProjectID): util.MethodMap{
 			"POST": "create-merge-request.json",
 		},
+		fmt.Sprintf("/api/v4/projects/%s/members", gitlabProjectID): util.MethodMap{
+			"POST": "add-project-member.json",
+		},
+		fmt.Sprintf("/api/v4/users"): util.MethodMap{
+			"GET": "list-users.json",
+		},
 	}
 	for path, methodMap := range gitlabRouter {
 		mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gitlab", methodMap))
@@ -165,7 +172,7 @@ func (suite *GitlabProviderSuite) TestGetRepository() {
 }
 
 func (suite *GitlabProviderSuite) TestAddCollaborator() {
-	err := suite.provider.AddCollaborator("derek", gitlabOrgName, "repo")
+	err := suite.provider.AddCollaborator(gitlabSecondUserName, gitlabOrgName, gitlabProjectName)
 	suite.Require().Nil(err)
 }
 
