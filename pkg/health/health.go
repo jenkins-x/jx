@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/cenkalti/backoff"
 
 	kh "github.com/Comcast/kuberhealthy/pkg/health"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -33,15 +36,21 @@ func Kuberhealthy(kubeClient kubernetes.Interface, namespace string) error {
 		return errors.Wrap(err, "failed to get kuberhealthy URL")
 	}
 
-	state, err := kuberHealthyState(URL)
-	if err != nil {
-		return errors.Wrap(err, "failed to get kuberhealthy state")
-	}
-
-	err = checkHealth(state)
+	err = util.Retry(2*time.Minute, func() error {
+		state, err := kuberHealthyState(URL)
+		if err != nil {
+			return errors.Wrap(err, "failed to get kuberhealthy state")
+		}
+		err = checkHealth(state)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return errors.Wrap(err, "Your Kubernetes cluster is not healthy")
 	}
+
 	return nil
 }
 
@@ -137,10 +146,13 @@ func checkHealth(state kh.State) error {
 				failures[k] = check
 			}
 		}
+		if len(state.Errors) == 0 && len(failures) == 0 {
+			return errors.New("Kuberhealthy not ready yet")
+		}
 		jsonString, err := json.Marshal(failures)
 		if err == nil {
 			log.Logger().Infof("failures: %v", string(jsonString))
-			return errors.New(string(jsonString))
+			return backoff.Permanent(errors.New(string(jsonString)))
 		}
 	}
 	log.Logger().Infof("Your Kubernetes cluster is %s", util.ColorInfo("HEALTHY"))
