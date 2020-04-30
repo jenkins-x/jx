@@ -380,7 +380,7 @@ func (g *GitlabProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 // ListOpenPullRequests lists the open pull requests
 func (g *GitlabProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
 	gitlabOpen := "opened"
-	opt := &gitlab.ListMergeRequestsOptions{
+	opt := &gitlab.ListProjectMergeRequestsOptions{
 		State: &gitlabOpen,
 		ListOptions: gitlab.ListOptions{
 			Page:    0,
@@ -388,8 +388,12 @@ func (g *GitlabProvider) ListOpenPullRequests(owner string, repo string) ([]*Git
 		},
 	}
 	answer := []*GitPullRequest{}
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 	for {
-		prs, _, err := g.Client.MergeRequests.ListMergeRequests(opt)
+		prs, _, err := g.Client.MergeRequests.ListProjectMergeRequests(pid, opt)
 		if err != nil {
 			return answer, err
 		}
@@ -507,6 +511,7 @@ func (g *GitlabProvider) UpdateCommitStatus(owner string, repo string, sha strin
 		Description: c.Description,
 		State:       c.Status,
 		Context:     c.Name,
+		URL:         c.TargetURL,
 		TargetURL:   c.TargetURL,
 	}, err
 }
@@ -517,7 +522,7 @@ func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
 		jxState = "failure"
 	}
 	return &GitRepoStatus{
-		ID:          string(status.ID),
+		ID:          strconv.Itoa(status.ID),
 		URL:         status.TargetURL,
 		TargetURL:   status.TargetURL,
 		State:       jxState,
