@@ -24,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -295,6 +296,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	pr.Revision = revision
 	pr.RemoteCluster = true
 	pr.DisableConcurrent = true
+	pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", kube.DisableBuildLockEnvKey, "true"))
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range o.Labels {

@@ -26,6 +26,9 @@ var buildLockPhaseRunning map[v1.PodPhase]bool = map[v1.PodPhase]bool{
 	v1.PodUnknown: true,
 }
 
+// DisableBuildLockEnvKey environment variable used to disable build lock in jx step helm apply
+const DisableBuildLockEnvKey = "JX_DISABLE_BUILD_LOCK"
+
 // AcquireBuildLock acquires a build lock, to avoid other builds to edit the
 // same namespace while a deployment is already running, other deployments
 // can negotiate which one should run after, by editing its data.
