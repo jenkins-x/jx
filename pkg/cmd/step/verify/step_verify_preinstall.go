@@ -985,6 +985,7 @@ func (o *StepVerifyPreInstallOptions) ValidateRequirements(requirements *config.
 			return errors.Wrapf(err, "failed to save changes to file: %s", fileName)
 		}
 	}
+	o.showPermissionsModeMessage(requirements)
 	return nil
 }
 
@@ -1036,4 +1037,11 @@ func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() (bool, error)
 	}
 	log.Logger().Info("Running in Batch Mode, execution will continue")
 	return true, nil
+}
+
+func (o *StepVerifyPreInstallOptions) showPermissionsModeMessage(requirementsConfig *config.RequirementsConfig) {
+	if requirementsConfig.Cluster.Provider != cloud.OPENSHIFT {
+		log.Logger().Info(`The provided requirements file has 'strictPermissions' enabled but 'provider' is not Openshift.
+This feature is only supported on Openshift`)
+	}
 }

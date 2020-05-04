@@ -345,6 +345,10 @@ type ClusterConfig struct {
 	DevEnvApprovers []string `json:"devEnvApprovers,omitempty"`
 	// DockerRegistryOrg the default organisation used for container images
 	DockerRegistryOrg string `json:"dockerRegistryOrg,omitempty"`
+	// StrictPermissions lets you decide how to boot the cluster when it comes to permissions
+	// If it's false, cluster wide permissions will be used, normal, namespaced permissions will be used otherwise
+	// and extra steps will be necessary to get the cluster working
+	StrictPermissions bool `json:"strictPermissions,omitempty"`
 }
 
 // VaultConfig contains Vault configuration for boot
