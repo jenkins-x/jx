@@ -105,6 +105,8 @@ type PreviewOptions struct {
 	PreviewHealthTimeoutDuration  time.Duration
 
 	HelmValuesConfig config.HelmValuesConfig
+
+	SkipAvailabilityCheck bool
 }
 
 // NewCmdPreview creates a command object for the "create" command
@@ -159,6 +161,7 @@ func (o *PreviewOptions) AddPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
 	cmd.Flags().StringVarP(&o.PreviewHealthTimeout, optionPreviewHealthTimeout, "", "5m", "The amount of time to wait for the preview application to become healthy")
 	cmd.Flags().BoolVarP(&o.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
+	cmd.Flags().BoolVarP(&o.SkipAvailabilityCheck, "skip-availability-check", "", false, "Disables the mandatory availability check.")
 }
 
 // Run implements the command
@@ -586,7 +589,7 @@ func (o *PreviewOptions) Run() error {
 			log.Logger().Warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs")
 		}
 	}
-	if url != "" {
+	if !o.SkipAvailabilityCheck && url != "" {
 		// Wait for a 200 range status code, 401 or 404 to make sure that the DNS has propagated
 		f := func() error {
 			resp, err := http.Get(url) // #nosec
