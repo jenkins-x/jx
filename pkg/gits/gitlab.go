@@ -328,10 +328,16 @@ func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullReque
 	if mr.MergedAt != nil {
 		merged = true
 	}
+	var assignees []*GitUser
+	if mr.Assignee != nil {
+		assignees = append(assignees, convertUser(mr.Assignee))
+	}
+	for _, a := range mr.Assignees {
+		assignees = append(assignees, convertUser(a))
+	}
 	return &GitPullRequest{
-		Author: &GitUser{
-			Login: mr.Author.Username,
-		},
+		Author:         convertUser(mr.Author),
+		Assignees:      assignees,
 		URL:            mr.WebURL,
 		Owner:          owner,
 		Repo:           repo,
@@ -969,4 +975,13 @@ func convertPullRequestLabels(from gitlab.Labels) []*Label {
 		})
 	}
 	return labels
+}
+
+func convertUser(from *gitlab.BasicUser) *GitUser {
+	return &GitUser{
+		URL:       from.WebURL,
+		Login:     from.Username,
+		Name:      from.Name,
+		AvatarURL: from.AvatarURL,
+	}
 }
