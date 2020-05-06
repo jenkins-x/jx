@@ -237,7 +237,8 @@ func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 		defaultBatchMode = true
 	}
 	cmd.PersistentFlags().BoolVarP(&o.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
-	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, "Enables verbose output")
+	levels := strings.Join(log.GetLevels(), ", ")
+	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, fmt.Sprintf("Enables verbose output. The environment variable JX_LOG_LEVEL has precedence over this flag and allows setting the logging level to any value of: %s", levels))
 
 	o.Cmd = cmd
 }
