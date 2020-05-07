@@ -13,7 +13,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestGetOrgOrUserFromOptions_orgIsSet(t *testing.T) {
@@ -79,6 +82,79 @@ func TestUpdateWebhookForSourceRepository_IgnoreRemoteEnv(t *testing.T) {
 	registered, err := updateWebhooksOptions.UpdateWebhookForSourceRepository(sr1, envMap1, err, "webhookURL", "emptyToken")
 	assert.Nil(t, err, "An error was returned trying to register a webhook")
 	assert.False(t, registered, "A remote environment should not have webhooks registered for the dev environment")
+}
+
+func TestGetHMACTokenSecret(t *testing.T) {
+	tests := []struct {
+		name           string
+		prowSecret     string
+		lhSecret       string
+		expectedSecret string
+		errorExpected  bool
+	}{
+		{
+			name:           "prow secret, no lighthouse secret",
+			prowSecret:     "abcd",
+			expectedSecret: "abcd",
+		},
+		{
+			name:           "prow and lighthouse secrets",
+			prowSecret:     "abcd",
+			lhSecret:       "efgh",
+			expectedSecret: "abcd",
+		},
+		{
+			name:           "lighthouse secret, no prow secret",
+			lhSecret:       "abcd",
+			expectedSecret: "abcd",
+		},
+		{
+			name:          "no secret",
+			errorExpected: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var k8sObjects []runtime.Object
+
+			if tc.prowSecret != "" {
+				k8sObjects = append(k8sObjects, &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hmac-token",
+						Namespace: "jx",
+					},
+					Type: corev1.SecretTypeOpaque,
+					Data: map[string][]byte{
+						"hmac": []byte(tc.prowSecret),
+					},
+				})
+			}
+			if tc.lhSecret != "" {
+				k8sObjects = append(k8sObjects, &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "lighthouse-hmac-token",
+						Namespace: "jx",
+					},
+					Type: corev1.SecretTypeOpaque,
+					Data: map[string][]byte{
+						"hmac": []byte(tc.lhSecret),
+					},
+				})
+			}
+			client := k8sfake.NewSimpleClientset(k8sObjects...)
+
+			result, err := getHMACTokenSecret(client, "jx")
+
+			if tc.errorExpected && err == nil {
+				t.Fatalf("expected an error getting the secret but didn't get one")
+			} else if !tc.errorExpected && err != nil {
+				t.Fatalf("did not expect an error and got one: %s", err)
+			} else {
+				assert.Equal(t, tc.expectedSecret, result)
+			}
+		})
+	}
 }
 
 func getSourceAndEnv(remote bool) (*v1.SourceRepository, map[string]*v1.Environment) {

@@ -6,6 +6,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -15,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/spf13/cobra"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -105,11 +107,10 @@ func (o *UpdateWebhooksOptions) Run() error {
 	if o.HMAC != "" {
 		hmacToken = o.HMAC
 	} else {
-		hmacTokenSecret, err := client.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+		hmacToken, err = getHMACTokenSecret(client, ns)
 		if err != nil {
 			return err
 		}
-		hmacToken = string(hmacTokenSecret.Data["hmac"])
 	}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -131,6 +132,18 @@ func (o *UpdateWebhooksOptions) Run() error {
 		}
 	}
 	return nil
+}
+
+func getHMACTokenSecret(client kubernetes.Interface, ns string) (string, error) {
+	hmacTokenSecret, err := client.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+	if err != nil && k8sErrors.IsNotFound(err) {
+		// Try again with the Lighthouse HMAC token name
+		hmacTokenSecret, err = client.CoreV1().Secrets(ns).Get("lighthouse-hmac-token", metav1.GetOptions{})
+	}
+	if err != nil {
+		return "", err
+	}
+	return string(hmacTokenSecret.Data["hmac"]), nil
 }
 
 func (o *UpdateWebhooksOptions) UpdateWebhookForSourceRepository(sr *v1.SourceRepository, envMap map[string]*v1.Environment, err error, webhookURL string, hmacToken string) (bool, error) {
