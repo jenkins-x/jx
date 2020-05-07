@@ -11,12 +11,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/gits"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestGetOrgOrUserFromOptions_orgIsSet(t *testing.T) {
@@ -142,9 +142,13 @@ func TestGetHMACTokenSecret(t *testing.T) {
 					},
 				})
 			}
-			client := k8sfake.NewSimpleClientset(k8sObjects...)
+			updateWebhooksOptions := &UpdateWebhooksOptions{
+				CommonOptions: &opts.CommonOptions{},
+			}
 
-			result, err := getHMACTokenSecret(client, "jx")
+			testhelpers.ConfigureTestOptionsWithResources(updateWebhooksOptions.CommonOptions, k8sObjects, []runtime.Object{}, gits_test.NewMockGitter(), &gits.FakeProvider{}, helm_test.NewMockHelmer(), nil)
+
+			result, err := updateWebhooksOptions.GetHMACTokenSecret()
 
 			if tc.errorExpected && err == nil {
 				t.Fatalf("expected an error getting the secret but didn't get one")
