@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"time"
 
@@ -649,6 +648,7 @@ func (o *StepCreateTaskOptions) generateTektonCRDs(effectiveProjectConfig *confi
 		DefaultImage:       "",
 		InterpretMode:      o.InterpretMode,
 	}
+
 	pipeline, tasks, structure, err := effectivePipeline.GenerateCRDs(crdParams)
 	if err != nil {
 		return nil, errors.Wrapf(err, "generation failed for Pipeline")
@@ -1402,13 +1402,8 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 
 	commandText := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
-	name := "/bin/sh"
-	if runtime.GOOS == "windows" {
-		name = "sh"
-	}
-
 	cmd := util.Command{
-		Name: name,
+		Name: util.GetSh(),
 		Args: []string{"-c", commandText},
 		Out:  o.Out,
 		Err:  o.Err,

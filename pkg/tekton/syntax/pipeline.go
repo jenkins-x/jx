@@ -1742,7 +1742,7 @@ func generateSteps(params generateStepsParams) ([]tektonv1alpha1.Step, map[strin
 			}
 		} else {
 			c.Image = stepImage
-			c.Command = []string{"/bin/sh", "-c"}
+			c.Command = []string{util.GetSh(), "-c"}
 		}
 
 		resolvedImage, err := versionstream.ResolveDockerImage(params.stageParams.parentParams.VersionsDir, c.Image)
