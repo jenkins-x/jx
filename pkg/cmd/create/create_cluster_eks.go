@@ -77,7 +77,7 @@ var (
 // NewCmdCreateClusterEKS creates the command
 func NewCmdCreateClusterEKS(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterEKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.EKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
