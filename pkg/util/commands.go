@@ -51,6 +51,10 @@ func (c CommandError) Error() string {
 		c.Command.Name, strings.Join(sanitisedArgs, " "), c.Command.Dir, c.Output)
 }
 
+func (c CommandError) Cause() error {
+	return c.cause
+}
+
 // SetName Setter method for Name to enable use of interface instead of Command struct
 func (c *Command) SetName(name string) {
 	c.Name = name

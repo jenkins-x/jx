@@ -82,580 +82,613 @@ var _ = Describe("Git CLI", func() {
 		}
 	})
 
-	BeforeEach(func() {
-		repoDir, err = ioutil.TempDir("", "jenkins-x-git-test-repo-")
-		Expect(err).NotTo(HaveOccurred())
-		By(fmt.Sprintf("creating a test repository in '%s'", repoDir))
-		testhelpers.GitCmd(Fail, repoDir, "init")
-	})
-
-	AfterEach(func() {
-		By("deleting temp repo")
-		_ = os.RemoveAll(repoDir)
-	})
-
-	Describe("#ConvertToValidBranchName", func() {
-		It("converts a string into a valid git branch name", func() {
-			testCases := []struct {
-				input    string
-				expected string
-			}{
-				{
-					"testing-thingy", "testing-thingy",
-				},
-				{
-					"testing-thingy/", "testing-thingy",
-				},
-				{
-					"testing-thingy.lock", "testing-thingy",
-				},
-				{
-					"foo bar", "foo_bar",
-				},
-				{
-					"foo\t ~bar", "foo_bar",
-				},
-			}
-			for _, data := range testCases {
-				actual := git.ConvertToValidBranchName(data.input)
-				Expect(actual).Should(Equal(data.expected))
-			}
-		})
-	})
-
-	Describe("#Config", func() {
-		It("should return an error if no repoDir is specified", func() {
-			err := git.Config("")
-			Expect(err).ShouldNot(BeNil())
-		})
-
-		It("should return error if no parameters are passed", func() {
-			err := git.Config(repoDir)
-			Expect(err).ShouldNot(BeNil())
-		})
-
-		It("should apply the specified config", func() {
-			err := git.Config(repoDir, "--local", "credential.helper", "/path/to/jx step git credentials --credential-helper")
-			Expect(err).Should(BeNil())
-
-			filename := filepath.Join(repoDir, ".git", "config")
-			Expect(util.FileExists(filename)).Should(Equal(true))
-			contents, err := ioutil.ReadFile(filename)
-			Expect(err).Should(BeNil())
-			Expect(string(contents)).Should(ContainSubstring("helper = /path/to/jx step git credentials --credential-helper"))
-		})
-	})
-
-	Describe("#GetCommits", func() {
-		var (
-			commitASha string
-			commitBSha string
-			commitCSha string
-			commitDSha string
-			commitESha string
-		)
+	Describe("un-initialized Git directory", func() {
 
 		BeforeEach(func() {
-			By("adding commit a on master branch")
-			testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-			testhelpers.Add(Fail, repoDir)
-			commitASha = testhelpers.Commit(Fail, repoDir, "commit a")
-
-			By("creating branch 'b' and adding a commit")
-			testhelpers.Branch(Fail, repoDir, "b")
-			testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
-			testhelpers.Add(Fail, repoDir)
-			commitBSha = testhelpers.Commit(Fail, repoDir, "commit b")
-
-			By("creating branch 'c' and adding a commit")
-			testhelpers.Checkout(Fail, repoDir, "master")
-			testhelpers.Branch(Fail, repoDir, "c")
-			testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
-			testhelpers.Add(Fail, repoDir)
-			commitCSha = testhelpers.Commit(Fail, repoDir, "commit c")
-
-			testhelpers.Checkout(Fail, repoDir, "master")
-			By("adding commit d on master branch")
-			testhelpers.WriteFile(Fail, repoDir, "d.txt", "d")
-			testhelpers.Add(Fail, repoDir)
-			commitDSha = testhelpers.Commit(Fail, repoDir, "commit d")
-
-			By("adding commit e on master branch")
-			testhelpers.WriteFile(Fail, repoDir, "e.txt", "e")
-			testhelpers.Add(Fail, repoDir)
-			commitESha = testhelpers.Commit(Fail, repoDir, "commit e")
-		})
-
-		It("returns all commits in range", func() {
-			commits, err := git.GetCommits(repoDir, commitASha, commitESha)
+			repoDir, err = ioutil.TempDir("", "jenkins-x-git-test-repo-")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(commits).Should(HaveLen(2))
-			Expect(commits[0].SHA).Should(Equal(commitESha))
-			Expect(commits[0].Message).Should(Equal("commit e"))
-			Expect(commits[1].SHA).Should(Equal(commitDSha))
-			Expect(commits[1].Message).Should(Equal("commit d"))
+			By(fmt.Sprintf("creating a test repository in '%s'", repoDir))
 		})
 
-		It("returns author and committer", func() {
-			commits, err := git.GetCommits(repoDir, commitASha, commitDSha)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(commits).Should(HaveLen(1))
-			Expect(commits[0].Author.Name).Should(Equal("test-author"))
-			Expect(commits[0].Author.Email).Should(Equal("test-author@acme.com"))
-			Expect(commits[0].Committer.Name).Should(Equal("test-committer"))
-			Expect(commits[0].Committer.Email).Should(Equal("test-committer@acme.com"))
+		AfterEach(func() {
+			By("deleting temp repo")
+			_ = os.RemoveAll(repoDir)
 		})
 
-		It("returns merge commits", func() {
-			testhelpers.Merge(Fail, repoDir, commitBSha, commitCSha)
-			Expect(err).NotTo(HaveOccurred())
-
-			commits, err := git.GetCommits(repoDir, commitESha, "HEAD")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(commits).Should(HaveLen(3))
-			Expect(commits[0].Message).Should(ContainSubstring("Merge commit"))
-		})
-	})
-
-	Describe("#GetLatestCommitSha", func() {
-		Context("when there is no commit", func() {
-			Specify("an error is returned", func() {
-				_, err := git.GetLatestCommitSha(repoDir)
-				Expect(err).ShouldNot(BeNil())
-				// TODO Currently the error message is returned which seems odd. Should be empty string imo (HF)
-				//Expect(sha).Should(BeEmpty())
-			})
-		})
-
-		Context("when there are commits", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "first commit")
-			})
-
-			Specify("the sha of the last commit is returned", func() {
-				sha, err := git.GetLatestCommitSha(repoDir)
+		Describe("#IsVersionControlled", func() {
+			It("empty directory not version controlled", func() {
+				versionControlled, err := git.IsVersionControlled(repoDir)
 				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(testhelpers.ReadRef(Fail, repoDir, "refs/heads/master")))
+				Expect(versionControlled).Should(Equal(false))
 			})
 		})
 	})
 
-	Describe("#GetCommitPointedToByTag", func() {
-		Context("when there is no commit", func() {
-			Specify("an error is returned", func() {
-				sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.1")
-				Expect(err).ShouldNot(BeNil())
-				Expect(sha).Should(BeEmpty())
+	Describe("initialized Git directory", func() {
+
+		BeforeEach(func() {
+			repoDir, err = ioutil.TempDir("", "jenkins-x-git-test-repo-")
+			Expect(err).NotTo(HaveOccurred())
+			By(fmt.Sprintf("creating a test repository in '%s'", repoDir))
+			testhelpers.GitCmd(Fail, repoDir, "init")
+		})
+
+		AfterEach(func() {
+			By("deleting temp repo")
+			_ = os.RemoveAll(repoDir)
+		})
+
+		Describe("#IsVersionControlled", func() {
+			It("empty directory not version controlled", func() {
+				versionControlled, err := git.IsVersionControlled(repoDir)
+				Expect(err).Should(BeNil())
+				Expect(versionControlled).Should(Equal(true))
 			})
 		})
 
-		Context("when there is no tags", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "first commit")
-			})
-			Specify("an error is returned", func() {
-				sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.1")
-				Expect(err).ShouldNot(BeNil())
-				Expect(sha).Should(BeEmpty())
+		Describe("#ConvertToValidBranchName", func() {
+			It("converts a string into a valid git branch name", func() {
+				testCases := []struct {
+					input    string
+					expected string
+				}{
+					{
+						"testing-thingy", "testing-thingy",
+					},
+					{
+						"testing-thingy/", "testing-thingy",
+					},
+					{
+						"testing-thingy.lock", "testing-thingy",
+					},
+					{
+						"foo bar", "foo_bar",
+					},
+					{
+						"foo\t ~bar", "foo_bar",
+					},
+				}
+				for _, data := range testCases {
+					actual := git.ConvertToValidBranchName(data.input)
+					Expect(actual).Should(Equal(data.expected))
+				}
 			})
 		})
 
-		Context("when there are commits", func() {
+		Describe("#Config", func() {
+			It("should return an error if no repoDir is specified", func() {
+				err := git.Config("")
+				Expect(err).ShouldNot(BeNil())
+			})
+
+			It("should return error if no parameters are passed", func() {
+				err := git.Config(repoDir)
+				Expect(err).ShouldNot(BeNil())
+			})
+
+			It("should apply the specified config", func() {
+				err := git.Config(repoDir, "--local", "credential.helper", "/path/to/jx step git credentials --credential-helper")
+				Expect(err).Should(BeNil())
+
+				filename := filepath.Join(repoDir, ".git", "config")
+				Expect(util.FileExists(filename)).Should(Equal(true))
+				contents, err := ioutil.ReadFile(filename)
+				Expect(err).Should(BeNil())
+				Expect(string(contents)).Should(ContainSubstring("helper = /path/to/jx step git credentials --credential-helper"))
+			})
+		})
+
+		Describe("#GetCommits", func() {
 			var (
-				tag2CommitSHA string
+				commitASha string
+				commitBSha string
+				commitCSha string
+				commitDSha string
+				commitESha string
 			)
+
 			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "first commit")
-				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
-
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "second commit")
-				testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
-				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
-
-				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "third commit")
-				testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
-				testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
-			})
-
-			Specify("the sha of the specified tag is returned", func() {
-				sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.2")
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2CommitSHA))
-			})
-		})
-	})
-
-	Describe("Get version tags", func() {
-		var (
-			tag2SHA       string
-			tag3SHA       string
-			tag2CommitSHA string
-			tag3CommitSHA string
-		)
-
-		Context("when tags are on master", func() {
-			BeforeEach(func() {
+				By("adding commit a on master branch")
 				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
 				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "first commit")
-				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+				commitASha = testhelpers.Commit(Fail, repoDir, "commit a")
 
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "second commit")
-				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
-				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
-
-				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "third commit")
-				tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
-				tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
-			})
-
-			It("#GetNthTagSHA1", func() {
-				sha, tag, err := git.NthTag(repoDir, 1)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag3SHA))
-				Expect(tag).Should(Equal("v0.0.3"))
-			})
-
-			It("#GetNthTagSHA2", func() {
-				sha, tag, err := git.NthTag(repoDir, 2)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2SHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-			It("#GetCommitPointedToByLatestTag", func() {
-				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag3CommitSHA))
-				Expect(tag).Should(Equal("v0.0.3"))
-			})
-
-			It("#GetCommitPointedToByPreviousTag", func() {
-				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2CommitSHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-		})
-
-		Context("when there is only one tag", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "second commit")
-				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
-				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
-			})
-
-			It("#GetNthTagSHA1", func() {
-				sha, tag, err := git.NthTag(repoDir, 1)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2SHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-
-			It("#GetNthTagSHA2", func() {
-				sha, tag, err := git.NthTag(repoDir, 2)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(""))
-				Expect(tag).Should(Equal(""))
-			})
-			It("#GetCommitPointedToByLatestTag", func() {
-				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2CommitSHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-
-			It("#GetCommitPointedToByPreviousTag", func() {
-				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(""))
-				Expect(tag).Should(Equal(""))
-			})
-		})
-
-		Context("when tags are made on release branches", func() {
-			BeforeEach(func() {
-				By("creating commit on master")
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "first master commit")
-
-				By("creating first release branch")
-				testhelpers.Branch(Fail, repoDir, "release_0_0_1")
-				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "adding version")
-				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
-
-				By("creating commit on master")
-				testhelpers.Checkout(Fail, repoDir, "master")
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "second master commit")
-
-				By("creating second release branch")
-				testhelpers.Branch(Fail, repoDir, "release_0_0_2")
-				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "adding version")
-				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
-				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
-
-				By("creating commit on master")
-				testhelpers.Checkout(Fail, repoDir, "master")
-				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "third master commit")
-
-				By("creating third release branch")
-				testhelpers.Branch(Fail, repoDir, "release_0_0_3")
-				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "adding version")
-				tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
-				tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
-			})
-
-			It("#GetNthTagSHA1", func() {
-				sha, tag, err := git.NthTag(repoDir, 1)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag3SHA))
-				Expect(tag).Should(Equal("v0.0.3"))
-			})
-
-			It("#GetNthTagSHA2", func() {
-				sha, tag, err := git.NthTag(repoDir, 2)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2SHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-			It("#GetCommitPointedToByLatestTag", func() {
-				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag3CommitSHA))
-				Expect(tag).Should(Equal("v0.0.3"))
-			})
-
-			It("#GetCommitPointedToByPreviousTag", func() {
-				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2CommitSHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-		})
-
-		Context("when tags are made in detached HEAD mode", func() {
-			BeforeEach(func() {
-				By("creating commit on master")
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "first master commit")
-
-				By("detaching HEAD and creating first release")
-				testhelpers.DetachHead(Fail, repoDir)
-				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "adding version")
-				testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
-
-				By("creating commit on master")
-				testhelpers.Checkout(Fail, repoDir, "master")
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "second master commit")
-
-				By("detaching HEAD and creating second release")
-				testhelpers.DetachHead(Fail, repoDir)
-				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "adding version")
-				tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
-				tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
-
-				By("creating commit on master")
-				testhelpers.Checkout(Fail, repoDir, "master")
-				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "third master commit")
-
-				By("detaching HEAD and creating second release")
-				testhelpers.DetachHead(Fail, repoDir)
-				testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "adding version")
-				tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
-				tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
-			})
-
-			It("#GetNthTagSHA1", func() {
-				sha, tag, err := git.NthTag(repoDir, 1)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag3SHA))
-				Expect(tag).Should(Equal("v0.0.3"))
-			})
-
-			It("#GetNthTagSHA2", func() {
-				sha, tag, err := git.NthTag(repoDir, 2)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2SHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-			It("#GetCommitPointedToByLatestTag", func() {
-				sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag3CommitSHA))
-				Expect(tag).Should(Equal("v0.0.3"))
-			})
-
-			It("#GetCommitPointedToByPreviousTag", func() {
-				sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(sha).Should(Equal(tag2CommitSHA))
-				Expect(tag).Should(Equal("v0.0.2"))
-			})
-		})
-	})
-
-	Describe("#DeleteLocalBranch", func() {
-		Context("when there is no branch", func() {
-			Specify("no error is returned", func() {
-				err := git.DeleteLocalBranch(repoDir, "b")
-				Expect(err).ShouldNot(BeNil())
-			})
-		})
-
-		Context("when there is a branch", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "commit a")
-
+				By("creating branch 'b' and adding a commit")
 				testhelpers.Branch(Fail, repoDir, "b")
-				testhelpers.Checkout(Fail, repoDir, "master")
-			})
-
-			Specify("the branch is deleted", func() {
-				err := git.DeleteLocalBranch(repoDir, "b")
-				Expect(err).Should(BeNil())
-			})
-		})
-	})
-
-	Describe("#CheckoutCommitFiles", func() {
-		var (
-			commitSha string
-		)
-
-		Context("when there is no file to checkout", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-				testhelpers.Add(Fail, repoDir)
-				commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
-			})
-			Specify("an error is returned", func() {
-				err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"b.txt"})
-				Expect(err).ShouldNot(BeNil())
-			})
-		})
-
-		Context("when there is single file to checkout", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-				testhelpers.Add(Fail, repoDir)
-				commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
-
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "ab")
-				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "commit b")
-			})
-
-			Specify("the file is checked out", func() {
-				err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"a.txt"})
-				Expect(err).Should(BeNil())
-			})
-		})
-
-		Context("when there are multiple files to checkout", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
 				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				testhelpers.Add(Fail, repoDir)
+				commitBSha = testhelpers.Commit(Fail, repoDir, "commit b")
+
+				By("creating branch 'c' and adding a commit")
+				testhelpers.Checkout(Fail, repoDir, "master")
+				testhelpers.Branch(Fail, repoDir, "c")
 				testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
 				testhelpers.Add(Fail, repoDir)
-				commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+				commitCSha = testhelpers.Commit(Fail, repoDir, "commit c")
 
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "new a")
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "new b")
+				testhelpers.Checkout(Fail, repoDir, "master")
+				By("adding commit d on master branch")
+				testhelpers.WriteFile(Fail, repoDir, "d.txt", "d")
 				testhelpers.Add(Fail, repoDir)
-				testhelpers.Commit(Fail, repoDir, "commit b")
+				commitDSha = testhelpers.Commit(Fail, repoDir, "commit d")
+
+				By("adding commit e on master branch")
+				testhelpers.WriteFile(Fail, repoDir, "e.txt", "e")
+				testhelpers.Add(Fail, repoDir)
+				commitESha = testhelpers.Commit(Fail, repoDir, "commit e")
 			})
 
-			Specify("the file is checked out", func() {
-				err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"a.txt", "b.txt"})
-				Expect(err).Should(BeNil())
-			})
-		})
-	})
-
-	Describe("#HasChanges", func() {
-		Context("when there are changes in directory", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			It("returns all commits in range", func() {
+				commits, err := git.GetCommits(repoDir, commitASha, commitESha)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(commits).Should(HaveLen(2))
+				Expect(commits[0].SHA).Should(Equal(commitESha))
+				Expect(commits[0].Message).Should(Equal("commit e"))
+				Expect(commits[1].SHA).Should(Equal(commitDSha))
+				Expect(commits[1].Message).Should(Equal("commit d"))
 			})
 
-			Specify("a changes are shown", func() {
-				changed, err := git.HasChanges(repoDir)
-				Expect(err).Should(BeNil())
-				Expect(changed).Should(BeTrue())
-			})
-		})
-	})
-
-	Describe("#HasFileChanged", func() {
-		Context("when there is not a file change", func() {
-			Specify("a file does not show as changed", func() {
-				changed, err := git.HasFileChanged(repoDir, "a.txt")
-				Expect(err).Should(BeNil())
-				Expect(changed).Should(BeFalse())
-			})
-		})
-
-		Context("when there is a file change", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+			It("returns author and committer", func() {
+				commits, err := git.GetCommits(repoDir, commitASha, commitDSha)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(commits).Should(HaveLen(1))
+				Expect(commits[0].Author.Name).Should(Equal("test-author"))
+				Expect(commits[0].Author.Email).Should(Equal("test-author@acme.com"))
+				Expect(commits[0].Committer.Name).Should(Equal("test-committer"))
+				Expect(commits[0].Committer.Email).Should(Equal("test-committer@acme.com"))
 			})
 
-			Specify("a file shows as changed", func() {
-				changed, err := git.HasFileChanged(repoDir, "a.txt")
-				Expect(err).Should(BeNil())
-				Expect(changed).Should(BeTrue())
+			It("returns merge commits", func() {
+				testhelpers.Merge(Fail, repoDir, commitBSha, commitCSha)
+				Expect(err).NotTo(HaveOccurred())
+
+				commits, err := git.GetCommits(repoDir, commitESha, "HEAD")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(commits).Should(HaveLen(3))
+				Expect(commits[0].Message).Should(ContainSubstring("Merge commit"))
 			})
 		})
 
-		Context("when there is multiple file changes", func() {
-			BeforeEach(func() {
-				testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
-				testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+		Describe("#GetLatestCommitSha", func() {
+			Context("when there is no commit", func() {
+				Specify("an error is returned", func() {
+					_, err := git.GetLatestCommitSha(repoDir)
+					Expect(err).ShouldNot(BeNil())
+					// TODO Currently the error message is returned which seems odd. Should be empty string imo (HF)
+					//Expect(sha).Should(BeEmpty())
+				})
 			})
 
-			Specify("a specific file shows as changed", func() {
-				changed, err := git.HasFileChanged(repoDir, "a.txt")
-				Expect(err).Should(BeNil())
-				Expect(changed).Should(BeTrue())
+			Context("when there are commits", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "first commit")
+				})
+
+				Specify("the sha of the last commit is returned", func() {
+					sha, err := git.GetLatestCommitSha(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(testhelpers.ReadRef(Fail, repoDir, "refs/heads/master")))
+				})
+			})
+		})
+
+		Describe("#GetCommitPointedToByTag", func() {
+			Context("when there is no commit", func() {
+				Specify("an error is returned", func() {
+					sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.1")
+					Expect(err).ShouldNot(BeNil())
+					Expect(sha).Should(BeEmpty())
+				})
+			})
+
+			Context("when there is no tags", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "first commit")
+				})
+				Specify("an error is returned", func() {
+					sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.1")
+					Expect(err).ShouldNot(BeNil())
+					Expect(sha).Should(BeEmpty())
+				})
+			})
+
+			Context("when there are commits", func() {
+				var (
+					tag2CommitSHA string
+				)
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "foo")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "first commit")
+					testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "second commit")
+					testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+					tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+
+					testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "third commit")
+					testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+					testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
+				})
+
+				Specify("the sha of the specified tag is returned", func() {
+					sha, err := git.GetCommitPointedToByTag(repoDir, "v0.0.2")
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2CommitSHA))
+				})
+			})
+		})
+
+		Describe("Get version tags", func() {
+			var (
+				tag2SHA       string
+				tag3SHA       string
+				tag2CommitSHA string
+				tag3CommitSHA string
+			)
+
+			Context("when tags are on master", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "first commit")
+					testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "second commit")
+					tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+					tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+
+					testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "third commit")
+					tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+					tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
+				})
+
+				It("#GetNthTagSHA1", func() {
+					sha, tag, err := git.NthTag(repoDir, 1)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag3SHA))
+					Expect(tag).Should(Equal("v0.0.3"))
+				})
+
+				It("#GetNthTagSHA2", func() {
+					sha, tag, err := git.NthTag(repoDir, 2)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2SHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+				It("#GetCommitPointedToByLatestTag", func() {
+					sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag3CommitSHA))
+					Expect(tag).Should(Equal("v0.0.3"))
+				})
+
+				It("#GetCommitPointedToByPreviousTag", func() {
+					sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2CommitSHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+			})
+
+			Context("when there is only one tag", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "second commit")
+					tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+					tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+				})
+
+				It("#GetNthTagSHA1", func() {
+					sha, tag, err := git.NthTag(repoDir, 1)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2SHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+
+				It("#GetNthTagSHA2", func() {
+					sha, tag, err := git.NthTag(repoDir, 2)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(""))
+					Expect(tag).Should(Equal(""))
+				})
+				It("#GetCommitPointedToByLatestTag", func() {
+					sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2CommitSHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+
+				It("#GetCommitPointedToByPreviousTag", func() {
+					sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(""))
+					Expect(tag).Should(Equal(""))
+				})
+			})
+
+			Context("when tags are made on release branches", func() {
+				BeforeEach(func() {
+					By("creating commit on master")
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "first master commit")
+
+					By("creating first release branch")
+					testhelpers.Branch(Fail, repoDir, "release_0_0_1")
+					testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "adding version")
+					testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+					By("creating commit on master")
+					testhelpers.Checkout(Fail, repoDir, "master")
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "second master commit")
+
+					By("creating second release branch")
+					testhelpers.Branch(Fail, repoDir, "release_0_0_2")
+					testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "adding version")
+					tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+					tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+
+					By("creating commit on master")
+					testhelpers.Checkout(Fail, repoDir, "master")
+					testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "third master commit")
+
+					By("creating third release branch")
+					testhelpers.Branch(Fail, repoDir, "release_0_0_3")
+					testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "adding version")
+					tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+					tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
+				})
+
+				It("#GetNthTagSHA1", func() {
+					sha, tag, err := git.NthTag(repoDir, 1)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag3SHA))
+					Expect(tag).Should(Equal("v0.0.3"))
+				})
+
+				It("#GetNthTagSHA2", func() {
+					sha, tag, err := git.NthTag(repoDir, 2)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2SHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+				It("#GetCommitPointedToByLatestTag", func() {
+					sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag3CommitSHA))
+					Expect(tag).Should(Equal("v0.0.3"))
+				})
+
+				It("#GetCommitPointedToByPreviousTag", func() {
+					sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2CommitSHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+			})
+
+			Context("when tags are made in detached HEAD mode", func() {
+				BeforeEach(func() {
+					By("creating commit on master")
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "first master commit")
+
+					By("detaching HEAD and creating first release")
+					testhelpers.DetachHead(Fail, repoDir)
+					testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.1")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "adding version")
+					testhelpers.Tag(Fail, repoDir, "v0.0.1", "version 0.0.1")
+
+					By("creating commit on master")
+					testhelpers.Checkout(Fail, repoDir, "master")
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "second master commit")
+
+					By("detaching HEAD and creating second release")
+					testhelpers.DetachHead(Fail, repoDir)
+					testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.2")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "adding version")
+					tag2SHA = testhelpers.Tag(Fail, repoDir, "v0.0.2", "version 0.0.2")
+					tag2CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.2")
+
+					By("creating commit on master")
+					testhelpers.Checkout(Fail, repoDir, "master")
+					testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "third master commit")
+
+					By("detaching HEAD and creating second release")
+					testhelpers.DetachHead(Fail, repoDir)
+					testhelpers.WriteFile(Fail, repoDir, "VERSION", "0.0.3")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "adding version")
+					tag3SHA = testhelpers.Tag(Fail, repoDir, "v0.0.3", "version 0.0.3")
+					tag3CommitSHA = testhelpers.Revlist(Fail, repoDir, 1, "v0.0.3")
+				})
+
+				It("#GetNthTagSHA1", func() {
+					sha, tag, err := git.NthTag(repoDir, 1)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag3SHA))
+					Expect(tag).Should(Equal("v0.0.3"))
+				})
+
+				It("#GetNthTagSHA2", func() {
+					sha, tag, err := git.NthTag(repoDir, 2)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2SHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+				It("#GetCommitPointedToByLatestTag", func() {
+					sha, tag, err := git.GetCommitPointedToByLatestTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag3CommitSHA))
+					Expect(tag).Should(Equal("v0.0.3"))
+				})
+
+				It("#GetCommitPointedToByPreviousTag", func() {
+					sha, tag, err := git.GetCommitPointedToByPreviousTag(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(sha).Should(Equal(tag2CommitSHA))
+					Expect(tag).Should(Equal("v0.0.2"))
+				})
+			})
+		})
+
+		Describe("#DeleteLocalBranch", func() {
+			Context("when there is no branch", func() {
+				Specify("no error is returned", func() {
+					err := git.DeleteLocalBranch(repoDir, "b")
+					Expect(err).ShouldNot(BeNil())
+				})
+			})
+
+			Context("when there is a branch", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "commit a")
+
+					testhelpers.Branch(Fail, repoDir, "b")
+					testhelpers.Checkout(Fail, repoDir, "master")
+				})
+
+				Specify("the branch is deleted", func() {
+					err := git.DeleteLocalBranch(repoDir, "b")
+					Expect(err).Should(BeNil())
+				})
+			})
+		})
+
+		Describe("#CheckoutCommitFiles", func() {
+			var (
+				commitSha string
+			)
+
+			Context("when there is no file to checkout", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.Add(Fail, repoDir)
+					commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+				})
+				Specify("an error is returned", func() {
+					err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"b.txt"})
+					Expect(err).ShouldNot(BeNil())
+				})
+			})
+
+			Context("when there is single file to checkout", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.Add(Fail, repoDir)
+					commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "ab")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "commit b")
+				})
+
+				Specify("the file is checked out", func() {
+					err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"a.txt"})
+					Expect(err).Should(BeNil())
+				})
+			})
+
+			Context("when there are multiple files to checkout", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+					testhelpers.WriteFile(Fail, repoDir, "c.txt", "c")
+					testhelpers.Add(Fail, repoDir)
+					commitSha = testhelpers.Commit(Fail, repoDir, "commit a")
+
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "new a")
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "new b")
+					testhelpers.Add(Fail, repoDir)
+					testhelpers.Commit(Fail, repoDir, "commit b")
+				})
+
+				Specify("the file is checked out", func() {
+					err := git.CheckoutCommitFiles(repoDir, commitSha, []string{"a.txt", "b.txt"})
+					Expect(err).Should(BeNil())
+				})
+			})
+		})
+
+		Describe("#HasChanges", func() {
+			Context("when there are changes in directory", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				})
+
+				Specify("a changes are shown", func() {
+					changed, err := git.HasChanges(repoDir)
+					Expect(err).Should(BeNil())
+					Expect(changed).Should(BeTrue())
+				})
+			})
+		})
+
+		Describe("#HasFileChanged", func() {
+			Context("when there is not a file change", func() {
+				Specify("a file does not show as changed", func() {
+					changed, err := git.HasFileChanged(repoDir, "a.txt")
+					Expect(err).Should(BeNil())
+					Expect(changed).Should(BeFalse())
+				})
+			})
+
+			Context("when there is a file change", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+				})
+
+				Specify("a file shows as changed", func() {
+					changed, err := git.HasFileChanged(repoDir, "a.txt")
+					Expect(err).Should(BeNil())
+					Expect(changed).Should(BeTrue())
+				})
+			})
+
+			Context("when there is multiple file changes", func() {
+				BeforeEach(func() {
+					testhelpers.WriteFile(Fail, repoDir, "a.txt", "a")
+					testhelpers.WriteFile(Fail, repoDir, "b.txt", "b")
+				})
+
+				Specify("a specific file shows as changed", func() {
+					changed, err := git.HasFileChanged(repoDir, "a.txt")
+					Expect(err).Should(BeNil())
+					Expect(changed).Should(BeTrue())
+				})
 			})
 		})
 	})

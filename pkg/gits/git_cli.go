@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -48,6 +49,33 @@ func NewGitCLI() *GitCLI {
 	return cli
 }
 
+// IsVersionControlled returns true if the specified directory is under Git version control, otherwise false.
+// An error is returned for unexpected IO errors.
+func (g *GitCLI) IsVersionControlled(dir string) (bool, error) {
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: []string{"status"},
+		Env:  g.Env,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		cmdErr, isCommandError := err.(util.CommandError)
+		if !isCommandError {
+			return false, err
+		}
+
+		cause := cmdErr.Cause()
+		_, isExitError := cause.(*exec.ExitError)
+		if isExitError {
+			return false, nil
+		}
+		return false, cmdErr
+	}
+
+	return true, nil
+}
+
 // Config runs a 'git config' command in the specified directory
 func (g *GitCLI) Config(dir string, args ...string) error {
 	if args == nil {
@@ -70,11 +98,11 @@ func (g *GitCLI) FindGitConfigDir(dir string) (string, string, error) {
 	}
 	for {
 		gitDir := filepath.Join(d, ".git/config")
-		f, err := util.FileExists(gitDir)
+		exists, err := util.FileExists(gitDir)
 		if err != nil {
 			return "", "", err
 		}
-		if f {
+		if exists {
 			return d, gitDir, nil
 		}
 		dirPath := strings.TrimSuffix(d, "/")
@@ -1246,7 +1274,6 @@ func (g *GitCLI) Describe(dir string, contains bool, commitish string, abbrev st
 				return commitish, "", nil
 			}
 		}
-		log.Logger().Warnf("err: %s", err.Error())
 		return "", "", errors.Wrapf(err, "running git %s", strings.Join(args, " "))
 	}
 	trimmed := strings.TrimSpace(strings.Trim(out, "\n"))

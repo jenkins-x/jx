@@ -26,6 +26,10 @@ func NewGitLocal() *GitLocal {
 	}
 }
 
+func (g *GitLocal) IsVersionControlled(dir string) (bool, error) {
+	return g.GitCLI.IsVersionControlled(dir)
+}
+
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
 // Faked out
 func (g *GitLocal) FindGitConfigDir(dir string) (string, string, error) {
