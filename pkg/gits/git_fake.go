@@ -47,6 +47,10 @@ func NewGitFake() Gitter {
 	return &GitFake{}
 }
 
+func (g *GitFake) IsVersionControlled(dir string) (bool, error) {
+	return true, nil
+}
+
 func (g *GitFake) Config(dir string, args ...string) error {
 	return nil
 }
@@ -123,7 +127,7 @@ func (g *GitFake) GetAuthorEmailForCommit(dir string, sha string) (string, error
 			return commit.Author.Email, nil
 		}
 	}
-	return "", errors.New("No commit found with given SHA")
+	return "", errors.New("no commit found with given SHA")
 }
 
 // Init initialises git in a dir

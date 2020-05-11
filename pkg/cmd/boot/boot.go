@@ -345,7 +345,7 @@ func (o *BootOptions) createBootClone(bootConfigGitURL string, bootConfigGitRef 
 			return "", errors.Wrapf(err, "setting HEAD to %s", commitish)
 		}
 	} else {
-		log.Logger().Infof("fetching branch %s", bootConfigGitRef)
+		log.Logger().Debugf("fetching branch %s", bootConfigGitRef)
 		err = o.Git().FetchBranch(cloneDir, "origin", bootConfigGitRef)
 		if err != nil {
 			return "", errors.Wrapf(err, "fetching branch %s", bootConfigGitRef)

@@ -176,6 +176,10 @@ type GitProvider interface {
 // Gitter defines common git actions used by Jenkins X via git cli
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
 type Gitter interface {
+	// IsVersionControlled returns true if the specified directory is under Git version control, otherwise false.
+	// An error is returned for unexpected IO errors.
+	IsVersionControlled(dir string) (bool, error)
+
 	Config(dir string, args ...string) error
 	FindGitConfigDir(dir string) (string, string, error)
 	PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer)

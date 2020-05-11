@@ -482,24 +482,25 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	// check whether we are going to change the upstream remote (e.g. on initial boot)
 	upstreamChange := false
 	if dirExists {
-		log.Logger().Debugf("dir %s already exists", dir)
-		d, gitConfig, err := gitter.FindGitConfigDir(dir)
+		dirIsGitRepo, err = gitter.IsVersionControlled(dir)
 		if err != nil {
 			return "", "", nil, nil, errors.Wrapf(err, "checking if %s is already a git repository", dir)
 		}
-		dirIsGitRepo = dir == d
 
-		currentUpstreamURL, err := gitter.DiscoverUpstreamGitURL(gitConfig)
-		if err != nil {
-			log.Logger().Warn("")
-		}
+		if dirIsGitRepo {
+			currentUpstreamURL, err := gitter.DiscoverUpstreamGitURL(filepath.Join(dir, ".git", "config"))
+			if err != nil {
+				log.Logger().Warnf("unable to determine upstream URL: %s", err.Error())
+			}
 
-		finalUpstreamURL, err := AddUserToURL(gitURL, username)
-		if err != nil {
-			return "", "", nil, nil, errors.Wrapf(err, "unable to add username to git url %s", gitURL)
-		}
-		if currentUpstreamURL != finalUpstreamURL {
-			upstreamChange = true
+			finalUpstreamURL, err := AddUserToURL(gitURL, username)
+			if err != nil {
+				return "", "", nil, nil, errors.Wrapf(err, "unable to add username to git url %s", gitURL)
+			}
+
+			if currentUpstreamURL != finalUpstreamURL {
+				upstreamChange = true
+			}
 		}
 	}
 
