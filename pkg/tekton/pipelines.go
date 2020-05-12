@@ -9,11 +9,14 @@ import (
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/auth"
 	clientv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -403,7 +406,7 @@ func possiblyUniquePipelineResourceName(organisation string, name string, branch
 // ApplyPipeline applies the tasks and pipeline to the cluster
 // and creates and applies a PipelineResource for their source repo and a pipelineRun
 // to execute them.
-func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Interface, crds *CRDWrapper, ns string, activityKey *kube.PromoteStepActivityKey) error {
+func ApplyPipeline(jxClient versioned.Interface, kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, crds *CRDWrapper, ns string, activityKey *kube.PromoteStepActivityKey) error {
 	info := util.ColorInfo
 
 	var activityOwnerReference *metav1.OwnerReference
@@ -422,6 +425,19 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 		}
 	}
 
+	gitKind := ""
+	if activityKey != nil {
+		clusterAuthConfigSvc, err := clients.NewFactory().CreateGitAuthConfigService(ns, "")
+		if err != nil {
+			return errors.Wrapf(err, "getting cluster-based auth configmap for checking kind of git url %s", activityKey.GitInfo.HostURL())
+		}
+		var clusterAuthConfig *auth.AuthConfig
+		if clusterAuthConfigSvc != nil {
+			clusterAuthConfig = clusterAuthConfigSvc.Config()
+		}
+		// Don't bother checking for an error here - we'll just fall back to no kind specified.
+		gitKind, _ = kube.GetGitServiceKind(jxClient, kubeClient, ns, clusterAuthConfig, activityKey.GitInfo.HostURL())
+	}
 	for _, resource := range crds.Resources() {
 		if activityOwnerReference != nil {
 			resource.OwnerReferences = []metav1.OwnerReference{*activityOwnerReference}
@@ -431,7 +447,7 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 		}
 		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
-			gitURL := activityKey.GitInfo.HttpCloneURL()
+			gitURL := activityKey.GitInfo.HttpCloneURL(gitKind)
 			log.Logger().Infof("upserted PipelineResource %s for the git repository %s", info(resource.Name), info(gitURL))
 		} else {
 			log.Logger().Infof("upserted PipelineResource %s", info(resource.Name))

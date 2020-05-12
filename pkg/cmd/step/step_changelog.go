@@ -386,7 +386,7 @@ func (o *StepChangelogOptions) Run() error {
 			GitOwner:      gitInfo.Organisation,
 			GitRepository: gitInfo.Name,
 			GitHTTPURL:    gitInfo.HttpsURL(),
-			GitCloneURL:   gitInfo.HttpCloneURL(),
+			GitCloneURL:   gitInfo.HttpCloneURL(gitKind),
 			Commits:       []v1.CommitSummary{},
 			Issues:        []v1.IssueSummary{},
 			PullRequests:  []v1.IssueSummary{},

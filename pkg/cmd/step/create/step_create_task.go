@@ -366,7 +366,7 @@ func (o *StepCreateTaskOptions) Run() error {
 			o.waitForPreviousPipeline(tektonClient, ns, 10*time.Minute)
 		}
 		log.Logger().Infof("Applying changes ")
-		err := tekton.ApplyPipeline(jxClient, tektonClient, tektonCRDs, ns, activityKey)
+		err := tekton.ApplyPipeline(jxClient, kubeClient, tektonClient, tektonCRDs, ns, activityKey)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}

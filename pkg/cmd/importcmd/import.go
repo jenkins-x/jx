@@ -1035,7 +1035,7 @@ func (options *ImportOptions) addProwConfig(gitURL string, gitKind string) error
 				sr.Spec.URL = gitInfo.HttpsURL()
 			}
 			if sr.Spec.HTTPCloneURL == "" {
-				sr.Spec.HTTPCloneURL = gitInfo.HttpCloneURL()
+				sr.Spec.HTTPCloneURL = gitInfo.HttpCloneURL(gitKind)
 			}
 			if sr.Spec.SSHCloneURL == "" {
 				sr.Spec.SSHCloneURL = gitInfo.SSHURL

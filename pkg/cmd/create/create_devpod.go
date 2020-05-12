@@ -277,7 +277,8 @@ func (o *CreateDevPodOptions) Run() error {
 		if err != nil {
 			log.Logger().Warnf("could not find git URL in dir %s due to: %s", dir, err.Error())
 		} else {
-			importURL = gitInfo.HttpCloneURL()
+			gitKind, _ := o.GitServerKind(gitInfo)
+			importURL = gitInfo.HttpCloneURL(gitKind)
 		}
 	}
 	label := o.Label

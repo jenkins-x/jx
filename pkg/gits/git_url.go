@@ -26,7 +26,15 @@ func (i *GitRepository) PullRequestURL(prName string) string {
 }
 
 // HttpCloneURL returns the HTTPS git URL this repository
-func (i *GitRepository) HttpCloneURL() string {
+func (i *GitRepository) HttpCloneURL(kind string) string {
+	if kind == KindBitBucketServer {
+		host := i.Host
+		if !strings.Contains(host, ":/") {
+			host = "https://" + host
+		}
+		return util.UrlJoin(host, "scm", i.Organisation, i.Name) + ".git"
+
+	}
 	return i.HttpsURL() + ".git"
 }
 
