@@ -930,7 +930,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				Pack:         tt.pack,
 				CustomEnvs:   tt.customEnvs,
 				DefaultImage: "maven",
-				KanikoImage:  "gcr.io/kaniko-project/executor:v0.19.0",
+				KanikoImage:  jxsyntax.KanikoDockerImage,
 				UseKaniko:    true,
 				PodTemplates: assertLoadPodTemplates(t),
 				GitInfo: &gits.GitRepository{

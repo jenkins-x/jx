@@ -14,6 +14,7 @@ import (
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 
 	"github.com/jenkins-x/jx/pkg/versionstream"
 
@@ -526,7 +527,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					VersionsDir: testVersionsDir,
 				},
 				DefaultImage:      "maven",
-				KanikoImage:       "gcr.io/kaniko-project/executor:v0.19.0",
+				KanikoImage:       syntax.KanikoDockerImage,
 				KanikoSecretMount: "/kaniko-secret/secret.json",
 				KanikoSecret:      "kaniko-secret",
 				KanikoSecretKey:   "kaniko-secret",

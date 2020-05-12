@@ -11,7 +11,7 @@ const (
 	DefaultStageNameForBuildPack = "from-build-pack"
 
 	// KanikoDockerImage - the default image used for Kaniko builds
-	KanikoDockerImage = "gcr.io/kaniko-project/executor:v0.19.0"
+	KanikoDockerImage = "gcr.io/kaniko-project/executor:v0.22.0"
 
 	// DefaultContainerImage - the default image used for pipelines if none is specified.
 	DefaultContainerImage = "gcr.io/jenkinsxio/builder-maven"
