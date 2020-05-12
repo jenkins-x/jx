@@ -123,7 +123,7 @@ func GetOwnerNamespaceID(g *gitlab.Client, owner string) (int, error) {
 func fromGitlabProject(p *gitlab.Project) *GitRepository {
 	org := ""
 	if p.Namespace != nil {
-		org = p.Namespace.Name
+		org = p.Namespace.Path
 	}
 	return &GitRepository{
 		Organisation: org,
