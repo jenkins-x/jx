@@ -10,9 +10,9 @@ import (
 	"strings"
 	"text/template"
 
-    "github.com/pkg/errors"
+	"github.com/pkg/errors"
 
-    "github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"

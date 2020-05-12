@@ -40,12 +40,12 @@ codegen-clientset: build-codegen ## Generate the k8s types and clients
 	# sleep for one second to prevent collision with previous codegen's replacement of go.mod
 	sleep 1
 	@echo "Generating Kubernetes Clients for pkg/apis in pkg/client for jenkins.io:v1"
-	./build/$(CODE_GEN_BIN_NAME) --generator-version $(CLIENTSET_GENERATOR_VERSION) clientset --output-package=pkg/client --input-package=pkg/apis --group-with-version=jenkins.io:v1
+	./build/$(CODE_GEN_BIN_NAME) --generator-version $(CLIENTSET_GENERATOR_VERSION) clientset --output-package=pkg/client --input-package=v2/pkg/apis --group-with-version=jenkins.io:v1 --semver=v2
 
 codegen-config: build-codegen ## Generate the deepcopy for the config, jenkinsfile, and tekton/syntax packages
 	# sleep for one second to prevent collision with previous codegen's replacement of go.mod
 	sleep 1
-	./build/$(CODE_GEN_BIN_NAME) --generator-version $(CLIENTSET_GENERATOR_VERSION) clientset --generator deepcopy --output-package=pkg --input-package=pkg --group-with-version=config: --group-with-version=jenkinsfile: --group-with-version=tekton:syntax
+	./build/$(CODE_GEN_BIN_NAME) --generator-version $(CLIENTSET_GENERATOR_VERSION) clientset --generator deepcopy --output-package=pkg --input-package=v2/pkg --group-with-version=config: --group-with-version=jenkinsfile: --group-with-version=tekton:syntax --semver=v2
 
 # Generated docs are not checked in
 generate-docs: build-codegen ## Generate the docs
@@ -56,7 +56,7 @@ generate-openapi: codegen-openapi fmt importfmt
 
 codegen-openapi: build-codegen
 	@echo "Generating OpenAPI structs for Kubernetes Clients"
-	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/pkg/apis --group-with-version=jenkins.io:v1 --version=2.0
+	./build/$(CODE_GEN_BIN_NAME) --generator-version $(OPENAPI_GEN_VERSION) openapi --output-package=pkg/client --input-package=github.com/jenkins-x/jx/v2/pkg/apis --group-with-version=jenkins.io:v1 --version=2.0 --module-name=github.com/jenkins-x/jx/v2 --semver=v2
 
 install-refdocs:
 	$(GO) get github.com/jenkins-x/gen-crd-api-reference-docs
