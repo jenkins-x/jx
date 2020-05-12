@@ -886,7 +886,8 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 		if err != nil {
 			log.Logger().Warnf("Could not parse the git URL %s due to %s", o.SourceURL, err)
 		} else {
-			o.SourceURL = o.GitInfo.HttpCloneURL()
+			gitKind, _ := o.GitServerKind(o.GitInfo)
+			o.SourceURL = o.GitInfo.HttpCloneURL(gitKind)
 			if o.PullRequestURL == "" {
 				if o.PullRequest == "" {
 					if warnMissingName {

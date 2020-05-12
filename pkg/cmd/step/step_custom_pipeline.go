@@ -106,6 +106,11 @@ func (o *StepCustomPipelineOptions) Run() error {
 		return err
 	}
 
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return err
+	}
+
 	branch, err := o.Git().Branch(o.Dir)
 	if err != nil {
 		return err
@@ -155,7 +160,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 				return err
 			}
 		} else {
-			gitURL := gitInfo.HttpCloneURL()
+			gitURL := gitInfo.HttpCloneURL(gitKind)
 			log.Logger().Infof("Using git URL %s and branch %s", util.ColorInfo(gitURL), util.ColorInfo(branch))
 
 			err = o.Retry(3, time.Second*10, func() error {

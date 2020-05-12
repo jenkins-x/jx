@@ -156,7 +156,7 @@ func (c *clientFactory) createActualCRDs(buildNumber string, branchIdentifier st
 
 // Apply takes the given CRDs to process them, usually applying them to the cluster.
 func (c *clientFactory) Apply(pipelineActivity kube.PromoteStepActivityKey, crds tekton.CRDWrapper) error {
-	err := tekton.ApplyPipeline(c.jxClient, c.tektonClient, &crds, c.ns, &pipelineActivity)
+	err := tekton.ApplyPipeline(c.jxClient, c.kubeClient, c.tektonClient, &crds, c.ns, &pipelineActivity)
 	if err != nil {
 		return errors.Wrapf(err, "failed to apply Tekton CRDs")
 	}
