@@ -266,17 +266,19 @@ func (c *Command) run() (string, error) {
 	return text, err
 }
 
-// PathWithBinary Sets the $PATH variable. Accepts an optional slice of strings containing paths to add to $PATH
-func PathWithBinary(paths ...string) string {
-	path := os.Getenv("PATH")
-	binDir, _ := JXBinLocation()
-	answer := path + string(os.PathListSeparator) + binDir
+// PathWithBinary Returns the path to be used to execute a binary from, takes the form JX_HOME/bin:mvnBinDir:customPaths
+func PathWithBinary(customPaths ...string) string {
+	existingEnvironmentPath := os.Getenv("PATH")
 	mvnBinDir, _ := MavenBinaryLocation()
+	extraPaths := ""
 	if mvnBinDir != "" {
-		answer += string(os.PathListSeparator) + mvnBinDir
+		extraPaths += string(os.PathListSeparator) + mvnBinDir
 	}
-	for _, p := range paths {
-		answer += string(os.PathListSeparator) + p
+	for _, p := range customPaths {
+		if p != "" {
+			extraPaths += string(os.PathListSeparator) + p
+		}
 	}
-	return answer
+	jxBinDir, _ := JXBinLocation()
+	return jxBinDir + string(os.PathListSeparator) + existingEnvironmentPath + extraPaths
 }
