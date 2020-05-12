@@ -1,5 +1,5 @@
 definitions:
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AccountReference:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.AccountReference:
     description: AccountReference is a reference to a user account in another system
       that is attached to this user
     properties:
@@ -8,7 +8,7 @@ definitions:
       provider:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.App:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.App:
     description: App is the metadata for an App
     properties:
       apiVersion:
@@ -25,9 +25,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.AppSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.AppList:
     description: AppList is a structure used by k8s to store lists of apps
     properties:
       apiVersion:
@@ -37,7 +37,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.App'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.App'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -50,17 +50,17 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.AppSpec:
     description: AppSpec provides details of the metadata for an App
     properties:
       pipelineExtension:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineExtension'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineExtension'
       schemaPreprocessor:
         $ref: '#/definitions/io.k8s.api.core.v1.Container'
       schemaPreprocessorRole:
         $ref: '#/definitions/io.k8s.api.rbac.v1.Role'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Approve:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Approve:
     description: |-
       Approve specifies a configuration for a single approve.
 
@@ -86,7 +86,7 @@ definitions:
           changes in the PR.
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Attachment:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Attachment:
     properties:
       name:
         type: string
@@ -95,7 +95,7 @@ definitions:
           type: string
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BatchPipelineActivity:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BatchPipelineActivity:
     description: BatchPipelineActivity contains information about a batch build, used
       by both the batch build and its comprising PRs for linking them together
     properties:
@@ -105,10 +105,10 @@ definitions:
         type: string
       pullRequestInfo:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PullRequestInfo'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PullRequestInfo'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Binary:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Binary:
     description: Binary provies the details of a downloadable binary
     properties:
       goarch:
@@ -118,30 +118,30 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BranchProtectionContextPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BranchProtectionContextPolicy:
     description: BranchProtectionContextPolicy configures required git provider contexts.
       Strict determines whether merging to the branch invalidates existing contexts.
     properties:
       contexts:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: Contexts appends required contexts that must be green to merge
       strict:
         description: Strict overrides whether new commits in the base branch require
           updating the PR if set
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Brancher:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Brancher:
     description: Brancher is for shared code between jobs that only run against certain
       branches. An empty brancher runs against all branches.
     properties:
       branches:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: Only run against these branches. Default is all branches.
       skipBranches:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: Do not run against these branches. Default is no branches.
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPack:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BuildPack:
     description: BuildPack represents a set of language specific build packs and associated
       quickstarts
     properties:
@@ -159,9 +159,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPackSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BuildPackSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPackList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BuildPackList:
     description: BuildPackList is a list of TypeMeta resources
     properties:
       apiVersion:
@@ -171,7 +171,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPack'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BuildPack'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -184,7 +184,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPackSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BuildPackSpec:
     description: BuildPackSpec is the specification of an BuildPack
     properties:
       gitRef:
@@ -195,10 +195,10 @@ definitions:
         type: string
       quickstartLocations:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.QuickStartLocation'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.QuickStartLocation'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ChartRef:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ChartRef:
     properties:
       name:
         type: string
@@ -207,7 +207,7 @@ definitions:
       repoName:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatus:
     description: CommitStatus represents the commit statuses for a particular pull
       request
     properties:
@@ -225,9 +225,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusCommitReference:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusCommitReference:
     properties:
       gitUrl:
         type: string
@@ -236,27 +236,27 @@ definitions:
       sha:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusDetails:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusDetails:
     properties:
       Items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusItem'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusItem'
         type: array
       checked:
         type: boolean
       commit:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusCommitReference'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusCommitReference'
       context:
         type: string
       pipelineActivity:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference'
     required:
     - pipelineActivity
     - checked
     - commit
     - context
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusItem:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusItem:
     properties:
       description:
         type: string
@@ -267,13 +267,13 @@ definitions:
     required:
     - pass
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusList:
     description: CommitStatusList is a structure used by k8s to store lists of commit
       statuses
     properties:
       Items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatus'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatus'
         type: array
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
@@ -291,25 +291,25 @@ definitions:
     - metadata
     - Items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusSpec:
     description: CommitStatusSpec provides details of a particular commit status
     properties:
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusDetails'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitStatusDetails'
         type: array
     required:
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitSummary:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitSummary:
     description: CommitSummary is the summary of a commit
     properties:
       author:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
       branch:
         type: string
       committer:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
       issueIds:
         items:
           type: string
@@ -321,7 +321,7 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigMapSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ConfigMapSpec:
     description: ConfigMapSpec contains configuration options for the configMap being
       updated by the config-updater plugin.
     properties:
@@ -345,37 +345,37 @@ definitions:
     required:
     - name
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigUpdater:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ConfigUpdater:
     description: ConfigUpdater holds configuration for the config updater plugin
     properties:
       ConfigMap:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigMapSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ConfigMapSpec'
       configFile:
         type: string
       map:
         additionalProperties:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigMapSpec'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ConfigMapSpec'
         type: object
       pluginFile:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ContextPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ContextPolicy:
     description: ContextPolicy configures options about how to handle various contexts.
     properties:
       fromBranchProtection:
         description: Infer required and optional jobs from Branch Protection configuration
         type: boolean
       optionalContexts:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       requiredContexts:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       requiredIfPresentContexts:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       skipUnknownContexts:
         description: whether to consider unknown contexts optional (skip) or required.
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CoreActivityStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CoreActivityStep:
     description: CoreActivityStep is a base step included in Stages of a pipeline
       or other kinds of step
     properties:
@@ -390,7 +390,7 @@ definitions:
       status:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdate:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.DependencyUpdate:
     description: DependencyUpdate describes an dependency update message from the
       commit log
     properties:
@@ -409,7 +409,7 @@ definitions:
       paths:
         items:
           items:
-            $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdateDetails'
+            $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.DependencyUpdateDetails'
           type: array
         type: array
       repo:
@@ -434,7 +434,7 @@ definitions:
     - toReleaseHTMLURL
     - toReleaseName
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdateDetails:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.DependencyUpdateDetails:
     description: DependencyUpdateDetails are the details of a dependency update
     properties:
       component:
@@ -471,7 +471,7 @@ definitions:
     - toReleaseHTMLURL
     - toReleaseName
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DeployOptions:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.DeployOptions:
     description: DeployOptions configures options for how to deploy applications by
       default such as using progressive delivery or using horizontal pod autoscaler
     properties:
@@ -483,7 +483,7 @@ definitions:
         description: should we use the horizontal pod autoscaler on new apps by default?
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Environment:
     description: Environment represents an environment like Dev, Test, Staging, Production
       where code lives
     properties:
@@ -501,11 +501,11 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentSpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentFilter:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentFilter:
     description: EnvironmentFilter specifies the environments to apply the role binding
       to
     properties:
@@ -520,7 +520,7 @@ definitions:
       kind:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentList:
     description: EnvironmentList is a list of TypeMeta resources
     properties:
       apiVersion:
@@ -530,7 +530,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Environment'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -543,7 +543,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRepository:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRepository:
     description: EnvironmentRepository is the repository for an environment using
       GitOps
     properties:
@@ -554,7 +554,7 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBinding:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBinding:
     description: |-
       EnvironmentRoleBinding is like a vanilla RoleBinding but applies to a set of Namespaces based on an Environment filter so that roles can be bound to multiple namespaces easily.
 
@@ -574,11 +574,11 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingSpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingList:
     description: EnvironmentRoleBindingList is a list of TypeMeta resources
     properties:
       apiVersion:
@@ -588,7 +588,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBinding'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBinding'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -601,13 +601,13 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingSpec:
     description: EnvironmentRoleBindingSpec is the specification of an EnvironmentRoleBinding
     properties:
       environments:
         description: specifies which sets of environments this binding applies to
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentFilter'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentFilter'
         type: array
       roleRef:
         $ref: '#/definitions/io.k8s.api.rbac.v1.RoleRef'
@@ -623,14 +623,14 @@ definitions:
     - subjects
     - roleRef
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingStatus:
     description: EnvironmentRoleBindingStatus is the status for an EnvironmentRoleBinding
       resource
     properties:
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentSpec:
     description: EnvironmentSpec is the specification of an Environment
     properties:
       cluster:
@@ -645,7 +645,7 @@ definitions:
         format: int32
         type: integer
       previewGitInfo:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PreviewGitSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PreviewGitSpec'
       promotionStrategy:
         type: string
       pullRequestURL:
@@ -655,26 +655,26 @@ definitions:
           a separate cluster to the Development Environment
         type: boolean
       source:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRepository'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentRepository'
       teamSettings:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSettings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamSettings'
       webHookEngine:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentStatus:
     description: EnvironmentStatus is the status for an Environment resource
     properties:
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentVariable:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentVariable:
     properties:
       name:
         type: string
       value:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Extension:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Extension:
     description: Extension represents an extension available to this Jenkins X install
     properties:
       apiVersion:
@@ -691,9 +691,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionConfig:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionConfig:
     description: ExtensionConfig is the configuration and enablement for an extension
       inside an app
     properties:
@@ -703,29 +703,29 @@ definitions:
         type: string
       parameters:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameterValue'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionParameterValue'
         type: array
     required:
     - name
     - namespace
     - parameters
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionConfigList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionConfigList:
     description: ExtensionsConfigList contains a list of ExtensionConfig items
     properties:
       extensions:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionConfig'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionConfig'
         type: array
     required:
     - extensions
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinition:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinition:
     description: ExtensionDefinition defines an Extension
     properties:
       children:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionChildReference'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinitionChildReference'
         type: array
       description:
         type: string
@@ -737,7 +737,7 @@ definitions:
         type: string
       parameters:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameter'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionParameter'
         type: array
       scriptFile:
         type: string
@@ -752,7 +752,7 @@ definitions:
     - namespace
     - uuid
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionChildReference:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinitionChildReference:
     description: ExtensionDefinitionChildReference provides a reference to a child
     properties:
       name:
@@ -766,19 +766,19 @@ definitions:
       uuid:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinitionList:
     description: ExtensionDefinitionList contains a list of ExtensionDefinition items
     properties:
       extensions:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinition'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinition'
         type: array
       version:
         type: string
     required:
     - extensions
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionReference:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinitionReference:
     description: ExtensionRepositoryReference references a GitHub repo that contains
       extension definitions
     properties:
@@ -790,18 +790,18 @@ definitions:
     - remote
     - tag
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionReferenceList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinitionReferenceList:
     description: ExtensionDefinitionReferenceList contains a list of ExtensionRepository
       items
     properties:
       remotes:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionReference'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionDefinitionReference'
         type: array
     required:
     - remotes
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionExecution:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionExecution:
     description: ExtensionExecution is an executable instance of an extension which
       can be attached into a pipeline for later execution. It differs from an Extension
       as it cannot have children and parameters have been resolved to environment
@@ -811,7 +811,7 @@ definitions:
         type: string
       environmentVariables:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentVariable'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.EnvironmentVariable'
         type: array
       given:
         type: string
@@ -824,7 +824,7 @@ definitions:
       uuid:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionList:
     description: ExtensionList is a list of Extensions available for a team
     properties:
       apiVersion:
@@ -834,7 +834,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Extension'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Extension'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -847,7 +847,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameter:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionParameter:
     description: ExtensionParameter describes a parameter definition for an extension
     properties:
       defaultValue:
@@ -859,7 +859,7 @@ definitions:
       name:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameterValue:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionParameterValue:
     properties:
       name:
         type: string
@@ -869,23 +869,23 @@ definitions:
     - name
     - value
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionRepositoryReference:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionRepositoryReference:
     properties:
       chart:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ChartRef'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ChartRef'
       github:
         type: string
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionRepositoryReferenceList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionRepositoryReferenceList:
     properties:
       repositories:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionRepositoryReference'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionRepositoryReference'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionSpec:
     description: ExtensionSpec provides details of an extension available for a team
     properties:
       children:
@@ -902,7 +902,7 @@ definitions:
         type: string
       parameters:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameter'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionParameter'
         type: array
       script:
         type: string
@@ -915,7 +915,7 @@ definitions:
           type: string
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExternalPlugin:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExternalPlugin:
     description: ExternalPlugin holds configuration for registering an external plugin.
     properties:
       endpoint:
@@ -923,7 +923,7 @@ definitions:
           the name of the plugin, ie. "http://{{name}}".
         type: string
       events:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: ReplaceableSliceOfStrings are the events that need to be demuxed
           by the hook server to the external plugin. If no events are specified, everything
           is sent.
@@ -933,7 +933,7 @@ definitions:
     required:
     - name
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Fact:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Fact:
     description: |-
       Fact represents observed facts. Apps will generate Facts about the system. A naming schema is required since each Fact has a name that's unique for the whole system. Apps should prefix their generated Facts with the name of the App, like <app-name>-<fact>. This makes that different Apps can't possibly have conflicting Fact names.
 
@@ -961,11 +961,11 @@ definitions:
             buildNumber: 23
           }
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.FactSpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.FactStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.FactList:
     description: FactList is a list of Fact resources
     properties:
       apiVersion:
@@ -975,7 +975,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Fact'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Fact'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -988,25 +988,25 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.FactSpec:
     description: FactSpec is the specification of a Fact
     properties:
       factType:
         type: string
       measurements:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Measurement'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Measurement'
         type: array
       name:
         type: string
       original:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Original'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Original'
       statements:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Statement'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Statement'
         type: array
       subject:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference'
       tags:
         items:
           type: string
@@ -1016,13 +1016,13 @@ definitions:
     - factType
     - subject
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.FactStatus:
     description: FactStatus is the status for an Fact resource
     properties:
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitService:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitService:
     description: GitService represents a git provider so we can map the host name
       to a kinda of git service
     properties:
@@ -1040,9 +1040,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitServiceSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitServiceSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitServiceList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitServiceList:
     description: GitServiceList is a list of GitService resources
     properties:
       apiVersion:
@@ -1052,7 +1052,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitService'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitService'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -1065,7 +1065,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitServiceSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitServiceSpec:
     description: GitServiceSpec is the specification of an GitService
     properties:
       gitKind:
@@ -1075,7 +1075,7 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitStatus:
     description: GitStatus the status of a git commit in terms of CI/CD
     properties:
       status:
@@ -1083,16 +1083,16 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GlobalProtectionPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GlobalProtectionPolicy:
     description: GlobalProtectionPolicy defines the default branch protection policy
       for the scheduler
     properties:
       ProtectionPolicy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ProtectionPolicy'
       protectTested:
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueLabel:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.IssueLabel:
     properties:
       color:
         type: string
@@ -1101,24 +1101,24 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueSummary:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.IssueSummary:
     description: IssueSummary is the summary of an issue
     properties:
       assignees:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
         type: array
       body:
         type: string
       closedBy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
       creationTimestamp:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
       id:
         type: string
       labels:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueLabel'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.IssueLabel'
         type: array
       message:
         type: string
@@ -1129,9 +1129,9 @@ definitions:
       url:
         type: string
       user:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.JobBase:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.JobBase:
     description: JobBase contains attributes common to all job types
     properties:
       agent:
@@ -1142,7 +1142,7 @@ definitions:
           kube.DefaultClusterAlias)'
         type: string
       labels:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringString'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringString'
         description: ReplaceableMapOfStringString are added to jobs and pods created
           for this job.
       maxConcurrency:
@@ -1164,7 +1164,7 @@ definitions:
     - name
     - agent
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Lgtm:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Lgtm:
     description: Lgtm specifies a configuration for a single lgtm. The configuration
       for the lgtm plugin is defined as a list of these structures.
     properties:
@@ -1183,7 +1183,7 @@ definitions:
           StickyLgtmTeam specifies the Github team whose members are trusted with sticky LGTM, which eliminates the need to re-lgtm minor fixes/updates.
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Measurement:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Measurement:
     description: Measurement is a percentage or a count, something measured that the
       system will capture within a fact
     properties:
@@ -1203,7 +1203,7 @@ definitions:
     - measurementType
     - measurementValue
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Merger:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Merger:
     description: Merger defines the options used to merge the PR
     properties:
       blockerLabel:
@@ -1222,7 +1222,7 @@ definitions:
           rebase, and merge.
         type: string
       policy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ContextPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ContextPolicy'
         description: ContextOptions defines the default merge options. If not set
           it will infer the required and optional contexts from the jobs configured
           and use the Git Provider combined status; otherwise it may apply the branch
@@ -1240,7 +1240,7 @@ definitions:
         description: URL for status contexts.
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Original:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Original:
     description: Original contains the report
     properties:
       mimetype:
@@ -1252,11 +1252,11 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodic:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Periodic:
     description: Periodic defines a job to be run periodically
     properties:
       JobBase:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.JobBase'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.JobBase'
       cron:
         description: Cron representation of job trigger time
         type: string
@@ -1264,25 +1264,25 @@ definitions:
         description: Interval to wait between two runs of the job.
         type: string
       tags:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: Tags for config entries
     required:
     - interval
     - cron
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodics:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Periodics:
     description: Periodics is a list of jobs to be run periodically
     properties:
       entries:
         description: Items are the post submit configurations
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodic'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Periodic'
         type: array
       replace:
         description: Replace the existing entries
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivity:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivity:
     description: PipelineActivity represents pipeline activity for a particular run
       of a pipeline
     properties:
@@ -1300,11 +1300,11 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivitySpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivitySpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivityStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivityList:
     description: PipelineActivityList is a list of PipelineActivity resources
     properties:
       apiVersion:
@@ -1314,7 +1314,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivity'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivity'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -1327,12 +1327,12 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivitySpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivitySpec:
     description: PipelineActivitySpec is the specification of the pipeline activity
     properties:
       attachments:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Attachment'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Attachment'
         type: array
       author:
         type: string
@@ -1343,7 +1343,7 @@ definitions:
       baseSHA:
         type: string
       batchPipelineActivity:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BatchPipelineActivity'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BatchPipelineActivity'
       build:
         type: string
       buildLogsUrl:
@@ -1372,7 +1372,7 @@ definitions:
         type: string
       postExtensions:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionExecution'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExtensionExecution'
         type: array
       pullTitle:
         type: string
@@ -1384,7 +1384,7 @@ definitions:
         type: string
       steps:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStep'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivityStep'
         type: array
       version:
         type: string
@@ -1398,25 +1398,25 @@ definitions:
       workflowStatus:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivityStatus:
     description: PipelineActivityStatus is the status for an Environment resource
     properties:
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineActivityStep:
     description: PipelineActivityStep represents a step in a pipeline activity
     properties:
       kind:
         type: string
       preview:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PreviewActivityStep'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PreviewActivityStep'
       promote:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteActivityStep'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromoteActivityStep'
       stage:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.StageActivityStep'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineExtension:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineExtension:
     description: PipelineExtension defines the image and command of an app which wants
       to modify/extend the pipeline
     properties:
@@ -1437,7 +1437,7 @@ definitions:
     required:
     - name
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineStructure:
     description: PipelineStructure contains references to the Pipeline and PipelineRun,
       and a list of PipelineStructureStages in the pipeline. This allows us to map
       between a running Pod to its TaskRun, to the TaskRun's Task and PipelineRun,
@@ -1464,13 +1464,13 @@ definitions:
         type: string
       stages:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineStructureStage'
         type: array
     required:
     - pipelineRef
     - pipelineRunRef
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineStructureList:
     description: PipelineStructureList is a list of PipelineStructureList resources
     properties:
       apiVersion:
@@ -1480,7 +1480,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineStructure'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -1493,7 +1493,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PipelineStructureStage:
     description: PipelineStructureStage contains the stage's name, one of either a
       reference to the Task corresponding to the stage if it has steps, a list of
       sequential stage names nested within this stage, or a list of parallel stage
@@ -1531,7 +1531,7 @@ definitions:
     - name
     - depth
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Plugin:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Plugin:
     description: Plugin represents a binary plugin installed into this Jenkins X team
     properties:
       apiVersion:
@@ -1548,9 +1548,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PluginSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PluginSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PluginList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PluginList:
     description: PluginList is a list of Plugins available for a team
     properties:
       apiVersion:
@@ -1560,7 +1560,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Plugin'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Plugin'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -1573,12 +1573,12 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PluginSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PluginSpec:
     description: PluginSpec provides details of a binary plugin available for a team
     properties:
       binaries:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Binary'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Binary'
         type: array
       description:
         type: string
@@ -1591,15 +1591,15 @@ definitions:
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Postsubmit:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Postsubmit:
     description: Postsubmit runs on push events.
     properties:
       Brancher:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Brancher'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Brancher'
       JobBase:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.JobBase'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.JobBase'
       RegexpChangeMatcher:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RegexpChangeMatcher'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.RegexpChangeMatcher'
       context:
         description: Context is the name of the GitHub status context for the job.
         type: string
@@ -1609,28 +1609,28 @@ definitions:
     required:
     - context
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Postsubmits:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Postsubmits:
     description: Postsubmits is a list of Postsubmit job configurations that can optionally
       completely replace the Postsubmit job configurations in the parent scheduler
     properties:
       entries:
         description: Items are the post submit configurations
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Postsubmit'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Postsubmit'
         type: array
       replace:
         description: Replace the existing entries
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Presubmit:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Presubmit:
     description: Presubmit defines a job configuration for pull requests
     properties:
       Brancher:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Brancher'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Brancher'
       JobBase:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.JobBase'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.JobBase'
       RegexpChangeMatcher:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RegexpChangeMatcher'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.RegexpChangeMatcher'
       alwaysRun:
         description: AlwaysRun automatically for every PR, or only when a comment
           triggers it. By default true.
@@ -1640,7 +1640,7 @@ definitions:
           job.
         type: string
       context_options:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RepoContextPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.RepoContextPolicy'
         description: ContextOptions defines the merge options. If not set it will
           infer the required and optional contexts from the jobs configured and use
           the Git Provider combined status; otherwise it may apply the branch protection
@@ -1655,10 +1655,10 @@ definitions:
           required for merge. By default false.
         type: boolean
       policy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicies'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ProtectionPolicies'
       queries:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Query'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Query'
         type: array
       report:
         description: Report enables reporting the job status on the git provider
@@ -1679,20 +1679,20 @@ definitions:
     - trigger
     - rerunCommand
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Presubmits:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Presubmits:
     description: Presubmits is a list of Presubmit job configurations that can optionally
       completely replace the Presubmit job configurations in the parent scheduler
     properties:
       entries:
         description: Items are the Presubmit configurtations
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Presubmit'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Presubmit'
         type: array
       replace:
         description: Replace the existing entries
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PreviewActivityStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PreviewActivityStep:
     description: PreviewActivityStep is the step of creating a preview environment
       as part of a Pull Request pipeline
     properties:
@@ -1713,7 +1713,7 @@ definitions:
       status:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PreviewGitSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PreviewGitSpec:
     description: PreviewGitSpec is the preview git branch/pull request details
     properties:
       appName:
@@ -1733,9 +1733,9 @@ definitions:
       url:
         type: string
       user:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteActivityStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromoteActivityStep:
     description: PromoteActivityStep is the step of promoting a version of an application
       to an environment
     properties:
@@ -1750,15 +1750,15 @@ definitions:
       name:
         type: string
       pullRequest:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromotePullRequestStep'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromotePullRequestStep'
       startedTimestamp:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
       status:
         type: string
       update:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteUpdateStep'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromoteUpdateStep'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromotePullRequestStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromotePullRequestStep:
     description: PromotePullRequestStep is the step for promoting a version to an
       environment by raising a Pull Request on the git repository of the environment
     properties:
@@ -1777,7 +1777,7 @@ definitions:
       status:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteUpdateStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromoteUpdateStep:
     description: PromoteUpdateStep is the step for updating a promotion after the
       Pull Request merges to master
     properties:
@@ -1793,29 +1793,29 @@ definitions:
         type: string
       statuses:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitStatus'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GitStatus'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteWorkflowStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromoteWorkflowStep:
     description: PromoteWorkflowStep is the step of promoting a version of an application
       to an environment
     properties:
       environment:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicies:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ProtectionPolicies:
     description: ProtectionPolicies defines the branch protection policies
     properties:
       ProtectionPolicy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ProtectionPolicy'
       Replace:
         type: boolean
       entries:
         additionalProperties:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicy'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ProtectionPolicy'
         type: object
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ProtectionPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ProtectionPolicy:
     description: ProtectionPolicy for merging.
     properties:
       enforceAdmins:
@@ -1825,16 +1825,16 @@ definitions:
         description: Protect overrides whether branch protection is enabled if set.
         type: boolean
       requiredPullRequestReviews:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReviewPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReviewPolicy'
         description: RequiredPullRequestReviews specifies approval/review criteria.
       requiredStatusChecks:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BranchProtectionContextPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.BranchProtectionContextPolicy'
         description: RequiredStatusChecks configures github contexts
       restrictions:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Restrictions'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Restrictions'
         description: Restrictions limits who can merge
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PullRequestInfo:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PullRequestInfo:
     description: PullRequestInfo contains information about a PR included in a batch,
       like its PR number, the last build number, and SHA
     properties:
@@ -1849,24 +1849,24 @@ definitions:
       pullRequestNumber:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Query:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Query:
     description: 'Query is turned into a Git Provider search query. See the docs for
       details: https://help.github.com/articles/searching-issues-and-pull-requests/'
     properties:
       excludedBranches:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       includedBranches:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       labels:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       milestone:
         type: string
       missingLabels:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       reviewApprovedRequired:
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.QuickStartLocation:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.QuickStartLocation:
     description: QuickStartLocation
     properties:
       excludes:
@@ -1884,7 +1884,7 @@ definitions:
       owner:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RegexpChangeMatcher:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.RegexpChangeMatcher:
     description: RegexpChangeMatcher is for code shared between jobs that run only
       when certain files are changed.
     properties:
@@ -1894,7 +1894,7 @@ definitions:
           regex, the job will be triggered
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Release:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Release:
     description: Release represents a single version of an app that has been released
     properties:
       apiVersion:
@@ -1911,11 +1911,11 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReleaseSpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReleaseStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReleaseList:
     description: ReleaseList is a list of Release resources
     properties:
       apiVersion:
@@ -1925,7 +1925,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Release'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Release'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -1938,16 +1938,16 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReleaseSpec:
     description: ReleaseSpec is the specification of the Release
     properties:
       commits:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitSummary'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CommitSummary'
         type: array
       dependencyUpdates:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DependencyUpdate'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.DependencyUpdate'
         type: array
       gitCloneUrl:
         type: string
@@ -1959,40 +1959,40 @@ definitions:
         type: string
       issues:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueSummary'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.IssueSummary'
         type: array
       name:
         type: string
       pullRequests:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueSummary'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.IssueSummary'
         type: array
       releaseNotesURL:
         type: string
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReleaseStatus:
     description: ReleaseStatus is the status of a release
     properties:
       status:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringContextPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringContextPolicy:
     description: ReplaceableMapOfStringContextPolicy is a map of context policies
       that can optionally completely replace any context policies defined in the parent
       scheduler
     properties:
       Items:
         additionalProperties:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ContextPolicy'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ContextPolicy'
         type: object
       replace:
         type: boolean
     required:
     - Items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringString:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringString:
     description: ReplaceableMapOfStringString is a map of strings that can optionally
       completely replace the map of strings in the parent scheduler
     properties:
@@ -2004,7 +2004,7 @@ definitions:
         description: Replace the existing entries
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfExternalPlugins:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfExternalPlugins:
     description: ReplaceableSliceOfExternalPlugins is a list of external plugins that
       can optionally completely replace the plugins in any parent SchedulerSpec
     properties:
@@ -2012,12 +2012,12 @@ definitions:
         type: boolean
       entries:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExternalPlugin'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ExternalPlugin'
         type: array
     required:
     - Replace
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings:
     description: ReplaceableSliceOfStrings is a slice of strings that can optionally
       completely replace the slice of strings defined in the parent scheduler
     properties:
@@ -2030,17 +2030,17 @@ definitions:
         description: Replace the existing entries
         type: boolean
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.RepoContextPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.RepoContextPolicy:
     description: RepoContextPolicy overrides the policy for repo, and any branch overrides.
     properties:
       ContextPolicy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ContextPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ContextPolicy'
       branches:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringContextPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableMapOfStringContextPolicy'
     required:
     - ContextPolicy
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference:
     properties:
       apiVersion:
         description: API version of the referent.
@@ -2058,19 +2058,19 @@ definitions:
     - kind
     - name
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Restrictions:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Restrictions:
     description: Restrictions limits who can merge Users and Teams entries are appended
       to parent lists.
     properties:
       teams:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
       users:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
     required:
     - users
     - teams
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReviewPolicy:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReviewPolicy:
     description: ReviewPolicy specifies git provider approval/review criteria. Any
       nil values inherit the policy from the parent, otherwise bool/ints are overridden.
       Non-empty lists are appended to parent lists.
@@ -2080,7 +2080,7 @@ definitions:
           old reviews if set
         type: boolean
       dismissalRestrictions:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Restrictions'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Restrictions'
         description: Restrictions appends users/teams that are allowed to merge
       requireCodeOwnerReviews:
         description: RequireOwners overrides whether CODEOWNERS must approve PRs if
@@ -2092,7 +2092,7 @@ definitions:
         format: int32
         type: integer
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Scheduler:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Scheduler:
     description: Scheduler is configuration for a pipeline scheduler
     properties:
       apiVersion:
@@ -2109,9 +2109,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SchedulerSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SchedulerSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SchedulerAgent:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SchedulerAgent:
     description: SchedulerAgent defines the scheduler agent configuration
     properties:
       agent:
@@ -2120,7 +2120,7 @@ definitions:
     required:
     - agent
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SchedulerList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SchedulerList:
     description: SchedulerList is a list of configurations for a pipeline scheduler
     properties:
       apiVersion:
@@ -2130,7 +2130,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Scheduler'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Scheduler'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -2143,44 +2143,44 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SchedulerSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SchedulerSpec:
     description: SchedulerSpec defines the pipeline scheduler (e.g. Prow) configuration
     properties:
       approve:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Approve'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Approve'
       attachments:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Attachment'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Attachment'
         type: array
       configUpdater:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ConfigUpdater'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ConfigUpdater'
       externalPlugins:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfExternalPlugins'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfExternalPlugins'
       lgtm:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Lgtm'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Lgtm'
       merger:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Merger'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Merger'
       periodics:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Periodics'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Periodics'
       plugins:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ReplaceableSliceOfStrings'
         description: Plugins is a list of plugin names enabled for a repo
       policy:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GlobalProtectionPolicy'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.GlobalProtectionPolicy'
       postsubmits:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Postsubmits'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Postsubmits'
       presubmits:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Presubmits'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Presubmits'
       schedulerAgent:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SchedulerAgent'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SchedulerAgent'
       trigger:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Trigger'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Trigger'
       welcome:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Welcome'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Welcome'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepository:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepository:
     description: SourceRepository is the metadata for an Application/Project/SourceRepository
     properties:
       apiVersion:
@@ -2197,9 +2197,9 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositorySpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositorySpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryGroup:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositoryGroup:
     description: SourceRepositoryGroup is the metadata for an Application/Project/SourceRepository
     properties:
       apiVersion:
@@ -2215,9 +2215,9 @@ definitions:
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryGroupSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositoryGroupSpec'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryGroupList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositoryGroupList:
     description: SourceRepositoryGroupList is a structure used by k8s to store lists
       of apps
     properties:
@@ -2228,7 +2228,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryGroup'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositoryGroup'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -2241,7 +2241,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryGroupSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositoryGroupSpec:
     description: SourceRepositoryGroupSpec is the metadata for an Application/Project/SourceRepository
     properties:
       apiVersion:
@@ -2258,15 +2258,15 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
       repositories:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference'
         type: array
       scheduler:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference'
     required:
     - repositories
     - scheduler
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositoryList:
     description: SourceRepositoryList is a structure used by k8s to store lists of
       apps
     properties:
@@ -2277,7 +2277,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepository'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepository'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -2290,7 +2290,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositorySpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.SourceRepositorySpec:
     description: SourceRepositorySpec provides details of the metadata for an App
     properties:
       description:
@@ -2314,7 +2314,7 @@ definitions:
       repo:
         type: string
       scheduler:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference'
         description: Scheduler a reference to a custom scheduler otherwise we default
           to the Team's Scededuler
       sshCloneURL:
@@ -2324,7 +2324,7 @@ definitions:
         description: URL is the web URL of the project page
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.StageActivityStep:
     description: StageActivityStep represents a stage of zero to more sub steps in
       a jenkins pipeline
     properties:
@@ -2340,10 +2340,10 @@ definitions:
         type: string
       steps:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CoreActivityStep'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.CoreActivityStep'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Statement:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Statement:
     description: Statement represents a decision that was made, for example that a
       promotion was approved or denied
     properties:
@@ -2362,7 +2362,7 @@ definitions:
     - statementType
     - measurementValue
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StorageLocation:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.StorageLocation:
     description: StorageLocation
     properties:
       bucketUrl:
@@ -2374,7 +2374,7 @@ definitions:
       gitUrl:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Team:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Team:
     description: Team represents a request to create an actual Team which is a group
       of users, a development environment and optional other environments
     properties:
@@ -2392,11 +2392,11 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamSpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamList:
     description: TeamList is a list of TypeMeta resources
     properties:
       apiVersion:
@@ -2406,7 +2406,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Team'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Team'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -2419,7 +2419,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSettings:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamSettings:
     description: TeamSettings the default settings for a team
     properties:
       appPrefixes:
@@ -2444,13 +2444,13 @@ definitions:
       buildPackUrl:
         type: string
       defaultScheduler:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.ResourceReference'
       deployKind:
         description: DeployKind what kind of deployment ("default" uses regular Kubernetes
           Services and Deployments, "knative" uses the Knative Service resource instead)
         type: string
       deployOptions:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.DeployOptions'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.DeployOptions'
         description: DeployOptions configures options for how to deploy applications
           by default such as using canary rollouts (progressive delivery) or using
           horizontal pod autoscaler
@@ -2499,11 +2499,11 @@ definitions:
         type: string
       quickstartLocations:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.QuickStartLocation'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.QuickStartLocation'
         type: array
       storageLocations:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StorageLocation'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.StorageLocation'
         type: array
       useGitOps:
         type: boolean
@@ -2516,7 +2516,7 @@ definitions:
           which is the set of versions to use for charts, images, packages etc
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamSpec:
     description: TeamSpec is the specification of an Team
     properties:
       kind:
@@ -2528,7 +2528,7 @@ definitions:
           type: string
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.TeamStatus:
     description: TeamStatus is the status for an Team resource
     properties:
       message:
@@ -2536,7 +2536,7 @@ definitions:
       provisionStatus:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Trigger:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Trigger:
     description: |-
       Trigger specifies a configuration for a single trigger.
 
@@ -2560,7 +2560,7 @@ definitions:
           built for PRs to the above repos. The default is the PR's org.
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.User:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.User:
     description: User represents a git user so we have a cache to find by email address
     properties:
       apiVersion:
@@ -2577,17 +2577,17 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
       user:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails'
         description: Deprecated, use Spec
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserDetails:
     description: UserDetails containers details of a user
     properties:
       accountReference:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AccountReference'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.AccountReference'
         type: array
       avatarUrl:
         type: string
@@ -2606,7 +2606,7 @@ definitions:
       url:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserList:
     description: UserList is a list of User resources
     properties:
       apiVersion:
@@ -2616,7 +2616,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.User'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.User'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -2629,7 +2629,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.UserSpec:
     description: UserSpec is the user details
     properties:
       imageUrl:
@@ -2641,13 +2641,13 @@ definitions:
       username:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Welcome:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Welcome:
     description: Welcome welcome plugin config
     properties:
       message_template:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Workflow:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Workflow:
     description: Workflow represents pipeline activity for a particular run of a pipeline
     properties:
       apiVersion:
@@ -2664,11 +2664,11 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowSpec'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowSpec'
       status:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStatus'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowStatus'
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowList:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowList:
     description: WorkflowList is a list of Workflow resources
     properties:
       apiVersion:
@@ -2678,7 +2678,7 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Workflow'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.Workflow'
         type: array
       kind:
         description: 'Kind is a string value representing the REST resource this object
@@ -2691,7 +2691,7 @@ definitions:
     - metadata
     - items
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowPreconditions:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowPreconditions:
     description: WorkflowPreconditions is the trigger to start a step
     properties:
       environments:
@@ -2701,23 +2701,23 @@ definitions:
           type: string
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowSpec:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowSpec:
     description: WorkflowSpec is the specification of the pipeline activity
     properties:
       pipeline:
         type: string
       steps:
         items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStep'
+          $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowStep'
         type: array
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStatus:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowStatus:
     description: WorkflowStatus is the status for an Environment resource
     properties:
       version:
         type: string
     type: object
-  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStep:
+  com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowStep:
     description: WorkflowStep represents a step in a pipeline activity
     properties:
       description:
@@ -2727,9 +2727,9 @@ definitions:
       name:
         type: string
       promote:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteWorkflowStep'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.PromoteWorkflowStep'
       trigger:
-        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowPreconditions'
+        $ref: '#/definitions/com.github.jenkins-x.jx.v2.pkg.apis.jenkins_io.v1.WorkflowPreconditions'
     type: object
   io.k8s.api.batch.v1.Job:
     description: Job represents the configuration of a single job.

@@ -84,6 +84,7 @@ func NewGenerateClientSetCmd(genOpts GenerateOptions) *cobra.Command {
 	cobraCmd.Flags().StringVarP(&o.OutputPackage, optionOutputPackage, "o", "", "Output package, must specify")
 	cobraCmd.Flags().StringVarP(&o.InputBase, optionInputBase, "", wd, "Input base, defaults working directory")
 	cobraCmd.Flags().BoolVarP(&o.Global, global, "", false, "use the users GOPATH")
+	cobraCmd.Flags().StringVarP(&o.SemVer, optionSemVer, "", "", "semantic version to use in packages")
 	return cobraCmd
 }
 
@@ -128,6 +129,6 @@ func (o *ClientSetGenerationOptions) Run() error {
 		return errors.Wrapf(err, "installing kubernetes code generator tools")
 	}
 	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.GoPathInputPackage)
-	return generator.GenerateClient(o.Generators, o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage,
-		filepath.Join(build.Default.GOPATH, "src"), o.BoilerplateFile, gopath)
+	return generator.GenerateClient(o.Generators, o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage, o.OutputPackage,
+		filepath.Join(build.Default.GOPATH, "src"), o.BoilerplateFile, gopath, o.SemVer)
 }

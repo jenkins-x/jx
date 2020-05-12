@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/v2/pkg/ksync"
-    "github.com/pkg/errors"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 

@@ -95,6 +95,17 @@ func FileExists(path string) (bool, error) {
 	return true, errors.Wrapf(err, "failed to check if file exists %s", path)
 }
 
+// DirExists checks if path exists and is a directory
+func DirExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err == nil {
+		return info.IsDir(), nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // DeleteFile deletes a file from the operating system. This should NOT be used to delete any sensitive information
 // because it can easily be recovered. Use DestroyFile to delete sensitive information
 func DeleteFile(fileName string) (err error) {

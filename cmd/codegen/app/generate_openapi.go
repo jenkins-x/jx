@@ -111,6 +111,7 @@ func NewCmdCreateClientOpenAPI(genOpts GenerateOptions) *cobra.Command {
 	cobraCmd.Flags().StringVarP(&o.ModuleName, optionModuleName, "", moduleName,
 		"module name (e.g. github.com/jenkins-x/jx)")
 	cobraCmd.Flags().BoolVarP(&o.Global, global, "", false, "use the users GOPATH")
+	cobraCmd.Flags().StringVarP(&o.SemVer, optionSemVer, "", "", "semantic version to use in packages")
 	return cobraCmd
 }
 
@@ -164,7 +165,7 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 
 	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.InputPackage)
 	err = generator.GenerateOpenApi(o.GroupsWithVersions, o.InputPackage, o.GoPathOutputPackage, o.OutputPackage,
-		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.BoilerplateFile, gopath)
+		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.BoilerplateFile, gopath, o.SemVer)
 	if err != nil {
 		return errors.Wrapf(err, "generating openapi structs to %s", o.GoPathOutputPackage)
 	}

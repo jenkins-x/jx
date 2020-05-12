@@ -10,7 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-    "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 // TailLogs will tail the logs for the pod in ns with containerName,

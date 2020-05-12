@@ -180,7 +180,7 @@ func InstallOpenApiGen(version string, gopath string) error {
 // A boilerplateFile is written to the top of any generated files.
 // The gitter client is used to ensure the correct versions of dependencies are loaded.
 func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPackage string, relativePackage string,
-	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string, gopath string) error {
+	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string, gopath string, semVer string) error {
 	basePkg := fmt.Sprintf("%s/openapi", outputPackage)
 	corePkg := fmt.Sprintf("%s/core", basePkg)
 	allPkg := fmt.Sprintf("%s/all", basePkg)
@@ -197,11 +197,11 @@ func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPac
 	if err != nil {
 		return err
 	}
-	_, err = writeOpenApiAll(outputBase, allPkg, corePkg, dependentPackages)
+	_, err = writeOpenApiAll(outputBase, allPkg, corePkg, dependentPackages, semVer)
 	if err != nil {
 		return err
 	}
-	_, err = writeSchemaWriterToDisk(outputBase, basePkg, allPkg)
+	_, err = writeSchemaWriterToDisk(outputBase, basePkg, allPkg, semVer)
 	if err != nil {
 		return err
 	}
@@ -213,7 +213,7 @@ func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPac
 // baseDir is the root of the module, outputPackage is the base path of the output package,
 // path is the path to the core openapi package (those that are generated for module the generator is run against),
 // and dependents is the paths to the dependent openapi packages
-func writeOpenApiAll(baseDir string, outputPackage string, path string, dependents []string) (string,
+func writeOpenApiAll(baseDir string, outputPackage string, path string, dependents []string, semVer string) (string,
 	error) {
 	tmpl, err := template.New("openapi").Parse(openapiTemplateSrc)
 	if err != nil {
@@ -233,6 +233,13 @@ func writeOpenApiAll(baseDir string, outputPackage string, path string, dependen
 		Path:       path,
 		Dependents: dependents,
 	}
+	if semVer != "" {
+		data.Path = strings.ReplaceAll(path, "/pkg/", fmt.Sprintf("/%s/pkg/", semVer))
+		data.Dependents = []string{}
+		for _, d := range dependents {
+			data.Dependents = append(data.Dependents, strings.ReplaceAll(d, "/pkg/", fmt.Sprintf("/%s/pkg/", semVer)))
+		}
+	}
 	err = tmpl.Execute(outFile, data)
 	defer func() {
 		err := outFile.Close()
@@ -251,7 +258,7 @@ func writeOpenApiAll(baseDir string, outputPackage string, path string, dependen
 // writer without requiring the user to write a command themselves. baseDir is the path to the module,
 // outputPackage is the path to the outputPacakge for the code generator,
 // and allImportPath is the path to the package where the generated map of all the structs is
-func writeSchemaWriterToDisk(baseDir string, outputPackage string, allImportPath string) (string, error) {
+func writeSchemaWriterToDisk(baseDir string, outputPackage string, allImportPath string, semVer string) (string, error) {
 	tmpl, err := template.New("schema_writer").Parse(schemaWriterTemplateSrc)
 	if err != nil {
 		return "", errors.Wrapf(err, "parsing template for %s", SchemaWriterSrcFileName)
@@ -268,6 +275,9 @@ func writeSchemaWriterToDisk(baseDir string, outputPackage string, allImportPath
 	}
 	data := &schemaWriterTemplateData{
 		AllImportPath: allImportPath,
+	}
+	if semVer != "" {
+		data.AllImportPath = strings.ReplaceAll(allImportPath, "/pkg/", fmt.Sprintf("/%s/pkg/", semVer))
 	}
 	err = tmpl.Execute(outFile, data)
 	defer func() {

@@ -37,13 +37,9 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 		inputDirsStr := strings.Join(inputDirs, ",")
 		generateCommand.Args = append(generateCommand.Args, "--input", inputDirsStr, "--input-base", inputPackage)
 	} else {
-		inputDirs := make([]string, 0)
-		for _, gv := range groupsWithVersions {
-			groupVersion := strings.Split(gv, ":")
-			if len(groupVersion) != 2 {
-				return errors.Errorf("argument %s must be like cheese:v1", gv)
-			}
-			inputDirs = append(inputDirs, fmt.Sprintf("%s/%s/%s", inputPackage, groupVersion[0], groupVersion[1]))
+		inputDirs, err := packagesForGroupsWithVersions(inputPackage, groupsWithVersions)
+		if err != nil {
+			return err
 		}
 		inputDirsStr := strings.Join(inputDirs, ",")
 		generateCommand.Args = append(generateCommand.Args, "--input-dirs", inputDirsStr)
@@ -51,10 +47,21 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 	for _, arg := range args {
 		generateCommand.Args = append(generateCommand.Args, arg)
 	}
-
 	out, err := generateCommand.RunWithoutRetry()
 	if err != nil {
 		return errors.Wrapf(err, "running %s, output %s", generateCommand.String(), out)
 	}
 	return nil
+}
+
+func packagesForGroupsWithVersions(inputPackage string, groupsWithVersions []string) ([]string, error) {
+	inputDirs := make([]string, 0)
+	for _, gv := range groupsWithVersions {
+		groupVersion := strings.Split(gv, ":")
+		if len(groupVersion) != 2 {
+			return nil, errors.Errorf("argument %s must be like cheese:v1", gv)
+		}
+		inputDirs = append(inputDirs, fmt.Sprintf("%s/%s/%s", inputPackage, groupVersion[0], groupVersion[1]))
+	}
+	return inputDirs, nil
 }
