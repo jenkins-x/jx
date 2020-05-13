@@ -266,19 +266,22 @@ func (c *Command) run() (string, error) {
 	return text, err
 }
 
-// PathWithBinary Returns the path to be used to execute a binary from, takes the form JX_HOME/bin:mvnBinDir:customPaths
+//PathWithBinary Returns the path to be used to execute a binary from, takes the form JX_HOME/bin:mvnBinDir:customPaths
 func PathWithBinary(customPaths ...string) string {
 	existingEnvironmentPath := os.Getenv("PATH")
-	mvnBinDir, _ := MavenBinaryLocation()
+
 	extraPaths := ""
-	if mvnBinDir != "" {
-		extraPaths += string(os.PathListSeparator) + mvnBinDir
-	}
 	for _, p := range customPaths {
 		if p != "" {
 			extraPaths += string(os.PathListSeparator) + p
 		}
 	}
+
+	mvnBinDir, _ := MavenBinaryLocation()
+	if mvnBinDir != "" {
+		extraPaths += string(os.PathListSeparator) + mvnBinDir
+	}
 	jxBinDir, _ := JXBinLocation()
+
 	return jxBinDir + string(os.PathListSeparator) + existingEnvironmentPath + extraPaths
 }
