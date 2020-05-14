@@ -24,22 +24,20 @@ import (
 
 // Build information. Populated at build-time.
 var (
-	Version   string
-	Revision  string
-	Branch    string
-	BuildUser string
-	BuildDate string
-	GoVersion string
+	Version      string
+	Revision     string
+	BuildDate    string
+	GoVersion    string
+	GitTreeState string
 )
 
 // Map provides the iterable version information.
 var Map = map[string]string{
-	"version":   Version,
-	"revision":  Revision,
-	"branch":    Branch,
-	"buildUser": BuildUser,
-	"buildDate": BuildDate,
-	"goVersion": GoVersion,
+	"version":      Version,
+	"revision":     Revision,
+	"buildDate":    BuildDate,
+	"goVersion":    GoVersion,
+	"gitTreeState": GitTreeState,
 }
 
 const (
@@ -52,8 +50,20 @@ const (
 
 	// TestVersion used in test cases for the current version if no
 	// version can be found - such as if the version property is not properly
-	// included in the go test flags
+	// included in the go test flags.
 	TestVersion = "2.0.404"
+
+	// TestRevision can be used in tests if no revision is passed in the test flags
+	TestRevision = "04b628f48"
+
+	// TestTreeState can be used in tests if no tree state is passed in the test flags
+	TestTreeState = "clean"
+
+	// TestBuildDate can be used in tests if no build date is passed in the test flags
+	TestBuildDate = "2020-05-31T14:51:38Z"
+
+	// TestGoVersion can be used in tests if no version is passed in the test flags
+	TestGoVersion = "1.13.8"
 )
 
 // GetVersion gets the current version string
@@ -75,9 +85,45 @@ func GetSemverVersion() (semver.Version, error) {
 	return v, nil
 }
 
-// VersionStringDefault returns the current version string or returns a dummy
+// GetRevision returns the short SHA1 hashes given a given revision
+func GetRevision() string {
+	v := Map["revision"]
+	if v == "" {
+		v = TestRevision
+	}
+	return v
+}
+
+// GetTreeState returns the state of the working tree
+func GetTreeState() string {
+	v := Map["gitTreeState"]
+	if v == "" {
+		v = TestTreeState
+	}
+	return v
+}
+
+// GetBuildDate returns the build date for the binary
+func GetBuildDate() string {
+	v := Map["buildDate"]
+	if v == "" {
+		v = TestBuildDate
+	}
+	return v
+}
+
+// GetGoVersion returns the version of go used to build the binary
+func GetGoVersion() string {
+	v := Map["goVersion"]
+	if v == "" {
+		v = TestGoVersion
+	}
+	return v
+}
+
+// StringDefault returns the current version string or returns a dummy
 // default value if there is an error
-func VersionStringDefault(defaultValue string) string {
+func StringDefault(defaultValue string) string {
 	v, err := GetSemverVersion()
 	if err == nil {
 		return v.String()

@@ -30,6 +30,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/experimental"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/profile"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/ui"
+
+	version2 "github.com/jenkins-x/jx/v2/pkg/cmd/version"
+
 	"github.com/spf13/viper"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/boot"
@@ -225,9 +228,9 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	}
 	templates.ActsAsRootCommand(rootCommand, filters, getPluginCommandGroups, groups...)
 	rootCommand.AddCommand(NewCmdDocs(commonOpts))
-	rootCommand.AddCommand(NewCmdVersion(commonOpts))
+	rootCommand.AddCommand(version2.NewCmdVersion(commonOpts))
 	rootCommand.Version = version.GetVersion()
-	rootCommand.SetVersionTemplate("{{printf .Version}}\n")
+	rootCommand.SetVersionTemplate("{{printf .Version}}\n Deprecated will be removed on July 1, 2020. Please use version instead\n")
 	rootCommand.AddCommand(NewCmdOptions(out))
 	rootCommand.AddCommand(NewCmdDiagnose(commonOpts))
 

@@ -9,7 +9,7 @@ import (
 )
 
 // deprecatedCommands list of deprecated commands along with some more deprecation details
-var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
+var deprecatedCommands = map[string]deprecationInfo{
 	"install": {
 		replacement: "jx boot",
 		date:        "Jun 1 2020",

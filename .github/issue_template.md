@@ -14,6 +14,14 @@ The output of `jx version` is:
 COPY OUTPUT HERE
 ```
 
+### Diagnostic information
+
+The output of `jx diagnose --show=version` is:
+
+```
+COPY OUTPUT HERE
+```
+
 ### Kubernetes cluster
 
 <!--
