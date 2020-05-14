@@ -50,8 +50,20 @@ var bitbucketServerRouter = util.Router{
 		"GET": "pr.json",
 		"PUT": "pr.json",
 	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/7": util.MethodMap{
+		"GET": "pr-merge-success.json",
+	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/commits": util.MethodMap{
 		"GET": "pr-commits.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/7/commits": util.MethodMap{
+		"GET": "pr-commits.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/activities": util.MethodMap{
+		"GET": "pr-activity.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/7/activities": util.MethodMap{
+		"GET": "pr-activity.json",
 	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/merge": util.MethodMap{
 		"POST": "pr-merge-success.json",
@@ -316,6 +328,17 @@ func (suite *BitbucketServerProviderTestSuite) TestMergePullRequest() {
 	err := suite.provider.MergePullRequest(pr, "Merging from unit tests")
 
 	suite.Require().Nil(err)
+
+	pr2, err := suite.provider.GetPullRequest(
+		"TEST-ORG",
+		&gits.GitRepository{Name: "test-repo", Project: "TEST-ORG"},
+		7,
+	)
+
+	suite.Require().Nil(err)
+	suite.Require().Equal(*pr2.Number, 7)
+	suite.T().Logf("PR: %+v", pr2)
+	suite.Require().Equal(*pr2.Merged, true)
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestJenkinsWebHookPath() {
