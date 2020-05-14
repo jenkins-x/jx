@@ -1037,8 +1037,19 @@ func toYamlString(resource interface{}) string {
 // generates the build log URL and returns the URL
 func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
+	var gitKind string
+	if initGitCredentials {
+		gitInfo, err := gits.ParseGitURL(location.GitURL)
+		if err != nil {
+			return "", errors.Wrapf(err, "could not parse git URL for storage URL %s", location.GitURL)
+		}
+		gitKind, err = o.GitServerKind(gitInfo)
+		if err != nil {
+			return "", errors.Wrapf(err, "could not determine git kind for storage URL %s", location.GitURL)
+		}
+	}
 	log.Logger().Debugf("Collecting logs for %s to location %s", activity.Name, location.Description())
-	coll, err := collector.NewCollector(location, o.Git())
+	coll, err := collector.NewCollector(location, o.Git(), gitKind)
 	if err != nil {
 		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
 	}
