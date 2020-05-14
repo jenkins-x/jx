@@ -84,6 +84,9 @@ var bitbucketServerRouter = util.Router{
 	"/rest/build-status/1.0/commits/d6f24ee03d76a2caf0a4e1975fb43e8f61759b9c": util.MethodMap{
 		"GET": "build-statuses.json",
 	},
+	"/rest/api/1.0/projects/test-org/repos/repo/permissions/users": util.MethodMap{
+		"PUT": "user.json",
+	},
 }
 
 func (suite *BitbucketServerProviderTestSuite) SetupSuite() {
