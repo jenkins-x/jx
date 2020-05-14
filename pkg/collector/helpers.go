@@ -9,14 +9,14 @@ import (
 )
 
 // NewCollector creates a new collector from the storage configuration
-func NewCollector(storageLocation v1.StorageLocation, gitter gits.Gitter) (Collector, error) {
+func NewCollector(storageLocation v1.StorageLocation, gitter gits.Gitter, gitKind string) (Collector, error) {
 	classifier := storageLocation.Classifier
 	if classifier == "" {
 		classifier = "default"
 	}
 	gitURL := storageLocation.GitURL
 	if gitURL != "" {
-		return NewGitCollector(gitter, gitURL, storageLocation.GetGitBranch())
+		return NewGitCollector(gitter, gitURL, storageLocation.GetGitBranch(), gitKind)
 	}
 	bucketProvider, err := factory.NewBucketProviderFromTeamSettingsConfigurationOrDefault(clients.NewFactory(), storageLocation)
 	if err != nil {

@@ -3,6 +3,7 @@ package collector
 import (
 	"fmt"
 	"io/ioutil"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,10 +19,11 @@ type GitCollector struct {
 	gitInfo   *gits.GitRepository
 	gitter    gits.Gitter
 	gitBranch string
+	gitKind   string
 }
 
 // NewGitCollector creates a new git based collector
-func NewGitCollector(gitter gits.Gitter, gitURL string, gitBranch string) (Collector, error) {
+func NewGitCollector(gitter gits.Gitter, gitURL string, gitBranch string, gitKind string) (Collector, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
@@ -31,6 +33,7 @@ func NewGitCollector(gitter gits.Gitter, gitURL string, gitBranch string) (Colle
 		gitter:    gitter,
 		gitInfo:   gitInfo,
 		gitBranch: gitBranch,
+		gitKind:   gitKind,
 	}, nil
 }
 
@@ -162,8 +165,15 @@ func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rP
 	if !c.gitInfo.IsGitHub() && gits.SaasGitKind(c.gitInfo.Host) == gits.KindGitHub {
 		url = fmt.Sprintf("https://raw.%s/%s/%s/%s/%s", c.gitInfo.Host, storageOrg, storageRepoName, c.gitBranch, rPath)
 	} else {
-		// TODO only supporting github for now!!!
-		url = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
+		switch c.gitKind {
+		case gits.KindGitlab:
+			url = fmt.Sprintf("https://%s/%s/%s/-/raw/%s/%s", c.gitInfo.Host, storageOrg, storageRepoName, c.gitBranch, rPath)
+		case gits.KindBitBucketServer:
+			url = fmt.Sprintf("https://%s/projects/%s/repos/%s/raw/%s?at=%s", c.gitInfo.Host, storageOrg, storageRepoName, rPath, neturl.QueryEscape(fmt.Sprintf("refs/heads/%s", c.gitBranch)))
+		default:
+			// Fall back on GitHub for now
+			url = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
+		}
 	}
 	log.Logger().Infof("Publishing %s", util.ColorInfo(url))
 	return url

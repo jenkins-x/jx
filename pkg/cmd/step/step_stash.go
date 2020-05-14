@@ -162,7 +162,19 @@ func (o *StepStashOptions) Run() error {
 		return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
 	}
 
-	coll, err := collector.NewCollector(o.StorageLocation, o.Git())
+	var gitKind string
+	if o.StorageLocation.GitURL != "" {
+		gitInfo, err := gits.ParseGitURL(o.StorageLocation.GitURL)
+		if err != nil {
+			return errors.Wrapf(err, "could not parse git URL for storage URL %s", o.StorageLocation.GitURL)
+		}
+		gitKind, err = o.GitServerKind(gitInfo)
+		if err != nil {
+			return errors.Wrapf(err, "could not determine git kind for storage URL %s", o.StorageLocation.GitURL)
+		}
+	}
+
+	coll, err := collector.NewCollector(o.StorageLocation, o.Git(), gitKind)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the collector for storage settings %s", o.StorageLocation.Description())
 	}
