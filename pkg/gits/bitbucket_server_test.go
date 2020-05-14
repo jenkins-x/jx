@@ -227,6 +227,7 @@ func (suite *BitbucketServerProviderTestSuite) TestCreatePullRequest() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "OPEN")
+	suite.Require().Equal(pr.Title, args.Title)
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestUpdatePullRequestStatus() {
@@ -257,6 +258,7 @@ func (suite *BitbucketServerProviderTestSuite) TestGetPullRequest() {
 
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.Number, 1)
+	suite.Require().Equal(pr.Title, "Test Pull Request")
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestPullRequestCommits() {
