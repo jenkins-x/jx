@@ -15,8 +15,9 @@ ROOT_PACKAGE := github.com/$(ORG_REPO)/v2
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 
-BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
-BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
+BUILD_DATE     := $(shell date +%Y-%m-%dT%H:%M:%SZ)
+GIT_TREE_STATE := $(shell test -z "`git status --porcelain`" && echo "clean" || echo "dirty")
+
 CGO_ENABLED = 0
 
 REPORTS_DIR=$(BUILD_TARGET)/reports
@@ -38,10 +39,10 @@ BUILD_TIME_CONFIG_FLAGS ?= ""
 # Full build flags used when building binaries. Not used for test compilation/execution.
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
-		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
-		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
-		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
-		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\
+		-X $(ROOT_PACKAGE)/pkg/version.Revision=$(REV)\
+		-X $(ROOT_PACKAGE)/pkg/version.BuildDate=$(BUILD_DATE)\
+		-X $(ROOT_PACKAGE)/pkg/version.GoVersion=$(GO_VERSION)\
+		-X $(ROOT_PACKAGE)/pkg/version.GitTreeState=$(GIT_TREE_STATE)\
 		$(BUILD_TIME_CONFIG_FLAGS)"
 
 # Some tests expect default values for version.*, so just use the config package values there.

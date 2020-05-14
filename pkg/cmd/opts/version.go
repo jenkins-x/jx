@@ -10,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/table"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-	"github.com/jenkins-x/jx/v2/pkg/version"
 )
 
 // CreateVersionResolver creates a new VersionResolver service
@@ -44,9 +43,6 @@ func (o *CommonOptions) GetPackageVersions(ns string, helmTLS bool) (map[string]
 	packages := map[string]string{}
 	table := o.CreateTable()
 	table.AddRow("NAME", "VERSION")
-	jxVersion := version.GetVersion()
-	table.AddRow("jx", info(jxVersion))
-	packages["jx"] = jxVersion
 	// Jenkins X version
 	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
@@ -84,7 +80,7 @@ func (o *CommonOptions) GetPackageVersions(ns string, helmTLS bool) (map[string]
 				if v != "" {
 					switch i {
 					case 0:
-						table.AddRow("kubectl", info(v))
+						table.AddRow("kubectl (installed in JX_BIN)", info(v))
 						packages["kubectl"] = v
 					case 1:
 						// Ignore K8S server details as we have these above

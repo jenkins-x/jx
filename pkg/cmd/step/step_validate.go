@@ -34,7 +34,7 @@ var (
 
 	stepValidateExample = templates.Examples(`
 		# Validates that the jx version is new enough
-		jx step validate --min-jx-version ` + version.VersionStringDefault(version.ExampleVersion) + `
+		jx step validate --min-jx-version ` + version.StringDefault(version.ExampleVersion) + `
 			`)
 )
 
