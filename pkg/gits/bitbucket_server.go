@@ -1143,8 +1143,11 @@ func (b *BitbucketServerProvider) GetRelease(org string, name string, tag string
 }
 
 func (b *BitbucketServerProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Logger().Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.", user)
-	return nil
+	options := make(map[string]interface{})
+	options["name"] = user
+	options["permission"] = "REPO_WRITE"
+	_, err := b.Client.DefaultApi.SetPermissionForUser(organisation, repo, options)
+	return err
 }
 
 func (b *BitbucketServerProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
