@@ -424,6 +424,7 @@ func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArgument
 		Repo:   bPR.ToRef.Repository.Name,
 		Number: &bPR.ID,
 		State:  &bPR.State,
+		Title:  bPR.Title,
 	}, nil
 }
 
@@ -571,6 +572,7 @@ func (b *BitbucketServerProvider) toPullRequest(bPR bitbucket.PullRequest) *GitP
 		State:         &bPR.State,
 		Author:        author,
 		LastCommitSha: bPR.FromRef.LatestCommit,
+		Title:         bPR.Title,
 	}
 	return answer
 }
