@@ -251,7 +251,7 @@ func (suite *BitbucketServerProviderTestSuite) TestUpdatePullRequestStatus() {
 func (suite *BitbucketServerProviderTestSuite) TestGetPullRequest() {
 
 	pr, err := suite.provider.GetPullRequest(
-		"test-user",
+		"TEST-ORG",
 		&gits.GitRepository{Name: "test-repo", Project: "TEST-ORG"},
 		1,
 	)
@@ -262,7 +262,7 @@ func (suite *BitbucketServerProviderTestSuite) TestGetPullRequest() {
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestPullRequestCommits() {
-	commits, err := suite.provider.GetPullRequestCommits("test-user", &gits.GitRepository{
+	commits, err := suite.provider.GetPullRequestCommits("TEST-ORG", &gits.GitRepository{
 		URL:     "https://auth.example.com/projects/TEST-ORG/repos/test-repo",
 		Name:    "test-repo",
 		Project: "TEST-ORG",

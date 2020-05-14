@@ -358,6 +358,9 @@ func (b *BitbucketServerProvider) ForkRepository(originalOrg, name, destinationO
 }
 
 func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
+	if data.GitRepository.Organisation == "" {
+		data.GitRepository.Organisation = data.GitRepository.Project
+	}
 	var bPullRequest, bPR bitbucket.PullRequest
 	var options = map[string]interface{}{
 		"title":       data.Title,
@@ -370,7 +373,7 @@ func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArgument
 			"repository": map[string]interface{}{
 				"slug": data.GitRepository.Name,
 				"project": map[string]interface{}{
-					"key": data.GitRepository.Project,
+					"key": strings.ToUpper(data.GitRepository.Organisation),
 				},
 			},
 		},
@@ -379,7 +382,7 @@ func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArgument
 			"repository": map[string]interface{}{
 				"slug": data.GitRepository.Name,
 				"project": map[string]interface{}{
-					"key": data.GitRepository.Project,
+					"key": strings.ToUpper(data.GitRepository.Organisation),
 				},
 			},
 		},
@@ -390,7 +393,7 @@ func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArgument
 		return nil, err
 	}
 
-	apiResponse, err := b.Client.DefaultApi.CreatePullRequestWithOptions(data.GitRepository.Project, data.GitRepository.Name, requestBody)
+	apiResponse, err := b.Client.DefaultApi.CreatePullRequestWithOptions(strings.ToUpper(data.GitRepository.Organisation), data.GitRepository.Name, requestBody)
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +407,7 @@ func (b *BitbucketServerProvider) CreatePullRequest(data *GitPullRequestArgument
 	for i := 0; i < 30; i++ {
 		time.Sleep(2 * time.Second)
 
-		apiResponse, err = b.Client.DefaultApi.GetPullRequest(data.GitRepository.Project, data.GitRepository.Name, bPullRequest.ID)
+		apiResponse, err = b.Client.DefaultApi.GetPullRequest(strings.ToUpper(data.GitRepository.Project), data.GitRepository.Name, bPullRequest.ID)
 		if err == nil {
 			break
 		}
@@ -543,7 +546,7 @@ func (b *BitbucketServerProvider) UpdatePullRequestStatus(pr *GitPullRequest) er
 func (b *BitbucketServerProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	var bPR bitbucket.PullRequest
 
-	apiResponse, err := b.Client.DefaultApi.GetPullRequest(repo.Project, repo.Name, number)
+	apiResponse, err := b.Client.DefaultApi.GetPullRequest(strings.ToUpper(owner), repo.Name, number)
 	if err != nil {
 		return nil, err
 	}
@@ -566,7 +569,7 @@ func (b *BitbucketServerProvider) toPullRequest(bPR bitbucket.PullRequest) *GitP
 	}
 	answer := &GitPullRequest{
 		URL:           bPR.Links.Self[0].Href,
-		Owner:         bPR.Author.User.Name,
+		Owner:         bPR.ToRef.Repository.Project.Key,
 		Repo:          bPR.ToRef.Repository.Name,
 		Number:        &bPR.ID,
 		State:         &bPR.State,
@@ -660,7 +663,7 @@ func (b *BitbucketServerProvider) GetPullRequestCommits(owner string, repository
 	paginationOptions["start"] = 0
 	paginationOptions["limit"] = pageLimit
 	for {
-		apiResponse, err := b.Client.DefaultApi.GetPullRequestCommitsWithOptions(repository.Project, repository.Name, number, paginationOptions)
+		apiResponse, err := b.Client.DefaultApi.GetPullRequestCommitsWithOptions(strings.ToUpper(owner), repository.Name, number, paginationOptions)
 		if err != nil {
 			return nil, err
 		}
