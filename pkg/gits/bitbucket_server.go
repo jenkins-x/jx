@@ -1181,8 +1181,33 @@ func BitBucketServerAccessTokenURL(url string) string {
 }
 
 // ListCommits lists the commits for the specified repo and owner
-func (b *BitbucketServerProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
-	return nil, fmt.Errorf("Listing commits not supported on bitbucket")
+func (b *BitbucketServerProvider) ListCommits(owner, repoName string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	options := make(map[string]interface{})
+	options["limit"] = pageLimit
+	options["start"] = 0
+	options["until"] = opt.SHA
+	var commitsPage commitsPage
+	commits := []*GitCommit{}
+
+	repo, err := b.GetRepository(owner, repoName)
+	if err != nil {
+		return nil, err
+	}
+	apiResponse, err := b.Client.DefaultApi.GetCommits(strings.ToUpper(owner), repo.Name, options)
+	if err != nil {
+		return nil, err
+	}
+
+	err = mapstructure.Decode(apiResponse.Values, &commitsPage)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, commit := range commitsPage.Values {
+		commits = append(commits, convertBitBucketCommitToGitCommit(&commit, repo))
+	}
+
+	return commits, nil
 }
 
 // AddLabelsToIssue adds labels to issues or pullrequests
