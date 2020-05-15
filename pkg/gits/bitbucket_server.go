@@ -473,10 +473,17 @@ func getMergeCommitSHAFromPRActivity(prActivity map[string]interface{}) *string 
 	var activity []map[string]interface{}
 	var mergeCommit map[string]interface{}
 
-	mapstructure.Decode(prActivity["values"], &activity)     //nolint:errcheck
-	mapstructure.Decode(activity[0]["commit"], &mergeCommit) //nolint:errcheck
-	commitSHA := mergeCommit["id"].(string)
-
+	mapstructure.Decode(prActivity["values"], &activity) //nolint:errcheck
+	for _, act := range activity {
+		if act["action"] == "MERGED" {
+			mapstructure.Decode(act["commit"], &mergeCommit) //nolint:errcheck
+			break
+		}
+	}
+	commitSHA := ""
+	if _, ok := mergeCommit["id"]; ok {
+		commitSHA = mergeCommit["id"].(string)
+	}
 	return &commitSHA
 }
 
