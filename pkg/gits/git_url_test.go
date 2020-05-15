@@ -175,3 +175,70 @@ func TestGitInfoProviderURL(t *testing.T) {
 		assert.Equal(t, "https://github.com", info.ProviderURL(), "ProviderURL() for %s", u)
 	}
 }
+
+func TestGitInfoHttpCloneURL(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		gitInfo  *gits.GitRepository
+		kind     string
+		expected string
+	}{
+		{
+			name: "github.com",
+			gitInfo: &gits.GitRepository{
+				Name:         "some-repo",
+				Host:         "github.com",
+				Organisation: "some-org",
+			},
+			kind:     gits.KindGitHub,
+			expected: "https://github.com/some-org/some-repo.git",
+		},
+		{
+			name: "github enterprise",
+			gitInfo: &gits.GitRepository{
+				Name:         "some-repo",
+				Host:         "somewhereelse.com",
+				Organisation: "some-org",
+			},
+			kind:     gits.KindGitHub,
+			expected: "https://somewhereelse.com/some-org/some-repo.git",
+		},
+		{
+			name: "gitlab",
+			gitInfo: &gits.GitRepository{
+				Name:         "some-repo",
+				Host:         "gitlab.com",
+				Organisation: "some-org",
+			},
+			kind:     gits.KindGitlab,
+			expected: "https://gitlab.com/some-org/some-repo.git",
+		},
+		{
+			name: "bitbucket server",
+			gitInfo: &gits.GitRepository{
+				Name:         "some-repo",
+				Host:         "bbs.something.com",
+				Organisation: "some-org",
+			},
+			kind:     gits.KindBitBucketServer,
+			expected: "https://bbs.something.com/scm/some-org/some-repo.git",
+		},
+		{
+			name: "no kind",
+			gitInfo: &gits.GitRepository{
+				Name:         "some-repo",
+				Host:         "whatever.com",
+				Organisation: "some-org",
+			},
+			expected: "https://whatever.com/some-org/some-repo.git",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.gitInfo.HttpCloneURL(tc.kind)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
