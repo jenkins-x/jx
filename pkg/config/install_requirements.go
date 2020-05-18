@@ -243,6 +243,22 @@ type IngressConfig struct {
 	DomainIssuerURL string `json:"domainIssuerURL,omitempty"`
 }
 
+// BuildPackConfig contains build pack info
+type BuildPackConfig struct {
+	// Location contains location config
+	BuildPackLibrary *BuildPackLibrary `json:"buildPackLibrary,omitempty"`
+}
+
+// BuildPackLibrary contains buildpack location
+type BuildPackLibrary struct {
+	// Name
+	Name string `json:"name,omitempty"`
+	// GitURL
+	GitURL string `json:"gitURL,omitempty"`
+	// GitRef
+	GitRef string `json:"gitRef,omitempty"`
+}
+
 // TLSConfig contains TLS specific requirements
 type TLSConfig struct {
 	// TLS enabled
@@ -473,6 +489,8 @@ type RequirementsConfig struct {
 	AutoUpdate AutoUpdateConfig `json:"autoUpdate,omitempty"`
 	// BootConfigURL contains the url to which the dev environment is associated with
 	BootConfigURL string `json:"bootConfigURL,omitempty"`
+	// BuildPackConfig contains custom build pack settings
+	BuildPacks *BuildPackConfig `json:"buildPacks,omitempty"`
 	// Cluster contains cluster specific requirements
 	Cluster ClusterConfig `json:"cluster"`
 	// Environments the requirements for the environments
