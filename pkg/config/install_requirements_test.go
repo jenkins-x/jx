@@ -143,6 +143,33 @@ func TestRequirementsConfigIngressAutoDNS(t *testing.T) {
 	assert.Equal(t, false, requirements.Ingress.IsAutoDNSDomain(), "requirements.Ingress.IsAutoDNSDomain() for domain %s", requirements.Ingress.Domain)
 }
 
+func Test_unmarshalling_requirements_config_with_build_pack_configuration_succeeds(t *testing.T) {
+	t.Parallel()
+
+	requirements := config.NewRequirementsConfig()
+
+	content, err := ioutil.ReadFile(path.Join(testDataDir, "build_pack_library.yaml"))
+
+	err = yaml.Unmarshal(content, requirements)
+	assert.NoError(t, err)
+	assert.Equal(t, "Test name", requirements.BuildPacks.BuildPackLibrary.Name, "requirements.buildPacks.BuildPackLibrary.name is not equivalent to test name")
+	assert.Equal(t, "github.com", requirements.BuildPacks.BuildPackLibrary.GitURL, "requirements.buildPacks.BuildPackLibrary.gitURL is not equivalent to git url ")
+	assert.Equal(t, "master", requirements.BuildPacks.BuildPackLibrary.GitRef, "requirements.buildPacks.BuildPackLibrary.gitRef is not equivalent git Ref")
+}
+
+func Test_marshalling_empty_requirements_config_creates_no_build_pack_configuration(t *testing.T) {
+	t.Parallel()
+
+	requirements := config.NewRequirementsConfig()
+	data, err := yaml.Marshal(requirements)
+	assert.NoError(t, err)
+	assert.NotContains(t, string(data), "buildPacks")
+
+	err = yaml.Unmarshal(data, requirements)
+	assert.NoError(t, err)
+	assert.Nil(t, requirements.BuildPacks)
+}
+
 func Test_env_repository_visibility(t *testing.T) {
 	t.Parallel()
 
