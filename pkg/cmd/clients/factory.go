@@ -447,7 +447,7 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 	if err != nil {
 		return nil, err
 	}
-	return f.CreateVaultClient(name, namespace)
+	return f.CreateInternalVaultClient(name, namespace)
 }
 
 // getVaultName gets the vault name from install configuration or builds a new name from
@@ -481,9 +481,9 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 	return name, nil
 }
 
-// CreateVaultClient returns the given vault client for managing secrets
+// CreateInternalVaultClient returns the given vault client for managing secrets
 // Will use default values for name and namespace if nil values are applied
-func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
+func (f *factory) CreateInternalVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the vault operator client")
