@@ -351,7 +351,7 @@ type ClusterConfig struct {
 	StrictPermissions bool `json:"strictPermissions,omitempty"`
 }
 
-// VaultConfig contains Vault configuration for boot
+// VaultConfig contains Vault configuration for Boot
 type VaultConfig struct {
 	// Name the name of the vault if using vault for secrets
 	Name           string `json:"name,omitempty"`
@@ -360,9 +360,21 @@ type VaultConfig struct {
 	Key            string `json:"key,omitempty"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	RecreateBucket bool   `json:"recreateBucket,omitempty"`
-	// Optionally allow us to override the default lookup of the Vault URL, could be incluster service or external ingress
-	DisableURLDiscovery bool            `json:"disableURLDiscovery,omitempty"`
-	AWSConfig           *VaultAWSConfig `json:"aws,omitempty"`
+
+	// DisableURLDiscovery allows us to optionally override the default lookup of the Vault URL, could be incluster service or external ingress
+	DisableURLDiscovery bool `json:"disableURLDiscovery,omitempty"`
+
+	// AWSConfig describes the AWS specific configuration needed for the Vault Operator.
+	AWSConfig *VaultAWSConfig `json:"aws,omitempty"`
+
+	// ExternalURL specifies the URL of an external Vault instance to use for secret storage.
+	// Needs to be specified together with the Service Account to use for connecting to Vault.
+	// All other settings needs to be nil.
+	ExternalURL string `json:"externalURL,omitempty"`
+
+	// SecretPrefix is thee secret prefix to be used for writing data into the KV engine of Vault.
+	// If not specified the cluster name is used.
+	SecretPrefix string `json:"secretPrefix,omitempty"`
 }
 
 // VaultAWSConfig contains all the Vault configuration needed by Vault to be deployed in AWS
