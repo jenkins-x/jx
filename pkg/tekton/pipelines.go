@@ -447,7 +447,7 @@ func ApplyPipeline(jxClient versioned.Interface, kubeClient kubernetes.Interface
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 		}
 		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
-			gitURL := activityKey.GitInfo.HttpCloneURL(gitKind)
+			gitURL := gits.HttpCloneURL(activityKey.GitInfo, gitKind)
 			log.Logger().Infof("upserted PipelineResource %s for the git repository %s", info(resource.Name), info(gitURL))
 		} else {
 			log.Logger().Infof("upserted PipelineResource %s", info(resource.Name))
