@@ -30,6 +30,33 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 )
 
+type vaultSelector struct {
+	vaultURL           string
+	serviceAccountName string
+	namespace          string
+}
+
+func NewVaultSelector(url string, sa string, ns string) kubevault.Selector {
+	selector := &vaultSelector{
+		vaultURL:           url,
+		serviceAccountName: sa,
+		namespace:          ns,
+	}
+	return selector
+}
+
+// GetVault retrieve the given vault by name
+func (v *vaultSelector) GetVault(name string, namespace string, useIngressURL bool) (*kubevault.Vault, error) {
+	vault := kubevault.Vault{
+		Name:                   name,
+		Namespace:              namespace,
+		URL:                    v.vaultURL,
+		AuthServiceAccountName: v.serviceAccountName,
+	}
+
+	return &vault, nil
+}
+
 // StepBootVaultOptions contains the command line flags
 type StepBootVaultOptions struct {
 	*opts.CommonOptions
@@ -42,7 +69,7 @@ var (
 	stepBootVaultLong = templates.LongDesc(`
 		This step boots up Vault in the current cluster if its enabled in the 'jx-requirements.yml' file and is not already installed.
 
-		This step is intended to be used in the Jenkins X Boot Pipeline: https://jenkins-x.io/getting-started/boot/
+		This step is intended to be used in the Jenkins X Boot Pipeline: https://jenkins-x.io/docs/getting-started/setup/boot/
 `)
 
 	stepBootVaultExample = templates.Examples(`
@@ -95,15 +122,66 @@ func (o *StepBootVaultOptions) Run() error {
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes client")
+		return errors.Wrapf(err, "failed to create Kubernetes client")
 	}
 
+	externalVaultURL := requirements.Vault.ExternalURL
+	if externalVaultURL != "" {
+		return o.setupExternalVault(requirements, ns, kubeClient)
+	}
+
+	return o.setupInClusterVault(requirements, ns, kubeClient)
+}
+
+func (o *StepBootVaultOptions) setupExternalVault(requirements *config.RequirementsConfig, ns string, kubeClient kubernetes.Interface) error {
+	vaultURL := requirements.Vault.ExternalURL
+	log.Logger().Infof("Using external Vault with URL: %s", vaultURL)
+	_ = o.verifyExternalVaultConfiguration(requirements, ns)
+
+	selector := NewVaultSelector(vaultURL, requirements.Vault.ServiceAccount, "jx")
+	vaultFactory, err := kubevault.NewVaultClientFactoryWithSelector(kubeClient, selector, ns)
+	if err != nil {
+		return errors.Wrap(err, "unable to create Vault factory for external Vault instance")
+	}
+
+	vaultClient, err := vaultFactory.NewVaultClient("", "jx", true, true)
+	if err != nil {
+		return errors.Wrap(err, "unable to create Vault client for external Vault instance")
+	}
+
+	sealStatus, err := vaultClient.Sys().SealStatus()
+	if err != nil {
+		return errors.Wrapf(err, "unable to retrieve status from Vault instance %s", vaultURL)
+	}
+	log.Logger().Infof("%v", sealStatus)
+
+	return nil
+}
+
+func (o *StepBootVaultOptions) verifyExternalVaultConfiguration(requirements *config.RequirementsConfig, ns string) error {
+	vault := kubevault.Vault{
+		Name:                   "",
+		AuthServiceAccountName: requirements.Vault.ServiceAccount,
+		Namespace:              ns,
+		URL:                    requirements.Vault.ExternalURL,
+		SecretPrefix:           requirements.Vault.SecretPrefix,
+	}
+
+	err := vault.ValidateExternalConfiguration()
+	if err != nil {
+		return errors.Wrapf(err, "invalid configuration for external Vault usage")
+	}
+
+	return nil
+}
+
+func (o *StepBootVaultOptions) setupInClusterVault(requirements *config.RequirementsConfig, ns string, kubeClient kubernetes.Interface) error {
 	if requirements.Vault.Name == "" {
 		requirements.Vault.Name = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
 	}
 	log.Logger().Debugf("Using vault name '%s'", requirements.Vault.Name)
 
-	err = o.installOperator(requirements, ns)
+	err := o.installOperator(requirements, ns)
 	if err != nil {
 		return errors.Wrapf(err, "unable to install Vault operator")
 	}
@@ -177,7 +255,6 @@ func (o *StepBootVaultOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create/update Vault")
 	}
-
 	return nil
 }
 

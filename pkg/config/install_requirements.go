@@ -372,7 +372,7 @@ type VaultConfig struct {
 	// All other settings needs to be nil.
 	ExternalURL string `json:"externalURL,omitempty"`
 
-	// SecretPrefix is thee secret prefix to be used for writing data into the KV engine of Vault.
+	// SecretPrefix is the secret prefix to be used for writing data into the KV engine of Vault.
 	// If not specified the cluster name is used.
 	SecretPrefix string `json:"secretPrefix,omitempty"`
 }

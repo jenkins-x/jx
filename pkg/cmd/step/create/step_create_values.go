@@ -108,6 +108,7 @@ func NewCmdStepCreateValues(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "the namespace Jenkins X is installed into. If not specified it defaults to $DEPLOY_NAMESPACE or else defaults to the current kubernetes namespace")
 	cmd.Flags().StringVarP(&options.Schema, "schema", "", "", "the path to the schema file, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.Name, "name", "", "values", "the kind of the file to create (and, by default, the schema name)")
+	// TODO: issue-7090 update comment
 	cmd.Flags().StringVarP(&options.BasePath, "secret-base-path", "", "", fmt.Sprintf("the secret path used to store secrets in vault / file system. Typically a unique name per cluster+team. If none is specified we will default it to the cluster name from the %s file in the current or a parent directory.", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&options.ValuesFile, "out", "", "", "the path to the file to create, overrides --dir and --name")
 	cmd.Flags().StringVarP(&options.SecretsScheme, optionSecretsScheme, "", "", fmt.Sprintf("the scheme to store/reference any secrets in, valid options are vault and local. If none are specified we will default it from the %s file in the current or a parent directory.", config.RequirementsConfigFileName))
