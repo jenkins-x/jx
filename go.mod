@@ -16,12 +16,12 @@ require (
 	github.com/TV4/logrus-stackdriver-formatter v0.1.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alecthomas/jsonschema v0.0.0-20190504002508-159cbd5dba26
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
 	github.com/antham/chyle v1.6.0
+	github.com/armon/go-metrics v0.3.3 // indirect
 	github.com/aws/aws-sdk-go v1.24.0
 	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
 	github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
@@ -37,6 +37,7 @@ require (
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
+	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible
@@ -53,12 +54,16 @@ require (
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.3.2
-	github.com/google/go-cmp v0.3.1
+	github.com/golang/protobuf v1.3.4
+	github.com/google/go-cmp v0.4.0
 	github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1
+	github.com/hashicorp/go-hclog v0.13.0 // indirect
+	github.com/hashicorp/go-memdb v1.2.1 // indirect
+	github.com/hashicorp/go-plugin v1.2.2 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
+	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/vault v1.1.2
@@ -67,10 +72,11 @@ require (
 	github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13
 	github.com/imdario/mergo v0.3.8
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c // indirect
+	github.com/jefferai/jsonx v1.0.1 // indirect
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jetstack/cert-manager v0.5.2
-	github.com/json-iterator/go v1.1.9 // indirect
+	github.com/keybase/go-crypto v0.0.0-20200123153347-de78d2cb44f4 // indirect
 	github.com/knative/build v0.7.0 // indirect
 	github.com/knative/pkg v0.0.0-20190624141606-d82505e6c5b4
 	github.com/knative/serving v0.7.0
@@ -81,11 +87,16 @@ require (
 	github.com/magiconair/properties v1.8.0
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mitchellh/copystructure v1.0.0 // indirect
+	github.com/mitchellh/go-testing-interface v1.0.4 // indirect
 	github.com/mitchellh/mapstructure v1.2.2
+	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
+	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.0
 	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
@@ -125,7 +136,7 @@ require (
 	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
 	golang.org/x/tools v0.0.0-20200415034506-5d8e1897c761
 	gopkg.in/AlecAivazis/survey.v1 v1.8.3
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
+	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.0.0-20190718183219-b59d8169aab5
