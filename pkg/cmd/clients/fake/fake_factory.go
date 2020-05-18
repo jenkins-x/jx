@@ -244,9 +244,9 @@ func (f *FakeFactory) CreateSystemVaultClient(namespace string) (vault.Client, e
 	return fake_vault.NewFakeVaultClient(), nil
 }
 
-// CreateVaultClient returns the given vault client for managing secrets
+// CreateInternalVaultClient returns the given vault client for managing secrets
 // Will use default values for name and namespace if nil values are applied
-func (f *FakeFactory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
+func (f *FakeFactory) CreateInternalVaultClient(name string, namespace string) (vault.Client, error) {
 	return fake_vault.NewFakeVaultClient(), nil
 }
 
