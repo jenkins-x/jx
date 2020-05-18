@@ -25,19 +25,6 @@ func (i *GitRepository) PullRequestURL(prName string) string {
 	return util.UrlJoin("https://"+i.Host, i.Organisation, i.Name, "pull", prName)
 }
 
-// HttpCloneURL returns the HTTPS git URL this repository
-func (i *GitRepository) HttpCloneURL(kind string) string {
-	if kind == KindBitBucketServer {
-		host := i.Host
-		if !strings.Contains(host, ":/") {
-			host = "https://" + host
-		}
-		return util.UrlJoin(host, "scm", i.Organisation, i.Name) + ".git"
-
-	}
-	return i.HttpsURL() + ".git"
-}
-
 // HttpURL returns the URL to browse this repository in a web browser
 func (i *GitRepository) HttpURL() string {
 	host := i.Host
@@ -270,4 +257,17 @@ func SaasGitKind(gitServiceUrl string) string {
 		}
 		return ""
 	}
+}
+
+// HttpCloneURL returns the HTTPS git URL this repository
+func HttpCloneURL(repo *GitRepository, kind string) string {
+	if kind == KindBitBucketServer {
+		host := repo.Host
+		if !strings.Contains(host, ":/") {
+			host = "https://" + host
+		}
+		return util.UrlJoin(host, "scm", repo.Organisation, repo.Name) + ".git"
+
+	}
+	return repo.HttpsURL() + ".git"
 }

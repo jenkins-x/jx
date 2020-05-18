@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
@@ -160,7 +161,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 				return err
 			}
 		} else {
-			gitURL := gitInfo.HttpCloneURL(gitKind)
+			gitURL := gits.HttpCloneURL(gitInfo, gitKind)
 			log.Logger().Infof("Using git URL %s and branch %s", util.ColorInfo(gitURL), util.ColorInfo(branch))
 
 			err = o.Retry(3, time.Second*10, func() error {
