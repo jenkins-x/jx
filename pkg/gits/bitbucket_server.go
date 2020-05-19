@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
@@ -23,6 +24,13 @@ import (
 
 // pageLimit is used for the page size for API responses
 const pageLimit = 25
+
+var (
+	// BaseWebHooks are webhooks we enable on all versions
+	BaseWebHooks = []string{"repo:refs_changed", "repo:modified", "repo:forked", "repo:comment:added", "repo:comment:edited", "repo:comment:deleted", "pr:opened", "pr:reviewer:approved", "pr:reviewer:unapproved", "pr:reviewer:needs_work", "pr:merged", "pr:declined", "pr:deleted", "pr:comment:added", "pr:comment:edited", "pr:comment:deleted", "pr:modified"}
+	// Ver7WebHooks are additional webhooks we enable on server versions >= 7.x
+	Ver7WebHooks = []string{"pr:from_ref_updated"}
+)
 
 // BitbucketServerProvider implements GitProvider interface for a bitbucket server
 type BitbucketServerProvider struct {
@@ -841,6 +849,48 @@ func (b *BitbucketServerProvider) parseWebHookURL(data *GitWebHookArguments) (st
 	return projectKey, repo, nil
 }
 
+type appProps struct {
+	Version     string `json:"version"`
+	BuildNumber string `json:"buildNumber"`
+	BuildDate   string `json:"buildDate"`
+	DisplayName string `json:"displayName"`
+}
+
+func (b *BitbucketServerProvider) getServerVersion() (*semver.Version, error) {
+	apiResponse, err := b.Client.DefaultApi.GetApplicationProperties()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get BitBucket Server version")
+	}
+
+	var props *appProps
+	err = mapstructure.Decode(apiResponse.Values, &props)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode response from application properties")
+	}
+
+	rawVersion := props.Version
+	if rawVersion == "" {
+		return semver.New("0.0.0")
+	}
+
+	return semver.New(rawVersion)
+}
+
+func (b *BitbucketServerProvider) webHooksForServer() ([]string, error) {
+	v, err := b.getServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	versionSeven, _ := semver.New("7.0.0")
+
+	var webhooks []string
+	webhooks = append(webhooks, BaseWebHooks...)
+	if v.GTE(*versionSeven) {
+		webhooks = append(webhooks, Ver7WebHooks...)
+	}
+	return webhooks, nil
+}
+
 // CreateWebHook adds a new webhook to a git repository
 func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error {
 	projectKey, repo, err := b.parseWebHookURL(data)
@@ -863,11 +913,15 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 		}
 	}
 
+	webhooks, err := b.webHooksForServer()
+	if err != nil {
+		return errors.Wrapf(err, "failed to determine webhooks for server version")
+	}
 	var options = map[string]interface{}{
 		"url":    data.URL,
 		"name":   "Jenkins X Web Hook",
 		"active": true,
-		"events": []string{"repo:refs_changed", "repo:modified", "repo:forked", "repo:comment:added", "repo:comment:edited", "repo:comment:deleted", "pr:opened", "pr:reviewer:approved", "pr:reviewer:unapproved", "pr:reviewer:needs_work", "pr:merged", "pr:declined", "pr:deleted", "pr:comment:added", "pr:comment:edited", "pr:comment:deleted", "pr:from_ref_updated", "pr:modified"},
+		"events": webhooks,
 	}
 
 	if data.Secret != "" {
@@ -968,11 +1022,15 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 		return errors.Errorf("Failed to update webhook with ID = %d due to int32 conversion failure", dataID)
 	}
 
+	webhooks, err := b.webHooksForServer()
+	if err != nil {
+		return errors.Wrapf(err, "failed to determine webhooks for server version")
+	}
 	var options = map[string]interface{}{
 		"url":    data.URL,
 		"name":   "Jenkins X Web Hook",
 		"active": true,
-		"events": []string{"repo:refs_changed", "repo:modified", "repo:forked", "repo:comment:added", "repo:comment:edited", "repo:comment:deleted", "pr:opened", "pr:reviewer:approved", "pr:reviewer:unapproved", "pr:reviewer:needs_work", "pr:merged", "pr:declined", "pr:deleted", "pr:comment:added", "pr:comment:edited", "pr:comment:deleted"},
+		"events": webhooks,
 	}
 
 	if data.Secret != "" {
