@@ -25,7 +25,7 @@ func GetConfigMapData(client kubernetes.Interface, name, ns string) (map[string]
 	return cm.Data, nil
 }
 
-// GetConfigMap gets a named configmap
+// GetConfigMap gets a named ConfigMap
 func GetConfigMap(client kubernetes.Interface, ns string, name string) (*v1.ConfigMap, error) {
 	return client.CoreV1().ConfigMaps(ns).Get(name, metav1.GetOptions{})
 }
