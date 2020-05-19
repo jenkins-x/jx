@@ -49,10 +49,20 @@ const (
 
 // Vault stores some details of a Vault resource
 type Vault struct {
-	Name                   string
-	Namespace              string
-	URL                    string
+	// Name defines the name of the Vault instance, provided we are dealing with an Jenkins X managed Vault instance
+	Name string
+
+	// AuthServiceAccountName is the name of the service account allowed to authenticate against Vault.
 	AuthServiceAccountName string
+
+	// Namespace of the service account authorized to authenticate against Vault.
+	Namespace string
+
+	// URL specifies the Vault URL to connect to.
+	URL string
+
+	// SecretPrefix is the secret prefix to be used for writing data into the KV engine of Vault.
+	SecretPrefix string
 }
 
 // GCPConfig keeps the configuration for Google Cloud
@@ -524,5 +534,9 @@ func CreateOrUpdateVault(vault *v1alpha1.Vault, vaultOperatorClient versioned.In
 	}
 	log.Logger().Infof("Vault '%s' in namespace '%s' %sd ", util.ColorInfo(vault.Name), util.ColorInfo(ns), op)
 
+	return nil
+}
+
+func (v *Vault) ValidateExternalConfiguration() error {
 	return nil
 }

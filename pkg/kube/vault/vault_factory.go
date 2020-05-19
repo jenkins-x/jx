@@ -84,7 +84,7 @@ func NewInteractiveVaultClientFactory(options OptionsInterface) (*VaultClientFac
 	return factory, nil
 }
 
-// NewVaultClientFactory Creates a new VaultClientFactory with different options to the above. It doesnt' have CLI support so
+// NewVaultClientFactory creates a new VaultClientFactory with different options to the above. It doesnt' have CLI support so
 // will fail if it needs interactive input (unlikely)
 func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, defaultNamespace string) (*VaultClientFactory, error) {
 	return &VaultClientFactory{
@@ -94,6 +94,24 @@ func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient 
 			kubeClient:          kubeClient,
 			vaultOperatorClient: vaultOperatorClient,
 		},
+	}, nil
+}
+
+// NewVaultClientFactoryWithoutSelector creates a new VaultClientFactory.
+func NewVaultClientFactoryWithoutSelector(kubeClient kubernetes.Interface, defaultNamespace string) (*VaultClientFactory, error) {
+	return &VaultClientFactory{
+		kubeClient:       kubeClient,
+		defaultNamespace: defaultNamespace,
+	}, nil
+}
+
+// NewVaultClientFactoryWithSelector creates a new VaultClientFactory with a provided Selector.
+// This allows to use an external Vault instance using the custom selector.
+func NewVaultClientFactoryWithSelector(kubeClient kubernetes.Interface, selector Selector, defaultNamespace string) (*VaultClientFactory, error) {
+	return &VaultClientFactory{
+		kubeClient:       kubeClient,
+		defaultNamespace: defaultNamespace,
+		Selector:         selector,
 	}, nil
 }
 
@@ -132,6 +150,56 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIn
 	return vaultClient, nil
 }
 
+// NewVaultClientForURL creates a new Vault api.Client.
+// If namespace is nil, then the default namespace of the factory will be used
+func (v *VaultClientFactory) NewVaultClientForURL(url string, namespace string, serviceAccountName string, insecureSSLWebhook bool) (*api.Client, error) {
+	if namespace == "" {
+		namespace = v.defaultNamespace
+	}
+
+	serviceAccount, err := v.kubeClient.CoreV1().ServiceAccounts(namespace).Get(serviceAccountName, meta_v1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to get service account '%s'", serviceAccountName)
+	}
+
+	jwt, err := serviceaccount.GetServiceAccountToken(v.kubeClient, namespace, serviceAccount.Name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to get service account token for '%s'", serviceAccountName)
+	}
+
+	config, err := v.vaultAPIClient(url, insecureSSLWebhook)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to create Vault api client")
+	}
+
+	vaultClient, err := api.NewClient(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating vault client")
+	}
+
+	// TODO: issue-7090 unify
+	// Wait for vault to be ready
+	log.Logger().Debugf("Connecting to vault on %s", vaultClient.Address())
+	err = waitForVault(vaultClient, healthInitialRetryDelay, healthhRetyTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
+	}
+
+	token, err := getTokenFromVault(serviceAccount.Name, jwt, vaultClient, authRetryTimeout)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting Vault authentication token")
+	}
+	vaultClient.SetToken(token)
+
+	// Wait for KV secret engine V2 to be configured
+	err = waitForKVEngine(vaultClient, kvEngineInitialRetyDelay, kvEngineRetryTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "wait for vault kv engine to be configured")
+	}
+
+	return vaultClient, nil
+}
+
 // GetConfigData generates the information necessary to configure an api.Client object
 // Returns the api.Config object, the JWT needed to create the auth user in vault, and an error if present
 func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIngressURL, insecureSSLWebhook bool) (config *api.Config, jwt string, saName string, err error) {
@@ -150,20 +218,30 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIng
 
 	serviceAccount, err := v.getServiceAccountFromVault(vlt)
 	token, err := serviceaccount.GetServiceAccountToken(v.kubeClient, namespace, serviceAccount.Name)
+	cfg, err := v.vaultAPIClient(vlt.URL, insecureSSLWebhook)
+	if err != nil {
+		return nil, "", "", errors.Wrapf(err, "unable to create Vault api client")
+	}
+
+	return cfg, token, serviceAccount.Name, err
+}
+
+// TODO: issue-7090
+func (v *VaultClientFactory) vaultAPIClient(url string, insecureSSLWebhook bool) (*api.Config, error) {
 	cfg := &api.Config{
-		Address:    vlt.URL,
+		Address:    url,
 		MaxRetries: maxRetries,
 	}
 
 	if insecureSSLWebhook {
 		t := api.TLSConfig{Insecure: true}
-		err = cfg.ConfigureTLS(&t)
+		err := cfg.ConfigureTLS(&t)
 		if err != nil {
-			return nil, "", "", errors.Wrap(err, "unable to configure tls")
+			return nil, errors.Wrap(err, "unable to configure tls")
 		}
 	}
 
-	return cfg, token, serviceAccount.Name, err
+	return cfg, nil
 }
 
 func (v *VaultClientFactory) getServiceAccountFromVault(vault *Vault) (*v1.ServiceAccount, error) {
