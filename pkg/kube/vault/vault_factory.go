@@ -97,6 +97,14 @@ func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient 
 	}, nil
 }
 
+// NewVaultClientFactoryWithoutSelector creates a new VaultClientFactory.
+func NewVaultClientFactoryWithoutSelector(kubeClient kubernetes.Interface, defaultNamespace string) (*VaultClientFactory, error) {
+	return &VaultClientFactory{
+		kubeClient:       kubeClient,
+		defaultNamespace: defaultNamespace,
+	}, nil
+}
+
 // NewVaultClientFactoryWithSelector creates a new VaultClientFactory with a provided Selector.
 // This allows to use an external Vault instance using the custom selector.
 func NewVaultClientFactoryWithSelector(kubeClient kubernetes.Interface, selector Selector, defaultNamespace string) (*VaultClientFactory, error) {
@@ -128,6 +136,52 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIn
 		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
 	}
 	token, err := getTokenFromVault(role, jwt, vaultClient, authRetryTimeout)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting Vault authentication token")
+	}
+	vaultClient.SetToken(token)
+
+	// Wait for KV secret engine V2 to be configured
+	err = waitForKVEngine(vaultClient, kvEngineInitialRetyDelay, kvEngineRetryTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "wait for vault kv engine to be configured")
+	}
+
+	return vaultClient, nil
+}
+
+// NewVaultClientForURL creates a new Vault api.Client.
+// If namespace is nil, then the default namespace of the factory will be used
+func (v *VaultClientFactory) NewVaultClientForURL(url string, namespace string, serviceAccountName string, insecureSSLWebhook bool) (*api.Client, error) {
+	if namespace == "" {
+		namespace = v.defaultNamespace
+	}
+
+	serviceAccount, err := v.kubeClient.CoreV1().ServiceAccounts(namespace).Get(serviceAccountName, meta_v1.GetOptions{})
+	// TODO: issue-7090 handle error properly
+
+	jwt, err := serviceaccount.GetServiceAccountToken(v.kubeClient, namespace, serviceAccount.Name)
+	// TODO: issue-7090 handle error properly
+
+	config, err := v.vaultAPIClient(url, insecureSSLWebhook)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to create Vault api client")
+	}
+
+	vaultClient, err := api.NewClient(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating vault client")
+	}
+
+	// TODO: issue-7090 unify
+	// Wait for vault to be ready
+	log.Logger().Debugf("Connecting to vault on %s", vaultClient.Address())
+	err = waitForVault(vaultClient, healthInitialRetryDelay, healthhRetyTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
+	}
+
+	token, err := getTokenFromVault(serviceAccount.Name, jwt, vaultClient, authRetryTimeout)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting Vault authentication token")
 	}
