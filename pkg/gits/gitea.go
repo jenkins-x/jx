@@ -3,6 +3,7 @@ package gits
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -599,13 +600,14 @@ func (p *GiteaProvider) RenameRepository(org string, name string, newName string
 
 func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
 	_, err := p.Client.GetRepo(org, name)
-	if err == nil {
-		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
+	// Would be nice to standardize the get repo function upstream
+	if err != nil {
+		if strings.Contains(err.Error(), http.StatusText(http.StatusNotFound)) {
+			return nil
+		}
+		return err
 	}
-	if strings.Contains(err.Error(), "404") {
-		return nil
-	}
-	return err
+	return fmt.Errorf("repository %s already exists", p.Git.RepoName(org, name))
 }
 
 func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {

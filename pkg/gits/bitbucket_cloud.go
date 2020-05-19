@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -294,15 +295,18 @@ func (b *BitbucketCloudProvider) ValidateRepositoryName(org string, name string)
 		name,
 	)
 
-	if r != nil && r.StatusCode == 404 {
+	if err != nil {
+		return err
+	}
+	switch status := r.StatusCode; status {
+	case http.StatusOK:
+		return fmt.Errorf("repository %s already exists", b.Git.RepoName(org, name))
+	case http.StatusNotFound:
 		return nil
+	case http.StatusInternalServerError:
+		return errors.Wrapf(errors.New(http.StatusText(http.StatusInternalServerError)), "validating repository %s", b.Git.RepoName(org, name))
 	}
-
-	if err == nil {
-		return fmt.Errorf("repository %s/%s already exists", org, name)
-	}
-
-	return err
+	return nil
 }
 
 func (b *BitbucketCloudProvider) CreatePullRequest(

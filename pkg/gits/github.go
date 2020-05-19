@@ -1068,13 +1068,18 @@ func (p *GitHubProvider) RenameRepository(org string, name string, newName strin
 
 func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 	_, r, err := p.Client.Repositories.Get(p.Context, org, name)
-	if err == nil {
-		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
+	if err != nil {
+		return err
 	}
-	if r != nil && r.StatusCode == 404 {
+	switch status := r.StatusCode; status {
+	case http.StatusOK:
+		return fmt.Errorf("repository %s already exists", p.Git.RepoName(org, name))
+	case http.StatusNotFound:
 		return nil
+	case http.StatusInternalServerError:
+		return errors.Wrapf(errors.New(http.StatusText(http.StatusInternalServerError)), "validating repository %s", p.Git.RepoName(org, name))
 	}
-	return err
+	return nil
 }
 
 func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
