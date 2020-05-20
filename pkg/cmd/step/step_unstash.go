@@ -1,6 +1,7 @@
 package step
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
@@ -146,17 +147,25 @@ func GetTokenForGitURL(authSvc auth.ConfigService, u string) (string, error) {
 		return "", err
 	}
 	gitServerURL := gitInfo.HostURL()
+	gitKind := ""
+	gitServer := authSvc.Config().GetServer(gitServerURL)
+	if gitServer != nil {
+		gitKind = gitServer.Kind
+	}
 	auths := authSvc.Config().FindUserAuths(gitServerURL)
-	for _, auth := range auths {
-		if auth.ApiToken != "" {
-			return auth.ApiToken, nil
+	for _, a := range auths {
+		if a.ApiToken != "" {
+			if gitKind == gits.KindBitBucketServer {
+				return fmt.Sprintf("%s:%s", a.Username, a.ApiToken), nil
+			}
+			return a.ApiToken, nil
 		}
 	}
 	if gitServerURL == "https://raw.githubusercontent.com" {
 		auths := authSvc.Config().FindUserAuths(gits.GitHubURL)
-		for _, auth := range auths {
-			if auth.ApiToken != "" {
-				return auth.ApiToken, nil
+		for _, a := range auths {
+			if a.ApiToken != "" {
+				return a.ApiToken, nil
 			}
 		}
 	}
