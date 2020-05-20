@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -45,30 +46,37 @@ func KubeProviderToBucketScheme(provider string) string {
 }
 
 // ReadURL reads the given URL from either a http/https endpoint or a bucket URL path.
-// if specified the httpFn is a function which can append the user/password or token if using a git provider
-func ReadURL(urlText string, timeout time.Duration, httpFn func(urlString string) (string, error)) ([]byte, error) {
+// if specified the httpFn is a function which can append the user/password or token and/or add a header with the token if using a git provider
+func ReadURL(urlText string, timeout time.Duration, httpFn func(urlString string) (string, func(*http.Request), error)) ([]byte, error) {
 	u, err := url.Parse(urlText)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse URL %s", urlText)
 	}
+	var headerFunc func(*http.Request)
 	switch u.Scheme {
 	case "http", "https":
 		if httpFn != nil {
-			urlText, err = httpFn(urlText)
+			urlText, headerFunc, err = httpFn(urlText)
 			if err != nil {
 				return nil, err
 			}
 		}
-		return ReadHTTPURL(urlText, timeout)
+		return ReadHTTPURL(urlText, headerFunc, timeout)
 	default:
 		return ReadBucketURL(u, timeout)
 	}
 }
 
-// ReadHTTPURL reads the HTTP based URL and returns the data or returning an error if a 2xx status is not returned
-func ReadHTTPURL(u string, timeout time.Duration) ([]byte, error) {
+// ReadHTTPURL reads the HTTP based URL, modifying the headers as needed, and returns the data or returning an error if a 2xx status is not returned
+func ReadHTTPURL(u string, headerFunc func(*http.Request), timeout time.Duration) ([]byte, error) {
 	httpClient := util.GetClientWithTimeout(timeout)
-	resp, err := httpClient.Get(u)
+
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	headerFunc(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to invoke GET on %s", u)
 	}
