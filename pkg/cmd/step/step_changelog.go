@@ -205,28 +205,8 @@ func (o *StepChangelogOptions) Run() error {
 		o.BatchMode = true
 	}
 
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterReleaseCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = o.RegisterUserCRD()
-	if err != nil {
-		return err
-	}
-
 	dir := o.Dir
+	var err error
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
