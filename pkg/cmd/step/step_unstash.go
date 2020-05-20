@@ -129,58 +129,52 @@ func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, func(*
 			return
 		}
 		if authSvc != nil {
-			token, tokenHeader, err := GetTokenForGitURL(authSvc, urlText)
+			gitInfo, err := gits.ParseGitURL(urlText)
 			if err != nil {
 				log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s", urlText, err)
-			} else if token != "" {
-				if tokenHeader != "" {
-					headerFunc = func(r *http.Request) {
-						r.Header.Set(tokenHeader, token)
+			}
+			gitServerURL := gitInfo.HostURL()
+			gitKind := ""
+			gitServer := authSvc.Config().GetServer(gitServerURL)
+			if gitServer != nil {
+				gitKind = gitServer.Kind
+			}
+			tokenPrefix := ""
+			auths := authSvc.Config().FindUserAuths(gitServerURL)
+			for _, a := range auths {
+				if a.ApiToken != "" {
+					if gitKind == gits.KindBitBucketServer {
+						tokenPrefix = fmt.Sprintf("%s:%s", a.Username, a.ApiToken)
+					} else if gitKind == gits.KindGitlab {
+						headerFunc = func(r *http.Request) {
+							r.Header.Set("PRIVATE-TOKEN", a.ApiToken)
+						}
+					} else if gitKind == gits.KindGitHub && !gitInfo.IsGitHub() {
+						// If we're on GitHub Enterprise, we need to put the token as a parameter to the URL.
+						tokenPrefix = a.ApiToken
+					} else {
+						tokenPrefix = a.ApiToken
 					}
-				} else {
-					idx := strings.Index(urlText, "://")
-					if idx > 0 {
-						idx += 3
-						urlText = urlText[0:idx] + token + "@" + urlText[idx:]
+					break
+				}
+			}
+			if gitServerURL == "https://raw.githubusercontent.com" {
+				auths := authSvc.Config().FindUserAuths(gits.GitHubURL)
+				for _, a := range auths {
+					if a.ApiToken != "" {
+						tokenPrefix = a.ApiToken
+						break
 					}
+				}
+			}
+			if tokenPrefix != "" {
+				idx := strings.Index(urlText, "://")
+				if idx > 0 {
+					idx += 3
+					urlText = urlText[0:idx] + tokenPrefix + "@" + urlText[idx:]
 				}
 			}
 		}
 		return urlText, headerFunc, nil
 	}
-}
-
-// GetTokenForGitURL returns the git token for the given git URL
-func GetTokenForGitURL(authSvc auth.ConfigService, u string) (string, string, error) {
-	gitInfo, err := gits.ParseGitURL(u)
-	if err != nil {
-		return "", "", err
-	}
-	gitServerURL := gitInfo.HostURL()
-	gitKind := ""
-	gitServer := authSvc.Config().GetServer(gitServerURL)
-	if gitServer != nil {
-		gitKind = gitServer.Kind
-	}
-	auths := authSvc.Config().FindUserAuths(gitServerURL)
-	for _, a := range auths {
-		if a.ApiToken != "" {
-			if gitKind == gits.KindBitBucketServer {
-				return fmt.Sprintf("%s:%s", a.Username, a.ApiToken), "", nil
-			}
-			if gitKind == gits.KindGitlab {
-				return a.ApiToken, "PRIVATE-TOKEN", nil
-			}
-			return a.ApiToken, "", nil
-		}
-	}
-	if gitServerURL == "https://raw.githubusercontent.com" {
-		auths := authSvc.Config().FindUserAuths(gits.GitHubURL)
-		for _, a := range auths {
-			if a.ApiToken != "" {
-				return a.ApiToken, "", nil
-			}
-		}
-	}
-	return "", "", nil
 }

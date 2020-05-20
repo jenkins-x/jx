@@ -162,8 +162,8 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 }
 
 func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rPath string) (url string) {
-	if !c.gitInfo.IsGitHub() && gits.SaasGitKind(c.gitInfo.Host) == gits.KindGitHub {
-		url = fmt.Sprintf("https://raw.%s/%s/%s/%s/%s", c.gitInfo.Host, storageOrg, storageRepoName, c.gitBranch, rPath)
+	if !c.gitInfo.IsGitHub() && c.gitKind == gits.KindGitHub {
+		url = fmt.Sprintf("https://%s/raw/%s/%s/%s/%s", c.gitInfo.Host, storageOrg, storageRepoName, c.gitBranch, rPath)
 	} else {
 		switch c.gitKind {
 		case gits.KindGitlab:

@@ -29,25 +29,30 @@ func TestCreateBucketHTTPFn(t *testing.T) {
 	testCases := []struct {
 		name                string
 		gitURL              string
-		expectedToken       string
+		expectedTokenPrefix string
 		expectedHeader      string
 		expectedHeaderValue string
 	}{
 		{
-			name:          "bitbucketserver",
-			gitURL:        "bitbucket.example.com/scm/some-org/some-proj.git",
-			expectedToken: "test:test",
+			name:                "bitbucketserver",
+			gitURL:              "bitbucket.example.com/scm/some-org/some-proj.git",
+			expectedTokenPrefix: "test:test",
 		},
 		{
-			name:          "github",
-			gitURL:        "raw.githubusercontent.com/jenkins-x/environment-tekton-weasel-dev/master/OWNERS",
-			expectedToken: "test",
+			name:                "github",
+			gitURL:              "raw.githubusercontent.com/jenkins-x/environment-tekton-weasel-dev/master/OWNERS",
+			expectedTokenPrefix: "test",
 		},
 		{
 			name:                "gitlab",
 			gitURL:              "gitlab.com/api/v4/projects/jxbdd%2Fenvironment-pr-751-6-lh-bdd-gl-dev/repository/files/jenkins-x%2Flogs%2Fjxbdd%2Fenvironment-pr-751-6-lh-bdd-gl-dev%2FPR-1%2F1.log/raw?ref=gh-pages",
 			expectedHeader:      "PRIVATE-TOKEN",
 			expectedHeaderValue: "test",
+		},
+		{
+			name:                "ghe",
+			gitURL:              "github.something.com/raw/foo/bar/branch/blah.log",
+			expectedTokenPrefix: "test",
 		},
 	}
 
@@ -100,8 +105,8 @@ func TestCreateBucketHTTPFn(t *testing.T) {
 			bucketURL, headerFn, err := httpFn("https://" + tc.gitURL)
 
 			assert.NoError(t, err)
-			expectedURL := fmt.Sprintf("https://%s@%s", tc.expectedToken, tc.gitURL)
-			if tc.expectedToken == "" {
+			expectedURL := fmt.Sprintf("https://%s@%s", tc.expectedTokenPrefix, tc.gitURL)
+			if tc.expectedTokenPrefix == "" {
 				expectedURL = fmt.Sprintf("https://%s", tc.gitURL)
 			}
 			assert.Equal(t, expectedURL, bucketURL)
