@@ -1038,7 +1038,7 @@ func toYamlString(resource interface{}) string {
 func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
 	var gitKind string
-	if initGitCredentials {
+	if initGitCredentials && location.GitURL != "" {
 		gitInfo, err := gits.ParseGitURL(location.GitURL)
 		if err != nil {
 			return "", errors.Wrapf(err, "could not parse git URL for storage URL %s", location.GitURL)
