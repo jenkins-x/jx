@@ -93,8 +93,13 @@ type Factory interface {
 	// CreateSystemVaultClient creates the system vault client for managing the secrets
 	CreateSystemVaultClient(namespace string) (vault.Client, error)
 
-	// CreateVaultClient returns the vault client for given vault
-	CreateVaultClient(name string, namespace string) (vault.Client, error)
+	// CreateInternalVaultClient returns the Vault client for a Vault instance managed by Jenkins X.
+	CreateInternalVaultClient(name string, namespace string) (vault.Client, error)
+
+	// CreateExternalVaultClient returns a Vault client connecting to the specified URL using the
+	// specified secretPrefix for all operations against the KV engine.
+	// TODO issue-7090 godoc
+	CreateExternalVaultClient(url string, serviceAccountName string, namespace string, kubeClient kubernetes.Interface) (vault.Client, error)
 
 	// CreateHelm creates a new helm client
 	CreateHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
@@ -103,7 +108,9 @@ type Factory interface {
 	// Kubernetes clients
 	//
 
-	// CreateKubeClient creates a new Kubernetes client
+	// CreateKubeClient creates a new Kubernetes client. It also returns the currently set namespace as per KUBECONFIG.
+	// If no namespace is selected, 'default' is returned.
+	// If an error occurs an error is returned together with a nil client and an empty string as current namespace.
 	CreateKubeClient() (kubernetes.Interface, string, error)
 
 	// CreateKubeConfig creates the kubernetes configuration

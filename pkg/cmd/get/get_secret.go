@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO issue-7090 Figure out what to do here
 type GetSecretOptions struct {
 	GetOptions
 

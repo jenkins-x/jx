@@ -333,6 +333,9 @@ const (
 
 	// SystemVaultName stores the name of the system Vault created on install
 	SystemVaultName = "systemVaultName"
+
+	// VaultURL stores the URL of the external Vault instance if no system internal Vault instance is used.
+	VaultURL = "vaultURL"
 )
 
 var (

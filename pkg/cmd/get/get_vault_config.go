@@ -40,6 +40,7 @@ var (
 	`)
 )
 
+// TODO: issue-7090 remove!?
 // NewCmdGetVaultConfig creates a new command for 'jx get secrets'
 func NewCmdGetVaultConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetVaultConfigOptions{
