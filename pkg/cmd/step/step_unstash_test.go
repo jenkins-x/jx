@@ -3,7 +3,9 @@
 package step_test
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"testing"
 
@@ -21,23 +23,31 @@ import (
 
 const secretName = kube.SecretJenkinsPipelineGitCredentials + "github-ghe"
 
-func TestGetTokenForGitURL(t *testing.T) {
+func TestCreateBucketHTTPFn(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name          string
-		gitURL        string
-		expectedToken string
+		name                string
+		gitURL              string
+		expectedToken       string
+		expectedHeader      string
+		expectedHeaderValue string
 	}{
 		{
 			name:          "bitbucketserver",
-			gitURL:        "https://bitbucket.example.com/scm/some-org/some-proj.git",
+			gitURL:        "bitbucket.example.com/scm/some-org/some-proj.git",
 			expectedToken: "test:test",
 		},
 		{
 			name:          "github",
-			gitURL:        "https://raw.githubusercontent.com/jenkins-x/environment-tekton-weasel-dev/master/OWNERS",
+			gitURL:        "raw.githubusercontent.com/jenkins-x/environment-tekton-weasel-dev/master/OWNERS",
 			expectedToken: "test",
+		},
+		{
+			name:                "gitlab",
+			gitURL:              "gitlab.com/api/v4/projects/jxbdd%2Fenvironment-pr-751-6-lh-bdd-gl-dev/repository/files/jenkins-x%2Flogs%2Fjxbdd%2Fenvironment-pr-751-6-lh-bdd-gl-dev%2FPR-1%2F1.log/raw?ref=gh-pages",
+			expectedHeader:      "PRIVATE-TOKEN",
+			expectedHeaderValue: "test",
 		},
 	}
 
@@ -82,9 +92,25 @@ func TestGetTokenForGitURL(t *testing.T) {
 			_, err = authCfgSvc.LoadConfig()
 			assert.NoError(t, err)
 
-			gitToken, err := step.GetTokenForGitURL(authCfgSvc, tc.gitURL)
+			req, err := http.NewRequest("GET", "https://"+tc.gitURL, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedToken, gitToken)
+
+			httpFn := step.CreateBucketHTTPFn(authCfgSvc)
+
+			bucketURL, headerFn, err := httpFn("https://" + tc.gitURL)
+
+			assert.NoError(t, err)
+			expectedURL := fmt.Sprintf("https://%s@%s", tc.expectedToken, tc.gitURL)
+			if tc.expectedToken == "" {
+				expectedURL = fmt.Sprintf("https://%s", tc.gitURL)
+			}
+			assert.Equal(t, expectedURL, bucketURL)
+
+			headerFn(req)
+
+			if tc.expectedHeader != "" {
+				assert.Equal(t, tc.expectedHeaderValue, req.Header.Get(tc.expectedHeader))
+			}
 		})
 	}
 }

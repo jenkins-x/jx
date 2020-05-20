@@ -167,7 +167,11 @@ func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rP
 	} else {
 		switch c.gitKind {
 		case gits.KindGitlab:
-			url = fmt.Sprintf("https://%s/%s/%s/-/raw/%s/%s", c.gitInfo.Host, storageOrg, storageRepoName, c.gitBranch, rPath)
+			url = fmt.Sprintf("https://%s/api/v4/projects/%s/repository/files/%s/raw?ref=%s",
+				c.gitInfo.Host,
+				neturl.PathEscape(fmt.Sprintf("%s/%s", storageOrg, storageRepoName)),
+				neturl.PathEscape(rPath),
+				neturl.QueryEscape(c.gitBranch))
 		case gits.KindBitBucketServer:
 			url = fmt.Sprintf("https://%s/projects/%s/repos/%s/raw/%s?at=%s", c.gitInfo.Host, storageOrg, storageRepoName, rPath, neturl.QueryEscape(fmt.Sprintf("refs/heads/%s", c.gitBranch)))
 		default:

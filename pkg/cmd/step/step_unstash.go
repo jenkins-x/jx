@@ -3,6 +3,7 @@ package step
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -121,30 +122,39 @@ func Unstash(u string, outDir string, timeout time.Duration, authSvc auth.Config
 	return nil
 }
 
-// CreateBucketHTTPFn creates a function to transform a git URL to add the token for accessing a git based bucket
-func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, error) {
-	return func(urlText string) (string, error) {
+// CreateBucketHTTPFn creates a function to transform a git URL to add the token and possible header function for accessing a git based bucket
+func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, func(*http.Request), error) {
+	return func(urlText string) (string, func(*http.Request), error) {
+		headerFunc := func(*http.Request) {
+			return
+		}
 		if authSvc != nil {
-			token, err := GetTokenForGitURL(authSvc, urlText)
+			token, tokenHeader, err := GetTokenForGitURL(authSvc, urlText)
 			if err != nil {
 				log.Logger().Warnf("Could not find the git token to access urlText %s due to: %s", urlText, err)
 			} else if token != "" {
-				idx := strings.Index(urlText, "://")
-				if idx > 0 {
-					idx += 3
-					urlText = urlText[0:idx] + token + "@" + urlText[idx:]
+				if tokenHeader != "" {
+					headerFunc = func(r *http.Request) {
+						r.Header.Set(tokenHeader, token)
+					}
+				} else {
+					idx := strings.Index(urlText, "://")
+					if idx > 0 {
+						idx += 3
+						urlText = urlText[0:idx] + token + "@" + urlText[idx:]
+					}
 				}
 			}
 		}
-		return urlText, nil
+		return urlText, headerFunc, nil
 	}
 }
 
 // GetTokenForGitURL returns the git token for the given git URL
-func GetTokenForGitURL(authSvc auth.ConfigService, u string) (string, error) {
+func GetTokenForGitURL(authSvc auth.ConfigService, u string) (string, string, error) {
 	gitInfo, err := gits.ParseGitURL(u)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	gitServerURL := gitInfo.HostURL()
 	gitKind := ""
@@ -156,18 +166,21 @@ func GetTokenForGitURL(authSvc auth.ConfigService, u string) (string, error) {
 	for _, a := range auths {
 		if a.ApiToken != "" {
 			if gitKind == gits.KindBitBucketServer {
-				return fmt.Sprintf("%s:%s", a.Username, a.ApiToken), nil
+				return fmt.Sprintf("%s:%s", a.Username, a.ApiToken), "", nil
 			}
-			return a.ApiToken, nil
+			if gitKind == gits.KindGitlab {
+				return a.ApiToken, "PRIVATE-TOKEN", nil
+			}
+			return a.ApiToken, "", nil
 		}
 	}
 	if gitServerURL == "https://raw.githubusercontent.com" {
 		auths := authSvc.Config().FindUserAuths(gits.GitHubURL)
 		for _, a := range auths {
 			if a.ApiToken != "" {
-				return a.ApiToken, nil
+				return a.ApiToken, "", nil
 			}
 		}
 	}
-	return "", nil
+	return "", "", nil
 }
