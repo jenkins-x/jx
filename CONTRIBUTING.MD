@@ -128,11 +128,11 @@ A test is unencapsulated (not isolated) if it cannot be run (with repeatable suc
 ### Mocking / Stubbing
 Mocking or stubbing methods in your unit tests will get you a long way towards test isolation. Coupled with the use of interface based APIs you should be able to make your methods easily testable and useful to other packages that may need to import them.
 https://github.com/petergtz/pegomock Is our current mocking library of choice, mainly because it is very easy to use and doesn't require you to write your own mocks (Yay!)
-We place all interfaces for each package in a file called `interface.go` in the relevant folder. So you can find all interfaces for `github.com/jenkins-x/jx/pkg/util` in `github.com/jenkins-x/jx/pkg/util/interface.go` 
+We place all interfaces for each package in a file called `interface.go` in the relevant folder. So you can find all interfaces for `github.com/jenkins-x/jx/v2/pkg/util` in `github.com/jenkins-x/jx/v2/pkg/util/interface.go` 
 Generating/Regenerating a mock for a given interface is easy, just go to the `interface.go` file that corresponds with the interface you would like to mock and add a comment directly above your interface definition that will look something like this:
 ```
 // CommandInterface defines the interface for a Command
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface -o mocks/command_interface.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/util CommandInterface -o mocks/command_interface.go
 type CommandInterface interface {
 	DidError() bool
 	DidFail() bool
@@ -146,7 +146,7 @@ type CommandInterface interface {
 	SetExponentialBackOff(*backoff.ExponentialBackOff)
 }
 ```
-In the example you can see that we pass the generator to use: `pegomock generate` the package path name: `github.com/jenkins-x/jx/pkg/util` the name of the interface: `CommandInterface` and finally an output directive to write the generated file to a mock subfolder. To keep things nice and tidy it's best to write each mocked interface to a separate file in this folder. So in this case: `-o mocks/command_interface.go`
+In the example you can see that we pass the generator to use: `pegomock generate` the package path name: `github.com/jenkins-x/jx/v2/pkg/util` the name of the interface: `CommandInterface` and finally an output directive to write the generated file to a mock subfolder. To keep things nice and tidy it's best to write each mocked interface to a separate file in this folder. So in this case: `-o mocks/command_interface.go`
 
 Now simply run:
 ```
@@ -167,8 +167,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -185,7 +185,7 @@ func TestJXBinaryLocationSuccess(t *testing.T) {
 ```
 Here we're importing the mock we need in our import declaration:
 ```
-mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
 ```
 Then inside the test we're instantiating `NewMockCommandInterface` which was automatically generated for us by pegomock.
 
