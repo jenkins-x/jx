@@ -11,7 +11,7 @@ REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 ORG := jenkins-x
 ORG_REPO := $(ORG)/$(NAME)
 RELEASE_ORG_REPO := $(ORG_REPO)
-ROOT_PACKAGE := github.com/$(ORG_REPO)
+ROOT_PACKAGE := github.com/$(ORG_REPO)/v2
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 
@@ -147,7 +147,7 @@ test1: get-test-deps make-reports-dir ## Runs single test specified by test name
 	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(TEST_BUILDFLAGS) -tags="unit integration" $(TEST_PACKAGE) -run $(TEST)
 
 testbin: get-test-deps make-reports-dir
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/pkg/cmd -o build/jx-test $(TEST_BUILDFLAGS)
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -c github.com/jenkins-x/jx/v2/pkg/cmd -o build/jx-test $(TEST_BUILDFLAGS)
 
 install: $(GO_DEPENDENCIES) ## Install the binary
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) $(MAIN_SRC_FILE)
