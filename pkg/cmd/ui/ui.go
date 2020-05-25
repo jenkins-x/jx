@@ -184,12 +184,13 @@ func (o UIOptions) waitForForwarding(localURL string) error {
 	return o.RetryUntilTrueOrTimeout(time.Minute, time.Second*3, func() (b bool, e error) {
 		log.Logger().Debugf("Checking the status of %s", localURL)
 		resp, err := http.Get(localURL) // #nosec
-		if err != nil || (resp != nil && resp.StatusCode != 200) {
+		respSuccess := resp != nil && (resp.StatusCode == 200 || resp.StatusCode == 401)
+		if err != nil || !respSuccess {
 			log.Logger().Debugf("Returned err: %+v", err)
 			log.Logger().Info(".")
 			return false, nil
 		}
-		return resp.StatusCode == 200, nil
+		return respSuccess, nil
 	})
 }
 
