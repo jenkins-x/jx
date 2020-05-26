@@ -372,18 +372,42 @@ type ClusterConfig struct {
 	StrictPermissions bool `json:"strictPermissions,omitempty"`
 }
 
-// VaultConfig contains Vault configuration for boot
+// VaultConfig contains Vault configuration for Boot
 type VaultConfig struct {
-	// Name the name of the vault if using vault for secrets
-	Name           string `json:"name,omitempty"`
+	// Name the name of the Vault if using Jenkins X managed Vault instance.
+	// Cannot be used in conjunction with the URL attribute
+	Name string `json:"name,omitempty"`
+
 	Bucket         string `json:"bucket,omitempty"`
-	Keyring        string `json:"keyring,omitempty"`
-	Key            string `json:"key,omitempty"`
-	ServiceAccount string `json:"serviceAccount,omitempty"`
 	RecreateBucket bool   `json:"recreateBucket,omitempty"`
-	// Optionally allow us to override the default lookup of the Vault URL, could be incluster service or external ingress
-	DisableURLDiscovery bool            `json:"disableURLDiscovery,omitempty"`
-	AWSConfig           *VaultAWSConfig `json:"aws,omitempty"`
+
+	Keyring string `json:"keyring,omitempty"`
+	Key     string `json:"key,omitempty"`
+
+	// DisableURLDiscovery allows us to optionally override the default lookup of the Vault URL, could be incluster service or external ingress
+	DisableURLDiscovery bool `json:"disableURLDiscovery,omitempty"`
+
+	// AWSConfig describes the AWS specific configuration needed for the Vault Operator.
+	AWSConfig *VaultAWSConfig `json:"aws,omitempty"`
+
+	// URL specifies the URL of an Vault instance to use for secret storage.
+	// Needs to be specified together with the Service Account and namespace to use for connecting to Vault.
+	// This cannot be used in conjunction with the Name attribute.
+	URL string `json:"url,omitempty"`
+
+	// ServiceAccount is the name of the Kubernetes service account allowed to authenticate against Vault.
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// Namespace of the Kubernetes service account allowed to authenticate against Vault.
+	Namespace string `json:"namespace,omitempty"`
+
+	// SecretEngineMountPoint is the secret engine mount point to be used for writing data into the KV engine of Vault.
+	// If not specified the 'secret' is used.
+	SecretEngineMountPoint string `json:"secretEngineMountPoint,omitempty"`
+
+	// KubernetesAuthPath is the auth path of used for this cluster
+	// If not specified the 'kubernetes' is used.
+	KubernetesAuthPath string `json:"kubernetesAuthPath,omitempty"`
 }
 
 // VaultAWSConfig contains all the Vault configuration needed by Vault to be deployed in AWS

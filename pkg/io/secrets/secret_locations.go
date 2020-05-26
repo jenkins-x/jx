@@ -10,6 +10,10 @@ import (
 const (
 	// SecretsLocationKey key in the config map which stored the location where the secrets are stored
 	SecretsLocationKey = "secretsLocation"
+
+	// VaultSecretPrefix is the key in the install config map which defines the secrets prefix under which to store secrets
+	// in the Vault KV engine.
+	VaultSecretPrefix = "vaultSecretsPrefix"
 )
 
 // SecretsLocationKind type for secrets location kind
