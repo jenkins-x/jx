@@ -1,7 +1,7 @@
 module github.com/jenkins-x/jx/v2
 
 require (
-	code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a
+	code.gitea.io/sdk/gitea v0.12.0
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.12.9 // indirect
 	github.com/Azure/draft v0.15.0
@@ -16,8 +16,6 @@ require (
 	github.com/TV4/logrus-stackdriver-formatter v0.1.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alecthomas/jsonschema v0.0.0-20190504002508-159cbd5dba26
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
@@ -45,21 +43,20 @@ require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20200320173742-022f4bab9090
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ole/go-ole v1.2.1 // indirect
-	github.com/go-openapi/errors v0.19.4 // indirect
 	github.com/go-openapi/jsonreference v0.19.3
-	github.com/go-openapi/loads v0.19.5 // indirect
 	github.com/go-openapi/spec v0.19.7
-	github.com/go-openapi/strfmt v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2
+	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.3.1
 	github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
-	github.com/hashicorp/go-version v1.1.0
+	github.com/hashicorp/go-version v1.2.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/vault v1.1.2
 	github.com/heptio/sonobuoy v0.16.0
@@ -74,11 +71,11 @@ require (
 	github.com/knative/build v0.7.0 // indirect
 	github.com/knative/pkg v0.0.0-20190624141606-d82505e6c5b4
 	github.com/knative/serving v0.7.0
-	github.com/kubernetes-incubator/reference-docs v0.0.0-20190912061656-a61bc210ee54 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
 	github.com/magiconair/properties v1.8.0
+	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mitchellh/mapstructure v1.2.2
@@ -87,6 +84,7 @@ require (
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
 	github.com/pborman/uuid v1.2.0
+	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
@@ -116,7 +114,6 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	go.mongodb.org/mongo-driver v1.3.2 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	gocloud.dev v0.9.0
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
@@ -125,17 +122,13 @@ require (
 	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
 	golang.org/x/tools v0.0.0-20200415034506-5d8e1897c761
 	gopkg.in/AlecAivazis/survey.v1 v1.8.3
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.0.0-20190718183219-b59d8169aab5
 	k8s.io/apiextensions-apiserver v0.0.0-20190718185103-d1ef975d28ce
 	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac // indirect
 	k8s.io/helm v2.7.2+incompatible
-	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 	k8s.io/kubernetes v1.11.3
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
