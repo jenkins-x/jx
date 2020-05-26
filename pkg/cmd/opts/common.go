@@ -147,7 +147,6 @@ type CommonOptions struct {
 	resourcesInstaller  resources.Installer
 	systemVaultClient   vault.Client
 	tektonClient        tektonclient.Interface
-	vaultClient         vault.Client
 	secretURLClient     secreturl.Client
 	vaultOperatorClient vaultoperatorclient.Interface
 	versionResolver     *versionstream.VersionResolver
@@ -1022,29 +1021,6 @@ func (o *CommonOptions) SystemVaultClient(namespace string) (vault.Client, error
 		o.systemVaultClient = systemVaultClient
 	}
 	return o.systemVaultClient, nil
-}
-
-// VaultClient returns or creates the vault client
-func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client, error) {
-	if o.factory == nil {
-		return nil, errors.New("command factory is not initialized")
-	}
-	if o.systemVaultClient == nil {
-		if namespace == "" {
-			var err error
-			_, namespace, err = o.KubeClientAndDevNamespace()
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to find development namespace")
-			}
-		}
-		vaultClient, err := o.factory.CreateInternalVaultClient(name, namespace)
-		if err != nil {
-			return nil, err
-		}
-		o.vaultClient = vaultClient
-	}
-
-	return o.vaultClient, nil
 }
 
 // GetSecretsLocation returns the location of the secrets

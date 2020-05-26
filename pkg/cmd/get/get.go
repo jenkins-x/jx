@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/v2/pkg/cmd/get/vault"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/get/vault/config"
+
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
 	"github.com/spf13/cobra"
@@ -102,8 +105,8 @@ func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdGetTracker(commonOpts))
 	cmd.AddCommand(NewCmdGetURL(commonOpts))
 	cmd.AddCommand(NewCmdGetUser(commonOpts))
-	cmd.AddCommand(NewCmdGetVault(commonOpts))
-	cmd.AddCommand(NewCmdGetVaultConfig(commonOpts))
+	cmd.AddCommand(vault.NewCmdGetVault(commonOpts))
+	cmd.AddCommand(config.NewCmdGetVaultConfig(commonOpts))
 	cmd.AddCommand(NewCmdGetStream(commonOpts))
 	cmd.AddCommand(NewCmdGetPlugins(commonOpts))
 	return cmd
