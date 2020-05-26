@@ -1037,7 +1037,7 @@ func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client
 				return nil, errors.Wrapf(err, "failed to find development namespace")
 			}
 		}
-		vaultClient, err := o.factory.CreateVaultClient(name, namespace)
+		vaultClient, err := o.factory.CreateInternalVaultClient(name, namespace)
 		if err != nil {
 			return nil, err
 		}
