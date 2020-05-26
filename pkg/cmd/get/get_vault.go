@@ -13,7 +13,7 @@ import (
 )
 
 type GetVaultOptions struct {
-	GetOptions
+	*opts.CommonOptions
 
 	Namespace           string
 	DisableURLDiscovery bool
@@ -33,9 +33,7 @@ var (
 // NewCmdGetVault creates a new command for 'jx get vaults'
 func NewCmdGetVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetVaultOptions{
-		GetOptions: GetOptions{
-			CommonOptions: commonOpts,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -51,8 +49,6 @@ func NewCmdGetVault(commonOpts *opts.CommonOptions) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
-
-	options.AddGetFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to list the vaults")
 	cmd.Flags().BoolVarP(&options.DisableURLDiscovery, "disableURLDiscovery", "", false, "Disables the automatic Vault URL discovery")
@@ -88,8 +84,8 @@ func (o *GetVaultOptions) Run() error {
 
 	table := o.CreateTable()
 	table.AddRow("NAME", "URL", "AUTH-SERVICE-ACCOUNT")
-	for _, vault := range vaults {
-		table.AddRow(vault.Name, vault.URL, vault.AuthServiceAccountName)
+	for _, v := range vaults {
+		table.AddRow(v.Name, v.URL, v.ServiceAccountName)
 	}
 	table.Render()
 

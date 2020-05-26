@@ -2231,7 +2231,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			return errors.Wrap(err, "building the system vault name from cluster name")
 		}
 
-		options.installValues[kube.SystemVaultName] = systemVaultName
+		options.installValues[vault.SystemVaultName] = systemVaultName
 
 		if kubevault.FindVault(vaultOperatorClient, systemVaultName, namespace) {
 			log.Logger().Infof("System vault named %s in namespace %s already exists",

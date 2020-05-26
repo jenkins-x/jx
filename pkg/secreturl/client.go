@@ -1,6 +1,6 @@
 package secreturl
 
-// Client is a simple interface for acessing vault-like secret storage URLs such as `vault.Client` or a file system we can use to
+// Client is a simple interface for accessing vault-like secret storage URLs such as `vault.Client` or a file system we can use to
 // access secret files and values in helm.
 //go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/secreturl Client -o mocks/secreturl_client.go
 type Client interface {

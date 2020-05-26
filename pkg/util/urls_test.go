@@ -54,3 +54,21 @@ func TestSanitizeURL(t *testing.T) {
 		})
 	}
 }
+
+func TestIsURL(t *testing.T) {
+	t.Parallel()
+	tests := map[string]bool{
+		"":                 false,
+		"/a/b/c":           false,
+		"http//test.com":   false,
+		"http://test.com":  true,
+		"https://test.com": true,
+	}
+
+	for test, expected := range tests {
+		t.Run(test, func(t *testing.T) {
+			actual := util.IsValidUrl(test)
+			assert.Equal(t, expected, actual, "%s", test)
+		})
+	}
+}

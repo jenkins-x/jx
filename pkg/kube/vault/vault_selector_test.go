@@ -25,7 +25,7 @@ func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
 	assert.Equal(t, "myVault", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
 	assert.Equal(t, "http://foo.bar", vault.URL)
-	assert.Equal(t, "myVault-auth-sa", vault.AuthServiceAccountName)
+	assert.Equal(t, "myVault-auth-sa", vault.ServiceAccountName)
 	assert.NoError(t, err)
 }
 
@@ -40,7 +40,7 @@ func Test_GetVault_InclusterUsesInternalVaultURL(t *testing.T) {
 	assert.Equal(t, "myVault", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
 	assert.Equal(t, fmt.Sprintf("http://myVault:%s", vault_const.DefaultVaultPort), vault.URL)
-	assert.Equal(t, "myVault-auth-sa", vault.AuthServiceAccountName)
+	assert.Equal(t, "myVault-auth-sa", vault.ServiceAccountName)
 	assert.NoError(t, err)
 }
 
@@ -80,7 +80,7 @@ func Test_GetVault_GetExplicitVaultSucceedsWhenTwoVaultsAreDefined(t *testing.T)
 	assert.Equal(t, "vault2", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
 	assert.Equal(t, "http://two.ah.ah.ah", vault.URL)
-	assert.Equal(t, "vault2-auth-sa", vault.AuthServiceAccountName)
+	assert.Equal(t, "vault2-auth-sa", vault.ServiceAccountName)
 	assert.NoError(t, err)
 }
 
@@ -116,6 +116,6 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 	assert.Equal(t, "vault2", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)
 	assert.Equal(t, "http://two.ah.ah.ah", vault.URL)
-	assert.Equal(t, "vault2-auth-sa", vault.AuthServiceAccountName)
+	assert.Equal(t, "vault2-auth-sa", vault.ServiceAccountName)
 	assert.NoError(t, err)
 }

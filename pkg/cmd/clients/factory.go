@@ -3,6 +3,8 @@ package clients
 import (
 	"fmt"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/heptio/sonobuoy/pkg/client"
 	sonoboy_dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
 	"k8s.io/client-go/dynamic"
@@ -324,10 +326,12 @@ func (f *factory) createAuthConfigServiceVault(fileName string, namespace string
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the kube client")
 	}
+
 	vaultClient, err := f.CreateSystemVaultClient(namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the vault client")
 	}
+
 	var authService auth.ConfigService
 	configMapClient := client.CoreV1().ConfigMaps(namespace)
 	if auth.IsConfigMapVaultAuth(configMapClient) {
@@ -335,6 +339,7 @@ func (f *factory) createAuthConfigServiceVault(fileName string, namespace string
 	} else {
 		authService = auth.NewVaultAuthConfigService(fileName, vaultClient)
 	}
+
 	if _, err := authService.LoadConfig(); err != nil {
 		return nil, errors.Wrap(err, "loading auth config from vault")
 	}
@@ -366,8 +371,7 @@ func (f *factory) createAuthConfigServiceFile(fileName string, serverKind string
 
 // CreateAuthConfigService creates a new service which loads/saves the auth config from/to different sources depending
 // on the current secrets location and cluster context. The sources can be vault, kubernetes secrets or local file.
-func (f *factory) CreateAuthConfigService(fileName string, namespace string,
-	serverKind string, serviceKind string) (auth.ConfigService, error) {
+func (f *factory) CreateAuthConfigService(fileName string, namespace string, serverKind string, serviceKind string) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
 		if authService, err := f.createAuthConfigServiceVault(fileName, namespace); err == nil {
 			return authService, nil
@@ -443,6 +447,34 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
+	kubeClient, _, err := f.CreateKubeClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create Kube client for Vault client creation")
+	}
+
+	installConfigMap, err := kubeClient.CoreV1().ConfigMaps(namespace).Get(kube.ConfigMapNameJXInstallConfig, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, errors.Errorf("unable to determine Vault type since ConfigMap %s not found in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+		}
+		return nil, errors.Wrapf(err, "error retrieving ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+	}
+
+	installValues := installConfigMap.Data
+
+	if installValues[secrets.SecretsLocationKey] != string(secrets.VaultLocationKind) {
+		return nil, errors.Errorf("unable to create Vault client for secret location kind '%s'", installValues[secrets.SecretsLocationKey])
+	}
+
+	vaultConfig, err := vault.FromMap(installValues, namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error parsing Vault configuration from ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+	}
+
+	if vaultConfig.IsExternal() {
+		return f.CreateExternalVaultClient(vaultConfig, kubeClient)
+	}
+
 	name, err := f.getVaultName(namespace)
 	if err != nil {
 		return nil, err
@@ -450,8 +482,7 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 	return f.CreateInternalVaultClient(name, namespace)
 }
 
-// getVaultName gets the vault name from install configuration or builds a new name from
-// cluster name
+// getVaultName gets the vault name from install configuration or builds a new name based on the cluster name.
 func (f *factory) getVaultName(namespace string) (string, error) {
 	log.Logger().Debugf("getting vault name for namespace %s", namespace)
 	kubeClient, _, err := f.CreateKubeClient()
@@ -460,7 +491,7 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 	}
 	var name string
 	if data, err := kube.ReadInstallValues(kubeClient, namespace); err == nil && data != nil {
-		name = data[kube.SystemVaultName]
+		name = data[vault.SystemVaultName]
 		log.Logger().Debugf("system vault name from config %s", name)
 		if name == "" {
 			clusterName := data[kube.ClusterName]
@@ -481,17 +512,19 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 	return name, nil
 }
 
-// CreateInternalVaultClient returns the given vault client for managing secrets
+// CreateInternalVaultClient returns the given Vault client for managing secrets
 // Will use default values for name and namespace if nil values are applied
 func (f *factory) CreateInternalVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the vault operator client")
 	}
+
 	kubeClient, defaultNamespace, err := f.CreateKubeClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the kube client")
 	}
+
 	devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting the dev namespace from current namespace %q",
@@ -548,7 +581,21 @@ func (f *factory) CreateInternalVaultClient(name string, namespace string) (vaul
 	}
 
 	vaultClient, err := clientFactory.NewVaultClient(name, namespace, useIngressURL, insecureSSLWebhook)
-	return vault.NewVaultClient(vaultClient), err
+	return vault.NewVaultClient(vaultClient, ""), err
+}
+
+func (f *factory) CreateExternalVaultClient(vaultConfig vault.Vault, kubeClient kubernetes.Interface) (vault.Client, error) {
+	clientFactory, err := kubevault.NewVaultClientFactoryWithoutSelector(kubeClient, vaultConfig.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create Vault client factory")
+	}
+
+	client, err := clientFactory.NewVaultClientForURL(vaultConfig, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create Vault client")
+	}
+
+	return vault.NewVaultClient(client, vaultConfig.SecretEngineMountPoint), nil
 }
 
 func (f *factory) useVaultInsecureSSL(namespace string) (bool, error) {
@@ -664,6 +711,9 @@ func (f *factory) CreateMetricsClient() (metricsclient.Interface, error) {
 	return metricsclient.NewForConfig(config)
 }
 
+// CreateKubeClient creates a new Kubernetes client. It also returns the currently set namespace as per KUBECONFIG.
+// If no namespace is selected, 'default' is returned.
+// If an error occurs an error is returned together with a nil client and an empty string as current namespace.
 func (f *factory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	cfg, err := f.CreateKubeConfig()
 	if err != nil {

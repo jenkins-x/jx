@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"regexp"
 
+	"github.com/jenkins-x/jx/v2/pkg/log"
+
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 	"github.com/jenkins-x/jx/v2/pkg/util"
@@ -13,7 +15,8 @@ import (
 )
 
 const (
-	yamlDataKey = "yaml"
+	yamlDataKey                   = "yaml"
+	defaultSecretEngineMountPoint = "secret"
 )
 
 var vaultURIRegex = regexp.MustCompile(`:[\s"]*vault:[-_.\w\/:]*`)
@@ -51,14 +54,23 @@ type Client interface {
 	ReplaceURIs(text string) (string, error)
 }
 
-// client is a hand wrapper around the official Vault API
+// client is a wrapper around the official Vault API
 type client struct {
-	client *api.Client
+	client                 *api.Client
+	secretEngineMountPoint string
 }
 
-// NewVaultClient creates a new Vault Client wrapping the api.client
-func NewVaultClient(apiclient *api.Client) Client {
-	return &client{client: apiclient}
+// NewVaultClient creates a new Vault Client wrapping the provided api.Client. The provided secretEngineMountPoint determines the
+// prefix (mount point) for the KV engine used by this client. If the empty string is specified, the string 'secret' is assumed as
+// the default prefix.
+func NewVaultClient(apiClient *api.Client, secretEngineMountPoint string) Client {
+	if secretEngineMountPoint == "" {
+		secretEngineMountPoint = defaultSecretEngineMountPoint
+	}
+	return &client{
+		client:                 apiClient,
+		secretEngineMountPoint: secretEngineMountPoint,
+	}
 }
 
 // Write writes a named secret to the vault with the data provided. Data can be a generic map of stuff, but at all points
@@ -67,7 +79,9 @@ func (v *client) Write(secretName string, data map[string]interface{}) (map[stri
 	payload := map[string]interface{}{
 		"data": data,
 	}
-	secret, err := v.client.Logical().Write(secretPath(secretName), payload)
+	path := v.secretPath(secretName)
+	log.Logger().Tracef("writing secret %s", path)
+	secret, err := v.client.Logical().Write(path, payload)
 	if secret != nil {
 		return secret.Data, err
 	}
@@ -76,7 +90,7 @@ func (v *client) Write(secretName string, data map[string]interface{}) (map[stri
 
 // Read reads a named secret to the vault
 func (v *client) Read(secretName string) (map[string]interface{}, error) {
-	secret, err := v.client.Logical().Read(secretPath(secretName))
+	secret, err := v.client.Logical().Read(v.secretPath(secretName))
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading secret %q from vault", secretName)
 	}
@@ -151,7 +165,7 @@ func (v *client) ReadYaml(secretName string) (string, error) {
 
 // List lists the secrets under a given path
 func (v *client) List(path string) ([]string, error) {
-	secrets, err := v.client.Logical().List(secretMetadataPath(path))
+	secrets, err := v.client.Logical().List(v.secretMetadataPath(path))
 	if err != nil {
 		return nil, err
 	}
@@ -190,4 +204,15 @@ func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 // ReplaceURIs will replace any vault: URIs in a string (or whatever URL scheme the secret URL client supports
 func (v *client) ReplaceURIs(s string) (string, error) {
 	return secreturl.ReplaceURIs(s, v, vaultURIRegex, "vault:")
+}
+
+// secretPath generates a secret path from the secret path for storing in vault
+// this just makes sure it gets stored under /secret
+func (v *client) secretPath(path string) string {
+	return fmt.Sprintf("%s/data/%s", v.secretEngineMountPoint, path)
+}
+
+// secretMetaPath generates the secret metadata path form the secret path provided
+func (v *client) secretMetadataPath(path string) string {
+	return fmt.Sprintf("%s/metadata/%s", v.secretEngineMountPoint, path)
 }

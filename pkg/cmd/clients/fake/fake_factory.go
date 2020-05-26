@@ -250,6 +250,10 @@ func (f *FakeFactory) CreateInternalVaultClient(name string, namespace string) (
 	return fake_vault.NewFakeVaultClient(), nil
 }
 
+func (f *FakeFactory) CreateExternalVaultClient(vaultConfig vault.Vault, kubeClient kubernetes.Interface) (vault.Client, error) {
+	return fake_vault.NewFakeVaultClient(), nil
+}
+
 // CreateKubeClient creates a new Kubernetes client
 func (f *FakeFactory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	if f.kubeClient == nil {

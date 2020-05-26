@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jenkins-x/jx/v2/pkg/vault"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/client-go/kubernetes"
@@ -12,7 +14,7 @@ import (
 // Selector is an interface for selecting a vault from the installed ones on the platform
 // It should pick the most logical one, or give the user a way of picking a vault if there are multiple installed
 type Selector interface {
-	GetVault(name string, namespace string, useIngressURL bool) (*Vault, error)
+	GetVault(name string, namespace string, useIngressURL bool) (*vault.Vault, error)
 }
 
 type vaultSelector struct {
@@ -27,21 +29,21 @@ func NewVaultSelector(o OptionsInterface) (Selector, error) {
 	if err != nil {
 		return nil, err
 	}
-	kubeclient, _, err := o.KubeClientAndNamespace()
+	kubeClient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return nil, err
 	}
 
 	v := &vaultSelector{
 		vaultOperatorClient: operator,
-		kubeClient:          kubeclient,
+		kubeClient:          kubeClient,
 		Handles:             o.GetIOFileHandles(),
 	}
 	return v, nil
 }
 
 // GetVault retrieve the given vault by name
-func (v *vaultSelector) GetVault(name string, namespace string, useIngressURL bool) (*Vault, error) {
+func (v *vaultSelector) GetVault(name string, namespace string, useIngressURL bool) (*vault.Vault, error) {
 	vaults, err := GetVaults(v.kubeClient, v.vaultOperatorClient, namespace, useIngressURL)
 	if err != nil {
 		return nil, err
@@ -67,8 +69,8 @@ func (v *vaultSelector) GetVault(name string, namespace string, useIngressURL bo
 	return vaults[0], nil
 }
 
-func (v *vaultSelector) selectVault(vaults []*Vault) (*Vault, error) {
-	vaultMap, vaultNames := make(map[string]*Vault, len(vaults)), make([]string, len(vaults))
+func (v *vaultSelector) selectVault(vaults []*vault.Vault) (*vault.Vault, error) {
+	vaultMap, vaultNames := make(map[string]*vault.Vault, len(vaults)), make([]string, len(vaults))
 	for i, vault := range vaults {
 		vaultMap[vault.Name] = vault
 		vaultNames[i] = vault.Name

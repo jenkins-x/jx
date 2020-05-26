@@ -20,7 +20,7 @@ const (
 	FileSystemLocationKind SecretsLocationKind = "local"
 	// VaultLocationKind indicates that secrets location is vault
 	VaultLocationKind SecretsLocationKind = "vault"
-	// KubeLocationKind inidcates that secrets location is in Kuberntes
+	// KubeLocationKind indicates that secrets location is in Kubernetes
 	KubeLocationKind SecretsLocationKind = "kube"
 	// AutoLocationKind indicates that secrets location needs to be dynamically determine
 	AutoLocationKind SecretsLocationKind = "auto"
