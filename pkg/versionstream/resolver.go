@@ -3,6 +3,7 @@ package versionstream
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 )
@@ -56,7 +57,7 @@ func (v *VersionResolver) VerifyPackages(packages map[string]string) error {
 			errs = append(errs, err)
 		}
 	}
-	return util.CombineErrors(errs...)
+	return errorutil.CombineErrors(errs...)
 }
 
 // VerifyPackage verifies the package is of a sufficient version

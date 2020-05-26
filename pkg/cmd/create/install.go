@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/upgrade"
-
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 	"github.com/jenkins-x/jx/v2/pkg/vault/create"
 
 	createoptions "github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
@@ -1865,7 +1865,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 			}
 			log.Logger().Infof("Registered environment %s", util.ColorInfo(env.GetName()))
 		}
-		return util.CombineErrors(errs...)
+		return errorutil.CombineErrors(errs...)
 	}
 	return nil
 }

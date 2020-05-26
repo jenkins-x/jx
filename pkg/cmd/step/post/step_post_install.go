@@ -3,6 +3,8 @@ package post
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
+
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
@@ -177,5 +179,5 @@ func (o *StepPostInstallOptions) Run() (err error) {
 			errs = append(errs, errors.Wrapf(err, "failed to import Environment %s with git URL %s", name, gitURL))
 		}
 	}
-	return util.CombineErrors(errs...)
+	return errorutil.CombineErrors(errs...)
 }

@@ -15,6 +15,7 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
@@ -289,7 +290,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	err = h.kubectlApply(ns, releaseName, wait, create, force, outputDir)
 	if err != nil {
 		err2 := h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
-		return util.CombineErrors(err, err2)
+		return errorutil.CombineErrors(err, err2)
 	}
 	err = h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 	if err != nil {
@@ -299,13 +300,13 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		err2 := h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
-		return util.CombineErrors(err, err2)
+		return errorutil.CombineErrors(err, err2)
 	}
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
 
-	return util.CombineErrors(err, err2)
+	return errorutil.CombineErrors(err, err2)
 }
 
 // FetchChart fetches a Helm Chart
@@ -377,7 +378,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	err = h.kubectlApply(ns, releaseName, wait, create, force, outputDir)
 	if err != nil {
 		err2 := h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
-		return util.CombineErrors(err, err2)
+		return errorutil.CombineErrors(err, err2)
 	}
 	err = h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 	if err != nil {
@@ -387,13 +388,13 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create, force)
 	if err != nil {
 		err2 := h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
-		return util.CombineErrors(err, err2)
+		return errorutil.CombineErrors(err, err2)
 	}
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
 
-	return util.CombineErrors(err, err2)
+	return errorutil.CombineErrors(err, err2)
 }
 
 func (h *HelmTemplate) DecryptSecrets(location string) error {
@@ -513,7 +514,7 @@ func (h *HelmTemplate) deleteNamespacedResourcesBySelector(ns string, selector s
 	log.Logger().Debugf("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(kinds, " "))
 	errs := h.deleteResourcesBySelector(ns, kinds, selector, wait)
 	errList = append(errList, errs...)
-	return util.CombineErrors(errList...)
+	return errorutil.CombineErrors(errList...)
 }
 
 func (h *HelmTemplate) deleteClusterResourcesBySelector(ns string, selector string, wait bool, message string) error {
@@ -527,7 +528,7 @@ func (h *HelmTemplate) deleteClusterResourcesBySelector(ns string, selector stri
 		errs = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
 		errList = append(errList, errs...)
 	}
-	return util.CombineErrors(errList...)
+	return errorutil.CombineErrors(errList...)
 }
 
 func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, selector string, wait bool) []error {

@@ -16,6 +16,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	jxconfig "github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
@@ -709,7 +710,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 			err2 := gitter.Status(dir)
 			out, err3 := gitter.Diff(dir)
 			log.Logger().Infof("Got diff %s", out)
-			return "", "", nil, nil, errors.Wrapf(util.CombineErrors(err, err2, err3), "unable to pop the stash")
+			return "", "", nil, nil, errors.Wrapf(errorutil.CombineErrors(err, err2, err3), "unable to pop the stash")
 		}
 	}
 
