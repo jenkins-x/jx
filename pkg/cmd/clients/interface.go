@@ -93,8 +93,8 @@ type Factory interface {
 	// CreateSystemVaultClient creates the system vault client for managing the secrets
 	CreateSystemVaultClient(namespace string) (vault.Client, error)
 
-	// CreateVaultClient returns the vault client for given vault
-	CreateVaultClient(name string, namespace string) (vault.Client, error)
+	// CreateInternalVaultClient returns the Vault client for a Vault instance managed by Jenkins X.
+	CreateInternalVaultClient(name string, namespace string) (vault.Client, error)
 
 	// CreateHelm creates a new helm client
 	CreateHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
