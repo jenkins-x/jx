@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	jxerrors "github.com/jenkins-x/jx/v2/pkg/util/errors"
+
 	"github.com/jenkins-x/jx/v2/pkg/boot"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"sigs.k8s.io/yaml"
@@ -160,7 +162,7 @@ func (o *StepVerifyEnvironmentsOptions) readEnvironment() (string, string, error
 		missingReoRefErr = errors.Errorf("the environment variable %s must be specified", boot.ConfigBaseRefEnvVarName)
 	}
 
-	err := util.CombineErrors(missingRepoURLErr, missingReoRefErr)
+	err := jxerrors.CombineErrors(missingRepoURLErr, missingReoRefErr)
 
 	if err == nil {
 		log.Logger().Debugf("Defined %s env variable value: %s", boot.ConfigRepoURLEnvVarName, fromGitURL)

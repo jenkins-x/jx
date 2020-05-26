@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	jxerrors "github.com/jenkins-x/jx/v2/pkg/util/errors"
+
 	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/v2/pkg/builds"
@@ -201,7 +203,7 @@ func (o *StepBDDOptions) Run() error {
 			}
 		}
 	}
-	return util.CombineErrors(errors...)
+	return jxerrors.CombineErrors(errors...)
 }
 
 // runOnCurrentCluster runs the tests on the current cluster
@@ -541,7 +543,7 @@ func (o *StepBDDOptions) reportStatus(testDir string, err error) error {
 			errs = append(errs, err)
 		}
 	}
-	return util.CombineErrors(errs...)
+	return jxerrors.CombineErrors(errs...)
 }
 
 func (o *StepBDDOptions) copyReports(testDir string, err error) error {

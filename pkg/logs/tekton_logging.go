@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	jxerrors "github.com/jenkins-x/jx/v2/pkg/util/errors"
+
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 
 	"github.com/jenkins-x/jx/v2/pkg/cloud/buckets"
@@ -461,7 +463,7 @@ func (t *TektonLogger) StreamPipelinePersistentLogs(logsURL string, jxClient ver
 			// TODO: This is only here as long as we keep supporting non boot clusters, as GKE are the only ones with LTS supported outside of boot
 			scanner, err2 := gke.StreamTransferFileFromBucket(logsURL)
 			if err2 != nil {
-				return util.CombineErrors(err, err2)
+				return jxerrors.CombineErrors(err, err2)
 			}
 			return t.streamPipedLogs(scanner, logsURL)
 		}
@@ -596,7 +598,7 @@ func NewBucketProviderFromTeamSettingsConfiguration(jxClient versioned.Interface
 	}
 	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	if err != nil || requirements == nil {
-		return nil, util.CombineErrors(err, errors.New("error obtaining the requirements file to decide bucket provider"))
+		return nil, jxerrors.CombineErrors(err, errors.New("error obtaining the requirements file to decide bucket provider"))
 	}
 	return factory.NewBucketProvider(requirements), nil
 }
