@@ -63,6 +63,14 @@ var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
 	"step nexus release": {
 		date: "Feb 1 2020",
 	},
+	"create vault": {
+		date: "Sep 1 2020",
+		info: "This commands will have no replacement.",
+	},
+	"delete vault": {
+		date: "Sep 1 2020",
+		info: "This commands will have no replacement.",
+	},
 }
 
 // deprecateInfo keeps some deprecation details related to a command
