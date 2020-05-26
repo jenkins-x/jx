@@ -36,5 +36,5 @@ func InstallEksCtlWithVersion(version string, skipPathScan bool) error {
 
 // InstallEksCtl installs eks cli
 func InstallEksCtl(skipPathScan bool) error {
-	return InstallEksCtlWithVersion("", skipPathScan)
+	return InstallEksCtlWithVersion(packages.EksCtlVersion, skipPathScan)
 }

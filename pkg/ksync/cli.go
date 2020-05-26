@@ -79,10 +79,7 @@ func install(latestVersion, binDir, fileName string) error {
 func (kcli *CLI) Version() (string, error) {
 	args := []string{"version"}
 	kcli.Runner.SetArgs(args)
-	out, err := kcli.Runner.RunWithoutRetry()
-	if err != nil {
-		return "", err
-	}
+	out, _ := kcli.Runner.RunWithoutRetry()
 	return out, nil
 }
 
