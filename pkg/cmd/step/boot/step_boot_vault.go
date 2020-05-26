@@ -31,6 +31,33 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 )
 
+type vaultSelector struct {
+	vaultURL           string
+	serviceAccountName string
+	namespace          string
+}
+
+func NewVaultSelector(vault vault.Vault) kubevault.Selector {
+	selector := &vaultSelector{
+		vaultURL:           vault.URL,
+		serviceAccountName: vault.ServiceAccountName,
+		namespace:          vault.Namespace,
+	}
+	return selector
+}
+
+// GetVault retrieve the given vault by name
+func (v *vaultSelector) GetVault(name string, namespace string, useIngressURL bool) (*vault.Vault, error) {
+	vault := vault.Vault{
+		Name:               name,
+		Namespace:          namespace,
+		URL:                v.vaultURL,
+		ServiceAccountName: v.serviceAccountName,
+	}
+
+	return &vault, nil
+}
+
 // StepBootVaultOptions contains the command line flags
 type StepBootVaultOptions struct {
 	*opts.CommonOptions
@@ -43,7 +70,7 @@ var (
 	stepBootVaultLong = templates.LongDesc(`
 		This step boots up Vault in the current cluster if its enabled in the 'jx-requirements.yml' file and is not already installed.
 
-		This step is intended to be used in the Jenkins X Boot Pipeline: https://jenkins-x.io/getting-started/boot/
+		This step is intended to be used in the Jenkins X Boot Pipeline: https://jenkins-x.io/docs/getting-started/setup/boot/
 `)
 
 	stepBootVaultExample = templates.Examples(`
@@ -96,13 +123,57 @@ func (o *StepBootVaultOptions) Run() error {
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes client")
+		return errors.Wrapf(err, "failed to create Kubernetes client")
 	}
 
+	externalVaultURL := requirements.Vault.URL
+	if externalVaultURL != "" {
+		return o.setupExternalVault(requirements, ns, kubeClient)
+	}
+
+	return o.setupInClusterVault(requirements, ns, kubeClient)
+}
+
+func (o *StepBootVaultOptions) setupExternalVault(requirements *config.RequirementsConfig, ns string, kubeClient kubernetes.Interface) error {
+	namespace := requirements.Vault.Namespace
+	if namespace == "" {
+		namespace = ns
+	}
+	vault, err := vault.NewExternalVault(requirements.Vault.URL, requirements.Vault.ServiceAccount, namespace, requirements.Vault.SecretEngineMountPoint, requirements.Vault.KubernetesAuthPath)
+	if err != nil {
+		return errors.Wrapf(err, "invalid configuration for external Vault setup")
+	}
+
+	selector := NewVaultSelector(vault)
+	vaultFactory, err := kubevault.NewVaultClientFactoryWithSelector(kubeClient, selector, ns)
+	if err != nil {
+		return errors.Wrap(err, "unable to create Vault factory for external Vault instance")
+	}
+
+	_, err = vaultFactory.NewVaultClientForURL(vault, false)
+	if err != nil {
+		return errors.Wrap(err, "unable to create Vault client for external Vault instance")
+	}
+
+	err = o.storeExternalVaultConfig(kubeClient, ns, vault)
+	if err != nil {
+		return errors.Wrapf(err, "unable to store Vault configuration in ConfigMap '%s'", kube.ConfigMapNameJXInstallConfig)
+	}
+
+	log.Logger().Infof("Using external Vault instance %s - %s", vault.URL, util.ColorInfo("OK"))
+	return nil
+}
+
+func (o *StepBootVaultOptions) setupInClusterVault(requirements *config.RequirementsConfig, ns string, kubeClient kubernetes.Interface) error {
 	if requirements.Vault.Name == "" {
 		requirements.Vault.Name = kubevault.SystemVaultNameForCluster(requirements.Cluster.ClusterName)
 	}
 	log.Logger().Debugf("Using vault name '%s'", requirements.Vault.Name)
+
+	vault, err := vault.NewInternalVault(requirements.Vault.Name, requirements.Vault.ServiceAccount, ns)
+	if err != nil {
+		return errors.Wrapf(err, "invalid configuration for external Vault setup")
+	}
 
 	err = o.installOperator(requirements, ns)
 	if err != nil {
@@ -114,7 +185,7 @@ func (o *StepBootVaultOptions) Run() error {
 		return err
 	}
 
-	err = o.storeSystemVaultName(kubeClient, requirements.Vault.Name, ns)
+	err = o.storeInternalVaultConfig(kubeClient, vault, ns)
 	if err != nil {
 		return err
 	}
@@ -178,7 +249,6 @@ func (o *StepBootVaultOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create/update Vault")
 	}
-
 	return nil
 }
 
@@ -243,15 +313,34 @@ func (o *StepBootVaultOptions) createAWSParam(requirements *config.RequirementsC
 	return awsParam, nil
 }
 
-func (o *StepBootVaultOptions) storeSystemVaultName(kubeClient kubernetes.Interface, vaultName string, ns string) error {
+func (o *StepBootVaultOptions) storeInternalVaultConfig(kubeClient kubernetes.Interface, vaultConfig vault.Vault, ns string) error {
 	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
 		func(configMap *corev1.ConfigMap) error {
-			configMap.Data[vault.SystemVaultName] = vaultName
 			configMap.Data[secrets.SecretsLocationKey] = string(secrets.VaultLocationKind)
+
+			vaultConfig := vaultConfig.ToMap()
+			configMap.Data = util.MergeMaps(configMap.Data, vaultConfig)
+
 			return nil
 		}, nil)
 	if err != nil {
-		return errors.Wrapf(err, "saving secrets location in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
+		return errors.Wrapf(err, "error saving system vault name in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
+	}
+	return nil
+}
+
+func (o *StepBootVaultOptions) storeExternalVaultConfig(kubeClient kubernetes.Interface, ns string, vaultConfig vault.Vault) error {
+	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
+		func(configMap *corev1.ConfigMap) error {
+			configMap.Data[secrets.SecretsLocationKey] = string(secrets.VaultLocationKind)
+
+			vaultConfig := vaultConfig.ToMap()
+			configMap.Data = util.MergeMaps(configMap.Data, vaultConfig)
+
+			return nil
+		}, nil)
+	if err != nil {
+		return errors.Wrapf(err, "error saving external Vault configuration in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, ns)
 	}
 	return nil
 }

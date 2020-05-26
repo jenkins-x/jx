@@ -170,6 +170,29 @@ func Test_marshalling_empty_requirements_config_creates_no_build_pack_configurat
 	assert.Nil(t, requirements.BuildPacks)
 }
 
+func Test_marshalling_vault_config(t *testing.T) {
+	t.Parallel()
+
+	requirements := config.NewRequirementsConfig()
+	requirements.Vault = config.VaultConfig{
+		Name:                   "myVault",
+		URL:                    "http://myvault",
+		ServiceAccount:         "vault-sa",
+		Namespace:              "jx",
+		KubernetesAuthPath:     "kubernetes",
+		SecretEngineMountPoint: "secret",
+	}
+	data, err := yaml.Marshal(requirements)
+	assert.NoError(t, err)
+
+	assert.Contains(t, string(data), "name: myVault")
+	assert.Contains(t, string(data), "url: http://myvault")
+	assert.Contains(t, string(data), "serviceAccount: vault-sa")
+	assert.Contains(t, string(data), "namespace: jx")
+	assert.Contains(t, string(data), "kubernetesAuthPath: kubernetes")
+	assert.Contains(t, string(data), "secretEngineMountPoint: secret")
+}
+
 func Test_env_repository_visibility(t *testing.T) {
 	t.Parallel()
 
