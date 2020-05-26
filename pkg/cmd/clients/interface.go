@@ -33,7 +33,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-// Factory is the interface defined for jx interactions via the cli
+// Factory is the interface defined for jx interactions via the CLI
 //go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/cmd/clients Factory -o mocks/factory.go
 type Factory interface {
 	//
@@ -96,6 +96,10 @@ type Factory interface {
 	// CreateInternalVaultClient returns the Vault client for a Vault instance managed by Jenkins X.
 	CreateInternalVaultClient(name string, namespace string) (vault.Client, error)
 
+	// CreateExternalVaultClient returns a Vault client connecting to the Vault instance described in the specified Vault configuration.
+	// The client authenticates with the JWT token of the specified service account in the given namespace.
+	CreateExternalVaultClient(vaultConfig vault.Vault, kubeClient kubernetes.Interface) (vault.Client, error)
+
 	// CreateHelm creates a new helm client
 	CreateHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
 
@@ -103,7 +107,9 @@ type Factory interface {
 	// Kubernetes clients
 	//
 
-	// CreateKubeClient creates a new Kubernetes client
+	// CreateKubeClient creates a new Kubernetes client. It also returns the currently set namespace as per KUBECONFIG.
+	// If no namespace is selected, 'default' is returned.
+	// If an error occurs an error is returned together with a nil client and an empty string as current namespace.
 	CreateKubeClient() (kubernetes.Interface, string, error)
 
 	// CreateKubeConfig creates the kubernetes configuration

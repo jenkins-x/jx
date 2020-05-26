@@ -330,9 +330,6 @@ const (
 
 	// KubeProvider stores the kubernetes provider name
 	KubeProvider = "kubeProvider"
-
-	// SystemVaultName stores the name of the system Vault created on install
-	SystemVaultName = "systemVaultName"
 )
 
 var (

@@ -21,6 +21,7 @@ import (
 	kubevault "github.com/jenkins-x/jx/v2/pkg/kube/vault"
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 	pkgvault "github.com/jenkins-x/jx/v2/pkg/vault"
 	"github.com/jenkins-x/jx/v2/pkg/vault/create"
 	"github.com/pkg/errors"
@@ -245,7 +246,7 @@ func (o *StepBootVaultOptions) createAWSParam(requirements *config.RequirementsC
 func (o *StepBootVaultOptions) storeSystemVaultName(kubeClient kubernetes.Interface, vaultName string, ns string) error {
 	_, err := kube.DefaultModifyConfigMap(kubeClient, ns, kube.ConfigMapNameJXInstallConfig,
 		func(configMap *corev1.ConfigMap) error {
-			configMap.Data[kube.SystemVaultName] = vaultName
+			configMap.Data[vault.SystemVaultName] = vaultName
 			configMap.Data[secrets.SecretsLocationKey] = string(secrets.VaultLocationKind)
 			return nil
 		}, nil)

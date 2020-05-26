@@ -88,3 +88,18 @@ func URLToHostName(svcURL string) string {
 	}
 	return host
 }
+
+// IsValidUrl tests a string to determine if it is a well-structured url or not.
+func IsValidUrl(s string) bool {
+	_, err := url.ParseRequestURI(s)
+	if err != nil {
+		return false
+	}
+
+	u, err := url.Parse(s)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+
+	return true
+}
