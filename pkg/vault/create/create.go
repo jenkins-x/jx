@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
@@ -125,7 +127,7 @@ func (p *VaultCreationParam) validate() error {
 		}
 	}
 
-	return util.CombineErrors(validationErrors...)
+	return errorutil.CombineErrors(validationErrors...)
 }
 
 func (p *GKEParam) validate() error {
@@ -139,7 +141,7 @@ func (p *GKEParam) validate() error {
 	if p.Zone == "" {
 		validationErrors = append(validationErrors, errors.New("the GKE zone needs to be provided"))
 	}
-	return util.CombineErrors(validationErrors...)
+	return errorutil.CombineErrors(validationErrors...)
 }
 
 func (p *AWSParam) validate() error {
@@ -156,7 +158,7 @@ func (p *AWSParam) validate() error {
 	if p.SecretAccessKey == "" {
 		validationErrors = append(validationErrors, errors.New("the SecretAccessKey needs to be provided"))
 	}
-	return util.CombineErrors(validationErrors...)
+	return errorutil.CombineErrors(validationErrors...)
 }
 
 // CreateOrUpdateVault creates or updates a Vault instance in the specified namespace.

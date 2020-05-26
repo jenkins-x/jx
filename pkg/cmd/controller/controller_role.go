@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
+
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
@@ -267,7 +269,7 @@ func (o *ControllerRoleOptions) upsertEnvironment(kubeClient kubernetes.Interfac
 
 		}
 	}
-	return util.CombineErrors(errors...)
+	return errorutil.CombineErrors(errors...)
 }
 
 // upsertEnvironmentRoleBindingRolesInEnvironments for the given environment and environment role binding lets update any role or role bindings if required
@@ -356,7 +358,7 @@ func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(
 			errors = append(errors, err)
 		}
 	}
-	return util.CombineErrors(errors...)
+	return errorutil.CombineErrors(errors...)
 }
 
 func (o *ControllerRoleOptions) removeEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
@@ -422,7 +424,7 @@ func (o *ControllerRoleOptions) UpsertEnvironmentRoleBinding(newEnv *v1.Environm
 			errors = append(errors, err)
 		}
 	}
-	return util.CombineErrors(errors...)
+	return errorutil.CombineErrors(errors...)
 }
 
 func (o *ControllerRoleOptions) onRole(oldObj interface{}, newObj interface{}) {
@@ -479,7 +481,7 @@ func (o *ControllerRoleOptions) UpsertRole(newRole *rbacv1.Role) error {
 			errors = append(errors, err)
 		}
 	}
-	return util.CombineErrors(errors...)
+	return errorutil.CombineErrors(errors...)
 }
 
 // upsertRoleInEnvironments updates the Role in the team environment in the other environment namespaces if it has changed

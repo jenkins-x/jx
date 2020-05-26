@@ -8,9 +8,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke/storage"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/v2/pkg/config"
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -42,7 +42,7 @@ func NewBucketProviderFromTeamSettingsConfiguration(factory clients.Factory) (bu
 	}
 	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
 	if err != nil || requirements == nil {
-		return nil, util.CombineErrors(err, errors.New("error obtaining the requirements file to decide bucket provider"))
+		return nil, errorutil.CombineErrors(err, errors.New("error obtaining the requirements file to decide bucket provider"))
 	}
 	return NewBucketProvider(requirements), nil
 }
@@ -58,7 +58,7 @@ func NewBucketProviderFromTeamSettingsConfigurationOrDefault(factory clients.Fac
 		// some configuration in a different way, it shouldn't be the norm for providers
 		err := legacyProvider.(*buckets.LegacyBucketProvider).Initialize(storageLocation.BucketURL, storageLocation.Classifier)
 		if err != nil {
-			return nil, util.CombineErrors(err1, errors.Wrap(err, "there was a problem initializing the legacy bucket provider"))
+			return nil, errorutil.CombineErrors(err1, errors.Wrap(err, "there was a problem initializing the legacy bucket provider"))
 		}
 		return legacyProvider, nil
 	}

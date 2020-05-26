@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/v2/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,7 +99,7 @@ func (o *GCPodsOptions) Run() error {
 			}
 		}
 	}
-	return util.CombineErrors(errors...)
+	return errorutil.CombineErrors(errors...)
 }
 
 // MatchesPod returns true if this pod can be garbage collected

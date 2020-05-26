@@ -3,6 +3,8 @@ package uninstall
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
+
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
@@ -143,7 +145,7 @@ func (o *UninstallOptions) Run() error {
 		errs = append(errs, fmt.Errorf("failed to cleanup namespaces in namespace %s: %s", namespace, err))
 	}
 	if len(errs) > 0 {
-		return util.CombineErrors(errs...)
+		return errorutil.CombineErrors(errs...)
 	}
 	log.Logger().Infof("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
 	return nil
@@ -208,7 +210,7 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 			}
 		}
 	}
-	return util.CombineErrors(errs...)
+	return errorutil.CombineErrors(errs...)
 }
 
 func (o *UninstallOptions) deleteNamespace(namespace string) error {

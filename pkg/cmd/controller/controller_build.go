@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
@@ -1073,7 +1074,7 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 	jx, _, err := o.JXClient()
 	clientErrs = append(clientErrs, err)
 
-	err = util.CombineErrors(clientErrs...)
+	err = errorutil.CombineErrors(clientErrs...)
 	if err != nil {
 		return "", errors.Wrap(err, "there was a problem obtaining one of the clients")
 	}

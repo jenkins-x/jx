@@ -3,9 +3,10 @@ package kube
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/v2/pkg/errorutil"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/v2/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +38,7 @@ func LoadPodTemplates(kubeClient kubernetes.Interface, ns string) (map[string]*c
 		LabelSelector: LabelKind + "=" + ValueKindPodTemplate,
 	})
 	if err2 != nil {
-		return answer, util.CombineErrors(err, err2)
+		return answer, errorutil.CombineErrors(err, err2)
 	}
 	for _, cm := range list.Items {
 		data := cm.Data
