@@ -30,7 +30,9 @@ var (
 		".beesdns.com",
 	}
 )
+
 const (
+	// DefaultFailOnValidationError by default fail if validation fails when reading jx-requirements
 	DefaultFailOnValidationError = true
 )
 
@@ -582,10 +584,10 @@ func LoadRequirementsConfigFile(fileName string, failOnValidationErrors bool) (*
 	}
 
 	if len(validationErrors) > 0 {
+		log.Logger().Warnf("validation failures in YAML file %s: %s", fileName, strings.Join(validationErrors, ", "))
+
 		if failOnValidationErrors {
 			return nil, fmt.Errorf("validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
-		} else {
-			log.Logger().Warnf("validation failures in YAML file %s: %s", fileName, strings.Join(validationErrors, ", "))
 		}
 	}
 
