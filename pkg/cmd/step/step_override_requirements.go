@@ -41,7 +41,7 @@ func NewCmdStepOverrideRequirements(commonOpts *opts.CommonOptions) *cobra.Comma
 
 // Run implements this command
 func (o *StepOverrideRequirementsOptions) Run() error {
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}

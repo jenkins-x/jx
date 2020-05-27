@@ -47,7 +47,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
 
-	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", dir)
 	assert.FileExists(t, fileName)
 
@@ -58,7 +58,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 
 	// lets check we can load the file from a sub dir
 	subDir := filepath.Join(dir, "subdir")
-	requirements, fileName, err = config.LoadRequirementsConfig(subDir)
+	requirements, fileName, err = config.LoadRequirementsConfig(subDir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in subDir: %s", subDir)
 	assert.FileExists(t, fileName)
 
@@ -71,7 +71,7 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 func TestOverrideRequirementsFromEnvironment(t *testing.T) {
 	t.Parallel()
 
-	requirements, fileName, err := config.LoadRequirementsConfig(testDataDir)
+	requirements, fileName, err := config.LoadRequirementsConfig(testDataDir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", testDataDir)
 	assert.FileExists(t, fileName)
 
@@ -87,7 +87,7 @@ func TestOverrideRequirementsFromEnvironment(t *testing.T) {
 
 	err = requirements.SaveConfig(filepath.Join(tempDir, config.RequirementsConfigFileName))
 	assert.NoError(t, err, "failed to save requirements file in dir %s", tempDir)
-	overrideRequirements, fileName, err := config.LoadRequirementsConfig(tempDir)
+	overrideRequirements, fileName, err := config.LoadRequirementsConfig(tempDir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", testDataDir)
 	assert.FileExists(t, fileName)
 
@@ -109,7 +109,7 @@ func TestRequirementsConfigMarshalExistingFileKanikoFalse(t *testing.T) {
 	assert.NoError(t, err, "failed to save file %s", file)
 	t.Logf("saved file %s", file)
 
-	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", dir)
 	assert.FileExists(t, fileName)
 
@@ -122,7 +122,7 @@ func TestRequirementsConfigMarshalInEmptyDir(t *testing.T) {
 
 	dir, err := ioutil.TempDir("", "test-requirements-config-empty-")
 
-	requirements, fileName, err := config.LoadRequirementsConfig(dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 	assert.Error(t, err)
 	assert.Empty(t, fileName)
 	assert.Nil(t, requirements)
@@ -422,7 +422,7 @@ func Test_LoadRequirementsConfig(t *testing.T) {
 				require.NoError(t, err, "unable to write requirements file %s", expectedRequirementsFile)
 			}
 
-			requirements, requirementsFile, err := config.LoadRequirementsConfig(testPath)
+			requirements, requirementsFile, err := config.LoadRequirementsConfig(testPath, config.DefaultFailOnValidationError)
 			if testCase.createRequirements {
 				require.NoError(t, err)
 				assert.Equal(t, expectedRequirementsFile, requirementsFile)
@@ -442,7 +442,7 @@ func TestLoadRequirementsConfig_load_invalid_yaml(t *testing.T) {
 	absolute, err := filepath.Abs(testDir)
 	assert.NoError(t, err, "could not find absolute path of dir %s", testDataDir)
 
-	_, _, err = config.LoadRequirementsConfig(testDir)
+	_, _, err = config.LoadRequirementsConfig(testDir, config.DefaultFailOnValidationError)
 	requirementsConfigPath := path.Join(absolute, config.RequirementsConfigFileName)
 	assert.EqualError(t, err, fmt.Sprintf("validation failures in YAML file %s:\nenvironments.0: Additional property namespace is not allowed", requirementsConfigPath))
 }

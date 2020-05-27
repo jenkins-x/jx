@@ -95,7 +95,7 @@ func (o *UpgradeBootOptions) Run() error {
 		}
 	}
 
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 	}
@@ -143,7 +143,7 @@ func (o *UpgradeBootOptions) Run() error {
 	}
 
 	// load modified requirements so we can merge with the base ones
-	modifiedRequirements, modifiedRequirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	modifiedRequirements, modifiedRequirementsFile, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements config %s", modifiedRequirementsFile)
 	}
@@ -192,7 +192,7 @@ func (o UpgradeBootOptions) determineBootConfigURL(versionStreamURL string) (str
 	}
 
 	if bootConfigURL == "" {
-		requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+		requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to load requirements config %s", requirementsFile)
 		}
@@ -259,7 +259,7 @@ func (o *UpgradeBootOptions) checkoutNewBranch() (string, error) {
 }
 
 func (o *UpgradeBootOptions) updateVersionStreamRef(upgradeRef string) error {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements file %s", requirementsFile)
 	}

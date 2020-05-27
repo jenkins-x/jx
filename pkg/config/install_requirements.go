@@ -30,6 +30,9 @@ var (
 		".beesdns.com",
 	}
 )
+const (
+	DefaultFailOnValidationError = true
+)
 
 const (
 	// RequirementsConfigFileName is the name of the requirements configuration file
@@ -536,7 +539,7 @@ func NewRequirementsConfig() *RequirementsConfig {
 // LoadRequirementsConfig loads the project configuration if there is a project configuration file
 // if there is not a file called `jx-requirements.yml` in the given dir we will scan up the parent
 // directories looking for the requirements file as we often run 'jx' steps in sub directories.
-func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
+func LoadRequirementsConfig(dir string, failOnValidationErrors bool) (*RequirementsConfig, string, error) {
 	absolute, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "creating absolute path")
@@ -554,14 +557,14 @@ func LoadRequirementsConfig(dir string) (*RequirementsConfig, string, error) {
 			continue
 		}
 
-		config, err := LoadRequirementsConfigFile(fileName)
+		config, err := LoadRequirementsConfigFile(fileName, failOnValidationErrors)
 		return config, fileName, err
 	}
 	return nil, "", errors.New("jx-requirements.yml file not found")
 }
 
 // LoadRequirementsConfigFile loads a specific project YAML configuration file
-func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
+func LoadRequirementsConfigFile(fileName string, failOnValidationErrors bool) (*RequirementsConfig, error) {
 	config := &RequirementsConfig{}
 	_, err := os.Stat(fileName)
 	if err != nil {
@@ -579,7 +582,11 @@ func LoadRequirementsConfigFile(fileName string) (*RequirementsConfig, error) {
 	}
 
 	if len(validationErrors) > 0 {
-		return nil, fmt.Errorf("validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+		if failOnValidationErrors {
+			return nil, fmt.Errorf("validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+		} else {
+			log.Logger().Warnf("validation failures in YAML file %s: %s", fileName, strings.Join(validationErrors, ", "))
+		}
 	}
 
 	err = yaml.Unmarshal(data, config)

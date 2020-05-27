@@ -106,7 +106,7 @@ func (o *StepCreateTemplatedConfigOptions) Run() error {
 	if err := o.checkFlags(); err != nil {
 		return err
 	}
-	requirements, _, err := config.LoadRequirementsConfig(o.RequirementsDir)
+	requirements, _, err := config.LoadRequirementsConfig(o.RequirementsDir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "loading requirements file form dir %q", o.RequirementsDir)
 	}

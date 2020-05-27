@@ -153,7 +153,7 @@ func (o *BootOptions) Run() error {
 		o.Dir = cloneDir
 	}
 
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "unable to load %s", config.RequirementsConfigFileName)
 	}
@@ -497,14 +497,14 @@ func existingBootClone(dir string) (bool, error) {
 }
 
 func (o *BootOptions) overrideRequirements(defaultBootConfigURL string) error {
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "loading requirements from dir %q", o.Dir)
 	}
 
 	// overwrite the default requirements with provided requirements
 	if o.RequirementsFile != "" {
-		providedRequirements, err := config.LoadRequirementsConfigFile(o.RequirementsFile)
+		providedRequirements, err := config.LoadRequirementsConfigFile(o.RequirementsFile, config.DefaultFailOnValidationError)
 		if err != nil {
 			return errors.Wrapf(err, "loading requirements from file %q", o.RequirementsFile)
 		}

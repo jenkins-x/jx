@@ -72,7 +72,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 		return err
 	}
 
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}

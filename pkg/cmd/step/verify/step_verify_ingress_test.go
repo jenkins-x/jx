@@ -114,14 +114,14 @@ func TestExternalDNSDisabledDomainNotOwned(t *testing.T) {
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
 
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
 	err = o.Run()
 	assert.NoError(t, err, "failed to run step in dir %s", o.Dir)
 
-	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
@@ -155,14 +155,14 @@ func TestExternalDNSDisabledNotGKE(t *testing.T) {
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
 
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
 	err = o.Run()
 	assert.NoError(t, err, "failed to run step in dir %s", o.Dir)
 
-	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err = config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 

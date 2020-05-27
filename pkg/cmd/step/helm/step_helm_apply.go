@@ -402,7 +402,7 @@ func (o *StepHelmApplyOptions) Run() error {
 // getRequirements tries to load the requirements either from the team settings or local requirements file
 func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, string, error) {
 	// Try to load first the requirements from current directory
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err == nil {
 		return requirements, requirementsFileName, nil
 	}

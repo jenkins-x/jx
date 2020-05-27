@@ -114,7 +114,7 @@ func (o *StepVerifyValuesOptions) Run() error {
 		return err
 	}
 
-	requirements, reqFile, err := config.LoadRequirementsConfig(o.RequirementsDir)
+	requirements, reqFile, err := config.LoadRequirementsConfig(o.RequirementsDir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "loading requirements from %q", o.RequirementsDir)
 	}

@@ -57,7 +57,7 @@ func TestTemplateSchemaFile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.DirExists(t, testData)
 
-		requirements, requirementsFile, err := config.LoadRequirementsConfig(testData)
+		requirements, requirementsFile, err := config.LoadRequirementsConfig(testData, config.DefaultFailOnValidationError)
 		require.NoError(t, err, "failed to load requirements in dir %s", testData)
 
 		requirements.Cluster.GitKind = tc.GitKind

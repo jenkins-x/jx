@@ -86,7 +86,7 @@ func (o *StepVerifyPackagesOptions) Run() error {
 		verifyMap[k] = packages[k]
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load boot requirements")
 	}

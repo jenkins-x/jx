@@ -94,7 +94,7 @@ func NewCmdStepVerifyPreInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *StepVerifyPreInstallOptions) Run() error {
 	info := util.ColorInfo
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}

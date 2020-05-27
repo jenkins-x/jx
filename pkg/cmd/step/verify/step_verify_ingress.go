@@ -111,7 +111,7 @@ func (o *StepVerifyIngressOptions) Run() error {
 			return fmt.Errorf("no default namespace found")
 		}
 	}
-	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load Jenkins X requirements")
 	}

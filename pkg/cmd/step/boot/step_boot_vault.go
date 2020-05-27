@@ -82,7 +82,7 @@ func (o *StepBootVaultOptions) Run() error {
 		return err
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}

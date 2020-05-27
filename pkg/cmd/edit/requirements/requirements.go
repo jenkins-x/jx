@@ -138,7 +138,7 @@ func NewCmdEditRequirements(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run runs the command
 func (o *RequirementsOptions) Run() error {
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}
