@@ -167,7 +167,7 @@ func TestStepVerifyPreInstallRequirements(t *testing.T) {
 		assert.NoError(t, err)
 		defer resetNamespace(t, origNamespace)
 
-		requirements, requirementsFileName, err := config.LoadRequirementsConfig(testDir)
+		requirements, requirementsFileName, err := config.LoadRequirementsConfig(testDir, config.DefaultFailOnValidationError)
 		assert.NoError(t, err, "for test %s", dir)
 
 		err = options.ValidateRequirements(requirements, requirementsFileName)
@@ -230,7 +230,7 @@ func TestStepVerifyPreInstallSetClusterRequirementsViaEnvars(t *testing.T) {
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
 
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", o.Dir)
 	assert.FileExists(t, fileName)
 
