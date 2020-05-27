@@ -763,7 +763,7 @@ func (o *StepBDDOptions) createCluster(cluster *CreateCluster) error {
 }
 
 func (o *StepBDDOptions) getTestSpecificRequirementsIfExists(cluster *CreateCluster) (*config.RequirementsConfig, error) {
-	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Flags.Dir)
+	requirements, requirementsFile, _ := config.LoadRequirementsConfig(o.Flags.Dir, config.DefaultFailOnValidationError)
 	if requirements == nil {
 		return nil, nil
 	}

@@ -116,7 +116,7 @@ func TestDetermineBootConfigURL(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(defaultBootRequirements, "", "", "")
 
-	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "could not get requirements file")
 	vs := &requirements.VersionStream
 
@@ -131,7 +131,7 @@ func TestRequirementsVersionStream(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(defaultBootRequirements, "", "", "")
 
-	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "could not get requirements file")
 	vs := &requirements.VersionStream
 
@@ -156,7 +156,7 @@ func TestUpdateVersionStreamRef(t *testing.T) {
 	err := o.updateVersionStreamRef("22222222")
 	require.NoError(t, err, "could not update version stream ref")
 
-	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "could not get requirements file")
 	vs := &requirements.VersionStream
 	assert.Equal(t, "22222222", vs.Ref, "UpdateVersionStreamRef Ref")
@@ -241,7 +241,7 @@ func TestDetermineBootConfigURLAlternative(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(alternativeBootRequirements, "", "", "")
 
-	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "could not get requirements file")
 	vs := &requirements.VersionStream
 
@@ -256,7 +256,7 @@ func TestRequirementsVersionStreamAlternative(t *testing.T) {
 	o := TestUpgradeBootOptions{}
 	o.setup(alternativeBootRequirements, "", "", "")
 
-	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "could not get requirements file")
 	vs := &requirements.VersionStream
 
@@ -281,7 +281,7 @@ func TestUpdateVersionStreamRefAlternative(t *testing.T) {
 	err := o.updateVersionStreamRef("22222222")
 	require.NoError(t, err, "could not update version stream ref")
 
-	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.UpgradeBootOptions.Dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "could not get requirements file")
 	vs := &requirements.VersionStream
 

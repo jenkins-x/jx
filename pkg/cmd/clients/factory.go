@@ -568,7 +568,7 @@ func (f *factory) useVaultInsecureSSL(namespace string) (bool, error) {
 }
 
 func (f *factory) useVaultIngress(devNamespace string) (bool, error) {
-	requirements, _, err := config.LoadRequirementsConfig("")
+	requirements, _, err := config.LoadRequirementsConfig("", config.DefaultFailOnValidationError)
 	if err == nil && requirements != nil && requirements.Vault.DisableURLDiscovery {
 		log.Logger().Debugf("Using vault ingress because the Vault.DisableURLDiscovery is set in requirements file")
 		return true, nil

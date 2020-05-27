@@ -53,7 +53,7 @@ func TestDetermineGitRef_DefaultGitUrl(t *testing.T) {
 	defer func() {
 		_ = os.RemoveAll(dir)
 	}()
-	requirements, _, err := config.LoadRequirementsConfig(dir)
+	requirements, _, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "unable to load tmp jx-requirements")
 	resolver := &versionstream.VersionResolver{
 		VersionsDir: filepath.Join("test_data", "jenkins-x-versions"),
@@ -79,7 +79,7 @@ func TestDetermineGitRef_GitURLNotInVersionStream(t *testing.T) {
 	defer func() {
 		_ = os.RemoveAll(dir)
 	}()
-	requirements, _, err := config.LoadRequirementsConfig(dir)
+	requirements, _, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 	require.NoError(t, err, "unable to load tmp jx-requirements")
 	resolver := &versionstream.VersionResolver{
 		VersionsDir: filepath.Join("test_data", "jenkins-x-versions"),

@@ -157,7 +157,7 @@ func TestGatherRequirements_PreserveEnvironmentGitOwnerCase(t *testing.T) {
 	_, err = testOptions.gatherRequirements(testConfig, requirementsFileName)
 	assert.NoError(t, err)
 
-	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName)
+	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName, config.DefaultFailOnValidationError)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "jx", requirementsWithDefaults.Cluster.Namespace)
@@ -201,7 +201,7 @@ func TestGatherRequirements_DevEnvApprovers(t *testing.T) {
 	_, err = testOptions.gatherRequirements(testConfig, requirementsFileName)
 	assert.NoError(t, err)
 
-	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName)
+	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName, config.DefaultFailOnValidationError)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "jx", requirementsWithDefaults.Cluster.Namespace)
@@ -260,7 +260,7 @@ func TestGatherRequirements_SetsDefaults(t *testing.T) {
 	_, err = testOptions.gatherRequirements(testConfig, requirementsFileName)
 	assert.NoError(t, err)
 
-	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName)
+	requirementsWithDefaults, err := config.LoadRequirementsConfigFile(requirementsFileName, config.DefaultFailOnValidationError)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "jx", requirementsWithDefaults.Cluster.Namespace)

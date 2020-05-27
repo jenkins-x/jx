@@ -104,7 +104,7 @@ func (o *StepExposeOptions) Run() error {
 		return err
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, _, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load requirements YAML")
 	}

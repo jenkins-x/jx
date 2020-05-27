@@ -128,7 +128,7 @@ func TestCmdEditRequirements(t *testing.T) {
 		file := localReqFile
 		require.FileExists(t, file, "should have generated the requirements file")
 
-		req, _, err := config.LoadRequirementsConfig(dir)
+		req, _, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 		require.NoError(t, err, "failed to load requirements from dir %s", dir)
 
 		if tt.callback != nil {

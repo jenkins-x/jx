@@ -129,7 +129,7 @@ func (o *StepCreateValuesOptions) Run() error {
 		}
 	}
 	// lets default to the install requirements setting
-	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}

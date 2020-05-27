@@ -550,7 +550,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 
 			// check helmfile featureflag but default to existing behaviour if there's any issues
 			var helmer helm.Helmer
-			r, _, err := config.LoadRequirementsConfig("")
+			r, _, err := config.LoadRequirementsConfig("", config.DefaultFailOnValidationError)
 			if err != nil {
 				r = config.NewRequirementsConfig()
 			}

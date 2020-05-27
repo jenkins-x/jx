@@ -91,7 +91,7 @@ func (o *StepHelmBuildOptions) Run() error {
 	}
 
 	if o.Boot {
-		requirements, requirementsFileName, err := config.LoadRequirementsConfig(dir)
+		requirements, requirementsFileName, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 		if err != nil {
 			return err
 		}
