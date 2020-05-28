@@ -22,9 +22,9 @@ Check out [how to install jx](https://jenkins-x.io/docs/getting-started/setup/in
 Please check out the [Getting Started Guide](https://jenkins-x.io/docs/getting-started/) on how to:
 
 * [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/docs/getting-started/setup/create-cluster/)
-* [install Jenkins X on existing Kubernetes clusters](https://jenkins-x.io/docs/managing-jx/old/install-on-cluster/)
+* [install Jenkins X on existing Kubernetes clusters](https://jenkins-x.io/docs/install-setup/installing/boot/)
 
-Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/getting-started/next/).
+Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/docs/create-project/).
 
 ## Welcome to the Jenkins X Community
 
@@ -264,7 +264,7 @@ Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we c
 
 We welcome your contributions.
 
-If you're looking to build from source or get started hacking on jx, please see the [CONTRIBUTING.MD](CONTRIBUTING.MD) or our [Contributing Guide](https://jenkins-x.io/docs/contributing/code/) on the Jenkins X website.
+If you're looking to build from source or get started hacking on jx, please see the [CONTRIBUTING.MD](CONTRIBUTING.MD) or our [Contributing Guide](https://jenkins-x.io/community/code/) on the Jenkins X website.
 
 
 [![](https://codescene.io/projects/4772/status.svg) Get more details at **codescene.io**.](https://codescene.io/projects/4772/jobs/latest-successful/results)
