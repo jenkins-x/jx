@@ -19,7 +19,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/log"
-	"k8s.io/api/apps/v1beta1"
+	appsV1 "k8s.io/api/apps/v1"
 )
 
 // GetApplicationsOptions containers the CLI options
@@ -39,12 +39,12 @@ type GetApplicationsOptions struct {
 // EnvApps contains data about app deployments in an environment
 type EnvApps struct {
 	Environment v1.Environment
-	Apps        map[string]v1beta1.Deployment
+	Apps        map[string]appsV1.Deployment
 }
 
 // ApplicationEnvironmentInfo contains the results of an app for an environment
 type ApplicationEnvironmentInfo struct {
-	Deployment  *v1beta1.Deployment
+	Deployment  *appsV1.Deployment
 	Environment *v1.Environment
 	Version     string
 	URL         string
