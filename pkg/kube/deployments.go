@@ -65,7 +65,7 @@ func GetDeploymentByRepo(client kubernetes.Interface, ns string, repoName string
 func IsDeploymentRunning(client kubernetes.Interface, name, namespace string) (bool, error) {
 	options := metav1.GetOptions{}
 
-	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, options)
+	d, err := client.AppsV1().Deployments(namespace).Get(name, options)
 	if err != nil {
 		return false, err
 	}
@@ -168,7 +168,7 @@ func DeploymentPodCount(client kubernetes.Interface, name, namespace string) (in
 
 // GetDeploymentPods returns pods of deployment
 func GetDeploymentPods(client kubernetes.Interface, name, namespace string) ([]v1.Pod, error) {
-	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
+	d, err := client.AppsV1().Deployments(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

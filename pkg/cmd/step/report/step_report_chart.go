@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/api/apps/v1beta1"
+	v1 "k8s.io/api/apps/v1"
 )
 
 var (
@@ -232,7 +232,7 @@ func (o *StepReportChartOptions) processTemplate(info *ChartData, text string) e
 	}
 
 	if util.GetMapValueAsStringViaPath(data, "kind") == "Deployment" {
-		d := v1beta1.Deployment{}
+		d := v1.Deployment{}
 		err := yaml.Unmarshal([]byte(text), &d)
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse Deployment template for chart %s/%s for template: %s", info.Prefix, info.Name, text)
