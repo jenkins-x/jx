@@ -140,7 +140,7 @@ type SecretEngine struct {
 // Seal configuration for Vault auto-unseal
 type Seal struct {
 	GcpCkms *GCPSealConfig `json:"gcpckms,omitempty"`
-	AWSKms  *AWSSealConig  `json:"awskms,omitempty"`
+	AWSKms  *AWSSealConfig `json:"awskms,omitempty"`
 }
 
 // GCPSealConfig Google Cloud KMS config for vault auto-unseal
@@ -152,8 +152,8 @@ type GCPSealConfig struct {
 	CryptoKey   string `json:"crypto_key,omitempty"`
 }
 
-// AWSSealConig AWS KMS config for vault auto-unseal
-type AWSSealConig struct {
+// AWSSealConfig AWS KMS config for vault auto-unseal
+type AWSSealConfig struct {
 	Region    string `json:"region,omitempty"`
 	AccessKey string `json:"access_key,omitempty"`
 	SecretKey string `json:"secret_key,omitempty"`
@@ -246,7 +246,7 @@ func PrepareAWSVaultCRD(awsServiceAccountSecretName string, awsConfig *AWSConfig
 	}
 
 	seal := Seal{
-		AWSKms: &AWSSealConig{
+		AWSKms: &AWSSealConfig{
 			Region:    awsConfig.KMSRegion,
 			AccessKey: awsConfig.AccessKeyID,
 			SecretKey: awsConfig.SecretAccessKey,
