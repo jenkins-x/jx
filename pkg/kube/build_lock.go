@@ -40,7 +40,7 @@ func AcquireBuildLock(kubeClient kubernetes.Interface, devNamespace, namespace s
 		log.Logger().Warnf("error while looking for Tekton: %s\n", err.Error())
 		return nil, err
 	} else if !ok {
-		log.Logger().Infof("lock cancelled because not running in tekton")
+		log.Logger().Debugf("lock cancelled because not running in tekton")
 		return func() error { return nil }, nil
 	}
 	// Create the lock object
