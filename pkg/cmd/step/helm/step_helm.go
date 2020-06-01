@@ -169,7 +169,7 @@ func (o *StepHelmOptions) replaceMissingVersionsFromVersionStream(requirementsCo
 
 	vs := requirementsConfig.VersionStream
 
-	log.Logger().Infof("Verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
+	log.Logger().Debugf("Verifying the helm requirements versions in dir: %s using version stream URL: %s and git ref: %s\n", o.Dir, vs.URL, vs.Ref)
 
 	resolver, err := o.getOrCreateVersionResolver(requirementsConfig)
 	if err != nil {
