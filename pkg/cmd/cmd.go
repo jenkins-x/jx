@@ -19,8 +19,10 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -64,6 +66,7 @@ import (
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/features"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -425,8 +428,34 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) err
 
 	// attempt to find binary, starting at longest possible name with given cmdArgs
 	for len(remainingArgs) > 0 {
-		path, err := pluginHandler.Lookup(fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-")))
+		commandName := fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-"))
+		path, err := pluginHandler.Lookup(commandName)
 		if err != nil || len(path) == 0 {
+			// lets check if there's a command in the ~/.jx/plugins/jx/bin dir
+			found := false
+			pluginDir, err := util.PluginBinDir("jx")
+			if err != nil {
+				log.Logger().Debugf("failed to find plugin dir %s", err.Error())
+			} else {
+				files, err := ioutil.ReadDir(pluginDir)
+				if err != nil {
+					log.Logger().Debugf("failed to read plugin dir %s", err.Error())
+				} else {
+					prefix := commandName + "-"
+					for _, f := range files {
+						name := f.Name()
+						if strings.HasPrefix(name, prefix) {
+							foundBinaryPath = filepath.Join(pluginDir, name)
+							found = true
+							log.Logger().Debugf("found plugin %s at %s", commandName, foundBinaryPath)
+						}
+					}
+				}
+			}
+			if found {
+				break
+			}
+
 			/* Usually "executable file not found in $PATH", spams output of jx help subcommand:
 			if err != nil {
 				log.Logger().Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
