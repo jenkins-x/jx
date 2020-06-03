@@ -124,7 +124,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 	foundAuth := false
 	for k, v := range dockerConfig.Auths {
 		if util.StringMatchesPattern(k, o.Host) {
-			v.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
+			v.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + secret))
 			v.Email = email
 			foundAuth = true
 			break
@@ -132,7 +132,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 	}
 	if foundAuth != true {
 		newConfigData := &Auth{}
-		newConfigData.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
+		newConfigData.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + secret))
 		newConfigData.Email = email
 		if dockerConfig.Auths == nil {
 			dockerConfig.Auths = map[string]*Auth{}
