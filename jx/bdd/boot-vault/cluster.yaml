@@ -9,6 +9,7 @@ clusters:
       - --min-num-nodes=3
       - --max-num-nodes=5
       - -z=europe-west1-c
+      - --kubernetes-version=1.16.9-gke.2
       - --skip-login
       - --skip-installation
     commands:
