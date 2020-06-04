@@ -50,7 +50,7 @@ func (o *CommonOptions) GetDockerRegistry(projectConfig *config.ProjectConfig) s
 			name := kube.ConfigMapJenkinsDockerRegistry
 			data, err := kube.GetConfigMapData(kubeClient, name, ns)
 			if err != nil {
-				log.Logger().Warnf("failed to load ConfigMap %s in namespace %s: %s", name, ns, err.Error())
+				log.Logger().Debugf("failed to load ConfigMap %s in namespace %s: %s", name, ns, err.Error())
 			} else {
 				dockerRegistry = data["docker.registry"]
 			}
