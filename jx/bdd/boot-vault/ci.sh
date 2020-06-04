@@ -76,7 +76,11 @@ sed -i "s/builder-go.*/&:$VERSION/g" jenkins-x.yml
 # Set JX_APP_VERSION to one that's compatible with 1.16
 export JX_APP_VERSION=0.1.201
 
+# And force using basic auth in the UI test
+export JX_APP_UI_TEST_BASIC_AUTH=true
+
 jx step bdd \
+    --test-git-repo=https://github.com/abayer/bdd-jx.git \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
     --config ../jx/bdd/boot-vault/cluster.yaml \
     --gopath /tmp \
