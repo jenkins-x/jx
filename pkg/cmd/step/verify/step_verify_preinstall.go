@@ -1054,7 +1054,7 @@ func (o *StepVerifyPreInstallOptions) showProvideFeedbackMessage() (bool, error)
 }
 
 func (o *StepVerifyPreInstallOptions) showPermissionsModeMessage(requirementsConfig *config.RequirementsConfig) {
-	if requirementsConfig.Cluster.Provider != cloud.OPENSHIFT {
+	if requirementsConfig.Cluster.StrictPermissions && requirementsConfig.Cluster.Provider != cloud.OPENSHIFT {
 		log.Logger().Info(`The provided requirements file has 'strictPermissions' enabled but 'provider' is not Openshift.
 This feature is only supported on Openshift`)
 	}
