@@ -8,11 +8,11 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 
 	"k8s.io/test-infra/prow/plugins"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/test-infra/prow/config"
 )
 
 const (
@@ -231,7 +231,7 @@ func buildSchedulerPlugins(repo string, pluginConfig *plugins.Configuration) *je
 }
 
 func buildSchedulerMerger(repo string, prowConfig *config.Config) *jenkinsv1.Merger {
-	tide := prowConfig.Tide
+	tide := prowConfig.Keeper
 	merger := &jenkinsv1.Merger{
 		SyncPeriod:         &tide.SyncPeriod,
 		StatusUpdatePeriod: &tide.StatusUpdatePeriod,
@@ -253,7 +253,7 @@ func buildSchedulerMerger(repo string, prowConfig *config.Config) *jenkinsv1.Mer
 	return merger
 }
 
-func buildSchedulerContextPolicy(orgRepo string, tideConfig *config.Tide) *jenkinsv1.ContextPolicy {
+func buildSchedulerContextPolicy(orgRepo string, tideConfig *config.Keeper) *jenkinsv1.ContextPolicy {
 	orgRepoArr := strings.Split(orgRepo, "/")
 	orgContextPolicy, orgContextPolicyFound := tideConfig.ContextOptions.Orgs[orgRepoArr[0]]
 	if orgContextPolicyFound {
@@ -286,7 +286,7 @@ func buildSchedulerContextPolicy(orgRepo string, tideConfig *config.Tide) *jenki
 	return &contextPolicy
 }
 
-func buildSchedulerRepoContextPolicy(orgRepo string, tideConfig *config.Tide) *jenkinsv1.RepoContextPolicy {
+func buildSchedulerRepoContextPolicy(orgRepo string, tideConfig *config.Keeper) *jenkinsv1.RepoContextPolicy {
 	orgRepoArr := strings.Split(orgRepo, "/")
 	orgContextPolicy, orgContextPolicyFound := tideConfig.ContextOptions.Orgs[orgRepoArr[0]]
 	if orgContextPolicyFound {
@@ -317,7 +317,7 @@ func buildSchedulerRepoContextPolicy(orgRepo string, tideConfig *config.Tide) *j
 	return nil
 }
 
-func buildSchedulerQuery(orgRepo string, tideQueries *config.TideQueries) []*jenkinsv1.Query {
+func buildSchedulerQuery(orgRepo string, tideQueries *config.KeeperQueries) []*jenkinsv1.Query {
 	queries := make([]*jenkinsv1.Query, 0)
 	if orgRepo != "" && strings.Contains(orgRepo, "/") {
 		for _, tideQuery := range *tideQueries {
@@ -441,41 +441,37 @@ func buildSchedulerGlobalProtectionPolicy(prowConfig *config.Config) *jenkinsv1.
 
 func buildSchedulerProtectionPolicies(repo string, prowConfig *config.Config) *jenkinsv1.ProtectionPolicies {
 	orgRepo := strings.Split(repo, "/")
-	orgBranchProtection, err := prowConfig.BranchProtection.GetOrg(orgRepo[0])
-	if err == nil {
-		repoBranchProtection, err := orgBranchProtection.GetRepo(orgRepo[1])
-		if err == nil {
-			var protectionPolicies map[string]*jenkinsv1.ProtectionPolicy
-			for branchName, branch := range repoBranchProtection.Branches {
-				if protectionPolicies == nil {
-					protectionPolicies = make(map[string]*jenkinsv1.ProtectionPolicy)
-				}
-				protectionPolicies[branchName] = &jenkinsv1.ProtectionPolicy{
-					Admins:                     branch.Admins,
-					Protect:                    branch.Protect,
-					RequiredPullRequestReviews: buildSchedulerRequiredPullRequestReviews(branch.RequiredPullRequestReviews),
-					RequiredStatusChecks:       buildSchedulerRequiredStatusChecks(branch.RequiredStatusChecks),
-					Restrictions:               buildSchedulerRestrictions(branch.Restrictions),
-				}
-			}
-			var repoPolicy *jenkinsv1.ProtectionPolicy
-			requiredPullRequestReviews := buildSchedulerRequiredPullRequestReviews(repoBranchProtection.RequiredPullRequestReviews)
-			requiredStatusChecks := buildSchedulerRequiredStatusChecks(repoBranchProtection.RequiredStatusChecks)
-			restrictions := buildSchedulerRestrictions(repoBranchProtection.Restrictions)
-			if repoBranchProtection.Admins != nil || repoBranchProtection.Protect != nil || requiredPullRequestReviews != nil || requiredStatusChecks != nil || restrictions != nil {
-				repoPolicy = &jenkinsv1.ProtectionPolicy{
-					Admins:                     repoBranchProtection.Admins,
-					Protect:                    repoBranchProtection.Protect,
-					RequiredPullRequestReviews: requiredPullRequestReviews,
-					RequiredStatusChecks:       requiredStatusChecks,
-					Restrictions:               buildSchedulerRestrictions(repoBranchProtection.Restrictions),
-				}
-			}
-			return &jenkinsv1.ProtectionPolicies{
-				ProtectionPolicy: repoPolicy,
-				Items:            protectionPolicies,
-			}
+	orgBranchProtection := prowConfig.BranchProtection.GetOrg(orgRepo[0])
+	repoBranchProtection := orgBranchProtection.GetRepo(orgRepo[1])
+	var protectionPolicies map[string]*jenkinsv1.ProtectionPolicy
+	for branchName, branch := range repoBranchProtection.Branches {
+		if protectionPolicies == nil {
+			protectionPolicies = make(map[string]*jenkinsv1.ProtectionPolicy)
 		}
+		protectionPolicies[branchName] = &jenkinsv1.ProtectionPolicy{
+			Admins:                     branch.Admins,
+			Protect:                    branch.Protect,
+			RequiredPullRequestReviews: buildSchedulerRequiredPullRequestReviews(branch.RequiredPullRequestReviews),
+			RequiredStatusChecks:       buildSchedulerRequiredStatusChecks(branch.RequiredStatusChecks),
+			Restrictions:               buildSchedulerRestrictions(branch.Restrictions),
+		}
+	}
+	var repoPolicy *jenkinsv1.ProtectionPolicy
+	requiredPullRequestReviews := buildSchedulerRequiredPullRequestReviews(repoBranchProtection.RequiredPullRequestReviews)
+	requiredStatusChecks := buildSchedulerRequiredStatusChecks(repoBranchProtection.RequiredStatusChecks)
+	restrictions := buildSchedulerRestrictions(repoBranchProtection.Restrictions)
+	if repoBranchProtection.Admins != nil || repoBranchProtection.Protect != nil || requiredPullRequestReviews != nil || requiredStatusChecks != nil || restrictions != nil {
+		repoPolicy = &jenkinsv1.ProtectionPolicy{
+			Admins:                     repoBranchProtection.Admins,
+			Protect:                    repoBranchProtection.Protect,
+			RequiredPullRequestReviews: requiredPullRequestReviews,
+			RequiredStatusChecks:       requiredStatusChecks,
+			Restrictions:               buildSchedulerRestrictions(repoBranchProtection.Restrictions),
+		}
+	}
+	return &jenkinsv1.ProtectionPolicies{
+		ProtectionPolicy: repoPolicy,
+		Items:            protectionPolicies,
 	}
 	return nil
 }
@@ -530,6 +526,7 @@ func buildSchedulerPostsubmits(repo string, prowConfig *config.Config) *jenkinsv
 	schedulerPostsubmits := &jenkinsv1.Postsubmits{}
 	for postSubmitIndex := range prowConfig.Postsubmits[repo] {
 		postsubmit := prowConfig.Postsubmits[repo][postSubmitIndex]
+		skipReport := !postsubmit.SkipReport
 		skipBranches := &jenkinsv1.ReplaceableSliceOfStrings{
 			Items: postsubmit.SkipBranches,
 		}
@@ -546,7 +543,7 @@ func buildSchedulerPostsubmits(repo string, prowConfig *config.Config) *jenkinsv
 				RunIfChanged: &postsubmit.RunIfChanged,
 			},
 			Context: &postsubmit.Context,
-			Report:  &postsubmit.Report,
+			Report:  &skipReport,
 		}
 		schedulerPostsubmits.Items = append(schedulerPostsubmits.Items, schedulerPostsubmit)
 	}
@@ -580,7 +577,7 @@ func buildSchedulerPresubmits(repo string, prowConfig *config.Config) *jenkinsv1
 			Items: presubmit.Branches,
 		}
 		report := !presubmit.SkipReport
-		mergeType := prowConfig.Tide.MergeType[repo]
+		mergeType := prowConfig.Keeper.MergeType[repo]
 		mt := string(mergeType)
 		schedulerPresubmit := &jenkinsv1.Presubmit{
 			JobBase: buildSchedulerJobBase(&presubmit.JobBase),
@@ -598,9 +595,9 @@ func buildSchedulerPresubmits(repo string, prowConfig *config.Config) *jenkinsv1
 			Trigger:       &presubmit.Trigger,
 			RerunCommand:  &presubmit.RerunCommand,
 			MergeType:     &mt,
-			Queries:       buildSchedulerQuery(repo, &prowConfig.Tide.Queries),
+			Queries:       buildSchedulerQuery(repo, &prowConfig.Keeper.Queries),
 			Policy:        buildSchedulerProtectionPolicies(repo, prowConfig),
-			ContextPolicy: buildSchedulerRepoContextPolicy(repo, &prowConfig.Tide),
+			ContextPolicy: buildSchedulerRepoContextPolicy(repo, &prowConfig.Keeper),
 		}
 		schedulerPresubmits.Items = append(schedulerPresubmits.Items, schedulerPresubmit)
 	}

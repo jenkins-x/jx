@@ -9,6 +9,7 @@ import (
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/util"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 
 	"github.com/pkg/errors"
 
@@ -18,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
-	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
 )
 
@@ -212,10 +212,10 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	prowConfig.PodNamespace = o.NS
-	prowConfig.ProwJobNamespace = o.NS
+	prowConfig.LighthouseJobNamespace = o.NS
 
 	for _, r := range o.Repos {
-		err = prowconfig.AddRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
+		err = prowconfig.AddRepoToTideConfig(&prowConfig.Keeper, r, o.Kind)
 		if err != nil {
 			return errors.Wrapf(err, "adding repo %q to tide config", r)
 		}
@@ -277,7 +277,7 @@ func (o *Options) RemoveProwConfig() error {
 	}
 
 	for _, repo := range o.Repos {
-		err = prowconfig.RemoveRepoFromTideConfig(&prowConfig.Tide, repo, o.Kind)
+		err = prowconfig.RemoveRepoFromTideConfig(&prowConfig.Keeper, repo, o.Kind)
 		if err != nil {
 			return errors.Wrapf(err, "removing repo %s from tide config", repo)
 		}
@@ -345,7 +345,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		}
 
 		tideURL := fmt.Sprintf("%s://deck.%s.%s", scheme, o.NS, domain)
-		prowConfig.Tide = prowconfig.CreateTide(tideURL)
+		prowConfig.Keeper = prowconfig.CreateTide(tideURL)
 	} else {
 		// config exists, updating
 		create = false

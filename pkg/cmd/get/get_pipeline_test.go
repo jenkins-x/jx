@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/get"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
@@ -22,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/test-infra/prow/config"
 )
 
 func TestGetPipelinesWithProw(t *testing.T) {

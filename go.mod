@@ -68,9 +68,9 @@ require (
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c // indirect
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
+	github.com/jenkins-x/lighthouse-config v0.0.3
 	github.com/jetstack/cert-manager v0.5.2
 	github.com/json-iterator/go v1.1.9 // indirect
-	github.com/knative/build v0.7.0 // indirect
 	github.com/knative/pkg v0.0.0-20190624141606-d82505e6c5b4
 	github.com/knative/serving v0.7.0
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -99,12 +99,12 @@ require (
 	github.com/sethvargo/go-password v0.1.2
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stoewer/go-strcase v1.0.1
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.0
 	github.com/tektoncd/pipeline v0.8.0
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
@@ -127,10 +127,10 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.0.0-20190718183219-b59d8169aab5
+	k8s.io/api v0.0.0-20190816222004-e3a6b8045b0b
 	k8s.io/apiextensions-apiserver v0.0.0-20190718185103-d1ef975d28ce
-	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
+	k8s.io/apimachinery v0.0.0-20190816221834-a9f1d8a9c101
+	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 	k8s.io/kubernetes v1.11.3

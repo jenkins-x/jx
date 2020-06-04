@@ -12,10 +12,9 @@ import (
 	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/v2/pkg/pipelinescheduler"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 
 	"k8s.io/test-infra/prow/plugins"
-
-	"k8s.io/test-infra/prow/config"
 
 	"github.com/stretchr/testify/assert"
 

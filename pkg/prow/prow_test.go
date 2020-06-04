@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	prowconfig "github.com/jenkins-x/jx/v2/pkg/prow/config"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 	"github.com/stretchr/testify/assert"
 
 	v1 "k8s.io/api/core/v1"
@@ -16,7 +17,6 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
 )
 
@@ -351,8 +351,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig := &config.Config{}
 	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 1, len(prowConfig.Keeper.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
 
 	p := prowConfig.Presubmits["test/repo"]
 	p[0].Agent = "foo"
@@ -392,8 +392,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig = &config.Config{}
 	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 1, len(prowConfig.Keeper.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
 
 	p = prowConfig.Presubmits["test/repo"]
 	assert.Equal(t, "tekton", p[0].Agent)
@@ -411,8 +411,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig = &config.Config{}
 	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
-	assert.Equal(t, 2, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
 
 	// add test/repo3
 	o.Options.Repos = []string{"test/repo3"}
@@ -427,8 +427,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig = &config.Config{}
 	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
-	assert.Equal(t, 3, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 3, len(prowConfig.Keeper.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
 }
 
 func TestGetReleaseJobs(t *testing.T) {
@@ -512,11 +512,11 @@ func assertInPluginConfig(t *testing.T, prowConfig *config.Config, repo string, 
 		assert.NotEmpty(t, prowConfig.Presubmits[repo])
 		assert.NotEmpty(t, prowConfig.Postsubmits[repo])
 		assert.NotEmpty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
-		assert.Contains(t, prowConfig.Tide.Queries[1].Repos, repo)
+		assert.Contains(t, prowConfig.Keeper.Queries[1].Repos, repo)
 	} else {
 		assert.Empty(t, prowConfig.Presubmits[repo])
 		assert.Empty(t, prowConfig.Postsubmits[repo])
 		assert.Empty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
-		assert.NotContains(t, prowConfig.Tide.Queries[1].Repos, repo)
+		assert.NotContains(t, prowConfig.Keeper.Queries[1].Repos, repo)
 	}
 }

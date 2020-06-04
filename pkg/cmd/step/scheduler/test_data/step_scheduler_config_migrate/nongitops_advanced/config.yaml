@@ -222,329 +222,384 @@ postsubmits:
     name: tekton
     branches:
     - master
+    skip_report: true
   cloudbees/jxui-ts-client:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   cloudbees/jxui-frontend:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/environment-tekton-mole-dev:
   - agent: tekton
     branches:
     - master
     context: ""
     name: promotion
+    skip_report: true
   jenkins-x/environment-tekton-mole-production:
   - agent: tekton
     branches:
     - master
     context: ""
     name: promotion
+    skip_report: true
   jenkins-x/environment-tekton-mole-staging:
   - agent: tekton
     branches:
     - master
     context: ""
     name: promotion
+    skip_report: true
   jenkins-x-apps/jx-app-sonarqube:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-cheese:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-grafana:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-datadog:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-istio:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-gitea:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-jenkins:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-anchore:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-ambassador:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-test-lifecycle:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-athens:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-sso:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-cert-manager:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-jacoco:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-apps/jx-app-prometheus:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/hey:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/jenkins-x-minimal:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/nexus:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/tekton:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/openshift-namespace-rbac-chart:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/athens-proxy:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/vault-operator:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/knative-build:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/jx-build-templates:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/environment-controller:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/prow:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x-charts/kubernetes-replicator:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/dev-env:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/dev-env-base:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   cloudbees/jx-tenant-service:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/updatebot:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/ext-java-code-quality:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jx:
   - agent: tekton
     name: release
     branches:
     - master
+    skip_report: true
   jenkins-x/jx-datadog:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jx-docs:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jx-tutorial:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-builders-base-image:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-builders-base:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-builders:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-serverless-filerunner:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-serverless:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/homebrew-jx:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-image:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jenkins-x-platform:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/jx-ts-client:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/sso-operator:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/exposecontroller:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   jenkins-x/bucketrepo:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
   cloudbees/cb-app-slack:
   - agent: tekton
     context: tekton
     name: tekton
     branches:
     - master
+    skip_report: true
 presubmits:
   cloudbees/jxui-backend:
   - agent: tekton
