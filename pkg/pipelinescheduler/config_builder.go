@@ -6,10 +6,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/rollout/rox-go/core/utils"
-	"k8s.io/test-infra/prow/config"
-	"k8s.io/test-infra/prow/github"
 	"k8s.io/test-infra/prow/plugins"
 )
 
@@ -212,7 +211,7 @@ func buildProwConfig(prowConfig *config.ProwConfig, scheduler *jenkinsv1.Schedul
 		}
 	}
 	if scheduler.Merger != nil {
-		err := buildMerger(&prowConfig.Tide, scheduler.Merger, org, repo)
+		err := buildMerger(&prowConfig.Keeper, scheduler.Merger, org, repo)
 		if err != nil {
 			return errors.Wrapf(err, "building Merger for %v", scheduler)
 		}
@@ -377,7 +376,8 @@ func buildPostsubmits(jobConfig *config.JobConfig, items []*jenkinsv1.Postsubmit
 			}
 		}
 		if postsubmit.Report != nil {
-			c.Report = *postsubmit.Report
+			report := *postsubmit.Report
+			c.SkipReport = !report
 		}
 		if postsubmit.Context != nil {
 			c.Context = *postsubmit.Context
@@ -435,18 +435,18 @@ func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 		jobConfig.Presubmits[orgSlashRepo] = append(jobConfig.Presubmits[orgSlashRepo], c)
 
 		if presubmit.Queries != nil && len(presubmit.Queries) > 0 {
-			err := buildQuery(&prowConfig.Tide, presubmit.Queries, orgName, repoName)
+			err := buildQuery(&prowConfig.Keeper, presubmit.Queries, orgName, repoName)
 			if err != nil {
 				return errors.Wrapf(err, "building Query from %v", presubmit.Queries)
 			}
 		}
 		if presubmit.MergeType != nil {
-			mt := github.PullRequestMergeType(*presubmit.MergeType)
-			if prowConfig.Tide.MergeType == nil && mt != "" {
-				prowConfig.Tide.MergeType = make(map[string]github.PullRequestMergeType)
+			mt := config.PullRequestMergeType(*presubmit.MergeType)
+			if prowConfig.Keeper.MergeType == nil && mt != "" {
+				prowConfig.Keeper.MergeType = make(map[string]config.PullRequestMergeType)
 			}
 			if mt != "" {
-				prowConfig.Tide.MergeType[orgSlashRepo] = mt
+				prowConfig.Keeper.MergeType[orgSlashRepo] = mt
 			}
 		}
 		if presubmit.Policy != nil {
@@ -466,20 +466,20 @@ func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 
 		}
 		if presubmit.ContextPolicy != nil {
-			policy := config.TideRepoContextPolicy{}
+			policy := config.KeeperRepoContextPolicy{}
 			err := buildRepoContextPolicy(&policy, presubmit.ContextPolicy)
 			if err != nil {
 				return errors.Wrapf(err, "building RepoContextPolicy from %v", presubmit)
 			}
-			if prowConfig.Tide.ContextOptions.Orgs == nil {
-				prowConfig.Tide.ContextOptions.Orgs = make(map[string]config.TideOrgContextPolicy)
+			if prowConfig.Keeper.ContextOptions.Orgs == nil {
+				prowConfig.Keeper.ContextOptions.Orgs = make(map[string]config.KeeperOrgContextPolicy)
 			}
-			if _, ok := prowConfig.Tide.ContextOptions.Orgs[orgName]; !ok {
-				prowConfig.Tide.ContextOptions.Orgs[orgName] = config.TideOrgContextPolicy{
-					Repos: make(map[string]config.TideRepoContextPolicy),
+			if _, ok := prowConfig.Keeper.ContextOptions.Orgs[orgName]; !ok {
+				prowConfig.Keeper.ContextOptions.Orgs[orgName] = config.KeeperOrgContextPolicy{
+					Repos: make(map[string]config.KeeperRepoContextPolicy),
 				}
 			}
-			prowConfig.Tide.ContextOptions.Orgs[orgName].Repos[repoName] = policy
+			prowConfig.Keeper.ContextOptions.Orgs[orgName].Repos[repoName] = policy
 		}
 		// TODO handle LGTM's here
 	}
@@ -648,7 +648,7 @@ func buildPeriodics(answer *config.JobConfig, periodics *jenkinsv1.Periodics) er
 	return nil
 }
 
-func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger, org string, repo string) error {
+func buildMerger(answer *config.Keeper, merger *jenkinsv1.Merger, org string, repo string) error {
 	if merger.SyncPeriod != nil {
 		answer.SyncPeriod = *merger.SyncPeriod
 	}
@@ -672,12 +672,12 @@ func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger, org string, repo
 	}
 	if merger.MergeType != nil {
 		if answer.MergeType == nil {
-			answer.MergeType = make(map[string]github.PullRequestMergeType)
+			answer.MergeType = make(map[string]config.PullRequestMergeType)
 		}
-		answer.MergeType[fmt.Sprintf("%s/%s", org, repo)] = github.PullRequestMergeType(*merger.MergeType)
+		answer.MergeType[fmt.Sprintf("%s/%s", org, repo)] = config.PullRequestMergeType(*merger.MergeType)
 	}
 	if merger.ContextPolicy != nil {
-		err := buildContextPolicy(&answer.ContextOptions.TideContextPolicy, merger.ContextPolicy)
+		err := buildContextPolicy(&answer.ContextOptions.KeeperContextPolicy, merger.ContextPolicy)
 		if err != nil {
 			return errors.Wrapf(err, "building ContextPolicy for %v", merger.ContextPolicy)
 		}
@@ -685,18 +685,18 @@ func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger, org string, repo
 	return nil
 }
 
-func buildRepoContextPolicy(answer *config.TideRepoContextPolicy,
+func buildRepoContextPolicy(answer *config.KeeperRepoContextPolicy,
 	repoContextPolicy *jenkinsv1.RepoContextPolicy) error {
-	err := buildContextPolicy(&answer.TideContextPolicy, repoContextPolicy.ContextPolicy)
+	err := buildContextPolicy(&answer.KeeperContextPolicy, repoContextPolicy.ContextPolicy)
 	if err != nil {
 		return errors.Wrapf(err, "building ContextPolicy for %v", repoContextPolicy)
 	}
 	if repoContextPolicy.Branches != nil {
 		for branch, policy := range repoContextPolicy.Branches.Items {
 			if answer.Branches == nil {
-				answer.Branches = make(map[string]config.TideContextPolicy)
+				answer.Branches = make(map[string]config.KeeperContextPolicy)
 			}
-			tidePolicy := config.TideContextPolicy{}
+			tidePolicy := config.KeeperContextPolicy{}
 			err := buildContextPolicy(&tidePolicy, policy)
 			if err != nil {
 				return errors.Wrapf(err, "building ContextPolicy for %v", policy)
@@ -707,7 +707,7 @@ func buildRepoContextPolicy(answer *config.TideRepoContextPolicy,
 	return nil
 }
 
-func buildContextPolicy(answer *config.TideContextPolicy,
+func buildContextPolicy(answer *config.KeeperContextPolicy,
 	contextOptions *jenkinsv1.ContextPolicy) error {
 	if contextOptions != nil {
 		if contextOptions.SkipUnknownContexts != nil {
@@ -729,11 +729,11 @@ func buildContextPolicy(answer *config.TideContextPolicy,
 	return nil
 }
 
-func buildQuery(answer *config.Tide, queries []*jenkinsv1.Query, org string, repo string) error {
+func buildQuery(answer *config.Keeper, queries []*jenkinsv1.Query, org string, repo string) error {
 	if answer.Queries == nil {
-		answer.Queries = config.TideQueries{}
+		answer.Queries = config.KeeperQueries{}
 	}
-	tideQuery := &config.TideQuery{
+	tideQuery := &config.KeeperQuery{
 		Repos: []string{orgSlashRepo(org, repo)},
 	}
 	for _, query := range queries {
@@ -758,7 +758,7 @@ func buildQuery(answer *config.Tide, queries []*jenkinsv1.Query, org string, rep
 		mergedWithExisting := false
 		for index := range answer.Queries {
 			existingQuery := &answer.Queries[index]
-			if cmp.Equal(existingQuery, tideQuery, cmpopts.IgnoreFields(config.TideQuery{}, "Repos")) {
+			if cmp.Equal(existingQuery, tideQuery, cmpopts.IgnoreFields(config.KeeperQuery{}, "Repos")) {
 				mergedWithExisting = true
 				for _, newRepo := range tideQuery.Repos {
 					if !utils.ContainsString(existingQuery.Repos, newRepo) {

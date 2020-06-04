@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/environments"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 	uuid "github.com/satori/go.uuid"
 	v1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,7 +33,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
 )
 
@@ -83,7 +83,7 @@ func GenerateProw(gitOps bool, autoApplyConfigUpdater bool, jxClient versioned.I
 	}
 	if cfg != nil {
 		cfg.PodNamespace = namespace
-		cfg.ProwJobNamespace = namespace
+		cfg.LighthouseJobNamespace = namespace
 	}
 	return cfg, plugs, nil
 }
@@ -120,6 +120,9 @@ func CreateSchedulersFromProwConfig(configFileLocation string, pluginsFileLocati
 		return nil, nil, nil, err
 	}
 
+	if prowConfig.LighthouseJobNamespace == "" {
+		prowConfig.LighthouseJobNamespace = "jx"
+	}
 	sourceRepoGroups, sourceRepositories, sourceRepoMap, schedulers, err := BuildSchedulers(prowConfig, pluginConfig)
 	teamSchedulerName = "default-scheduler"
 	cleanupExistingProwConfig(prowConfig, pluginConfig, sourceRepoMap)
@@ -169,7 +172,7 @@ func CreateSchedulersFromProwConfig(configFileLocation string, pluginsFileLocati
 			cmpopts.IgnoreUnexported(config.Presubmit{}),
 			cmpopts.IgnoreUnexported(config.Periodic{}),
 			sortSliceStringOpt,
-			cmpopts.SortSlices(func(i config.TideQuery, j config.TideQuery) bool {
+			cmpopts.SortSlices(func(i config.KeeperQuery, j config.KeeperQuery) bool {
 				sort.Strings(i.Repos)
 				sort.Strings(j.Repos)
 				iLabels := append(i.Labels, i.MissingLabels...)
@@ -192,8 +195,8 @@ func cleanupExistingProwConfig(prowConfig *config.Config, pluginConfig *plugins.
 	prowConfig.Deck = config.Deck{}
 	// heart plugin is not supported
 	pluginConfig.Heart = plugins.Heart{}
-	queries := prowConfig.Tide.Queries[:0]
-	for _, query := range prowConfig.Tide.Queries {
+	queries := prowConfig.Keeper.Queries[:0]
+	for _, query := range prowConfig.Keeper.Queries {
 		repos := query.Repos[:0]
 		for _, repo := range query.Repos {
 			// We do not support tide queries for repos with not presubmits or postsubmits, ignore the dummy environment for now
@@ -206,7 +209,7 @@ func cleanupExistingProwConfig(prowConfig *config.Config, pluginConfig *plugins.
 			queries = append(queries, query)
 		}
 	}
-	prowConfig.Tide.Queries = queries
+	prowConfig.Keeper.Queries = queries
 
 	pluginConfig.ConfigUpdater = plugins.ConfigUpdater{}
 	triggers := make([]plugins.Trigger, 0)

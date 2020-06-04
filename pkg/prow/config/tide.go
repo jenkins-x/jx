@@ -6,16 +6,16 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-	"k8s.io/test-infra/prow/config"
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 )
 
 // CreateTide creates a default Tide Config object
-func CreateTide(tideURL string) config.Tide {
-	t := config.Tide{
+func CreateTide(tideURL string) config.Keeper {
+	t := config.Keeper{
 		TargetURL: tideURL,
 	}
 
-	var qs []config.TideQuery
+	var qs []config.KeeperQuery
 	qs = append(qs, createApplicationTideQuery())
 	qs = append(qs, createEnvironmentTideQuery())
 	t.Queries = qs
@@ -25,8 +25,8 @@ func CreateTide(tideURL string) config.Tide {
 
 	t.SyncPeriod = time.Duration(30)
 	t.StatusUpdatePeriod = time.Duration(30)
-	t.ContextOptions = config.TideContextPolicyOptions{
-		TideContextPolicy: config.TideContextPolicy{
+	t.ContextOptions = config.KeeperContextPolicyOptions{
+		KeeperContextPolicy: config.KeeperContextPolicy{
 			FromBranchProtection: &myTrue,
 			SkipUnknownContexts:  &myFalse,
 		},
@@ -36,7 +36,7 @@ func CreateTide(tideURL string) config.Tide {
 }
 
 // AddRepoToTideConfig adds a code repository to the Tide section of the Prow Config
-func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
+func AddRepoToTideConfig(t *config.Keeper, repo string, kind Kind) error {
 	switch kind {
 	case Application:
 		found := false
@@ -81,7 +81,7 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 }
 
 // RemoveRepoFromTideConfig adds a code repository to the Tide section of the Prow Config
-func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
+func RemoveRepoFromTideConfig(t *config.Keeper, repo string, kind Kind) error {
 	switch kind {
 	case Application:
 		found := false
@@ -115,16 +115,16 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 	return nil
 }
 
-func createApplicationTideQuery() config.TideQuery {
-	return config.TideQuery{
+func createApplicationTideQuery() config.KeeperQuery {
+	return config.KeeperQuery{
 		Repos:         []string{"jenkins-x/dummy"},
 		Labels:        []string{"approved"},
 		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
 	}
 }
 
-func createEnvironmentTideQuery() config.TideQuery {
-	return config.TideQuery{
+func createEnvironmentTideQuery() config.KeeperQuery {
+	return config.KeeperQuery{
 		Repos:         []string{"jenkins-x/dummy-environment"},
 		Labels:        []string{},
 		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},

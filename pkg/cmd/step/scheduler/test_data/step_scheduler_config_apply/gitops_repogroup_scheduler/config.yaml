@@ -23,6 +23,8 @@ branch-protection:
 deck:
   spyglass: {}
 gerrit: {}
+github:
+  LinkURL: null
 owners_dir_blacklist:
   default: null
   repos: null
@@ -33,19 +35,16 @@ postsubmits:
   - agent: tekton
     branches:
     - master
-    context: ""
     name: release
   cb-kubecd/jx-scheduler-test-group-repo:
   - agent: tekton
     branches:
     - master
-    context: ""
     name: release
   cb-kubecd/jx-scheduler-test-repo:
   - agent: tekton
     branches:
     - master
-    context: ""
     name: release
 presubmits:
   @@DEV_ENV_ORG@@/environment-@@DEV_ENV_ORG@@-@@DEV_ENV_REPO@@-dev:
@@ -70,7 +69,8 @@ presubmits:
     rerun_command: /test this
     trigger: (?m)^/test( all| this),?(\s+|$)
 prowjob_namespace: jx
-push_gateway: {}
+push_gateway:
+  serve_metrics: false
 sinker: {}
 tide:
   context_options:

@@ -5,9 +5,8 @@ package config
 import (
 	"testing"
 
+	"github.com/jenkins-x/lighthouse-config/pkg/config"
 	"github.com/stretchr/testify/assert"
-
-	"k8s.io/test-infra/prow/config"
 )
 
 func newBranchProtection() config.BranchProtection {
