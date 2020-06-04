@@ -73,6 +73,9 @@ helm repo add jenkins-x https://storage.googleapis.com/chartmuseum.jenkins-x.io
 # We need to use the image from the Pull Request instead of the versions stream, otherwise we are not testing the PR itself
 sed -i "s/builder-go.*/&:$VERSION/g" jenkins-x.yml
 
+# Set JX_APP_VERSION to one that's compatible with 1.16
+export JX_APP_VERSION=0.1.201
+
 jx step bdd \
     --versions-repo https://github.com/jenkins-x/jenkins-x-versions.git \
     --config ../jx/bdd/boot-vault/cluster.yaml \
