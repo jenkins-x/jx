@@ -26,7 +26,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jenkins-x/jx/v2/pkg/cmd/alpha"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/deprecation"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/experimental"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/profile"
@@ -130,8 +129,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 	}
 	environmentsCommands = append(environmentsCommands, findCommands("environment", createCommands, deleteCommands, editCommands, getCommands)...)
 
-	alphaCommand := alpha.NewCmdAlpha(commonOpts)
-
 	groups := templates.CommandGroups{
 		{
 			Message:  "Installing:",
@@ -207,12 +204,6 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 			Message: "Working with Jenkins X UI:",
 			Commands: []*cobra.Command{
 				ui.NewCmdUI(commonOpts),
-			},
-		},
-		{
-			Message: "Alpha commands:",
-			Commands: []*cobra.Command{
-				alphaCommand,
 			},
 		},
 	}
