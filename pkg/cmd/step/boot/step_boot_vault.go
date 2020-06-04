@@ -110,7 +110,7 @@ func (o *StepBootVaultOptions) Run() error {
 		return err
 	}
 
-	requirements, _, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
+	requirements, fileName, err := config.LoadRequirementsConfig(o.Dir, config.DefaultFailOnValidationError)
 	if err != nil {
 		return err
 	}
@@ -126,12 +126,76 @@ func (o *StepBootVaultOptions) Run() error {
 		return errors.Wrapf(err, "failed to create Kubernetes client")
 	}
 
-	externalVaultURL := requirements.Vault.URL
-	if externalVaultURL != "" {
-		return o.setupExternalVault(requirements, ns, kubeClient)
+	internal := requirements.Vault.URL == ""
+	// if we are not in batch mode and the key values in jx-requirements.yml are not set, interactively query the user
+	if !o.BatchMode && requirements.Vault.URL == "" && requirements.Vault.Name == "" {
+		internal, err = o.interactiveVaultConfiguration(internal, requirements, fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to interactively configure Vault")
+		}
 	}
 
-	return o.setupInClusterVault(requirements, ns, kubeClient)
+	if internal {
+		return o.setupInClusterVault(requirements, ns, kubeClient)
+	}
+	return o.setupExternalVault(requirements, ns, kubeClient)
+}
+
+func (o *StepBootVaultOptions) interactiveVaultConfiguration(internal bool, requirements *config.RequirementsConfig, fileName string) (bool, error) {
+	help := "Jenkins X uses Vault to store secrets. You can provide your own Vault instance or let Jenkins X create one for you."
+	message := "Do you want Jenkins X to create and manage Vault?"
+	internal, err := util.Confirm(message, true, help, o.GetIOFileHandles())
+	if err != nil {
+		return false, errors.Wrapf(err, "unable to process user input")
+	}
+
+	if internal {
+		return true, nil
+	}
+
+	err = o.askExternalVaultParameters(requirements, o.GetIOFileHandles())
+	if err != nil {
+		return false, errors.Wrapf(err, "unable to ask user for Vault configuration")
+	}
+	err = requirements.SaveConfig(fileName)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to write updated requirements file")
+	}
+	return false, nil
+}
+
+func (o *StepBootVaultOptions) askExternalVaultParameters(requirements *config.RequirementsConfig, fileHandles util.IOFileHandles) error {
+	url, err := util.PickValue("URL to Vault instance: ", "", true, "Please specify the URL to the Vault instance for storing your Jenkins X secrets", fileHandles)
+	if err != nil {
+		return errors.Wrap(err, "unable to get Vault URL from user")
+	}
+	requirements.Vault.URL = url
+
+	sa, err := util.PickValue("Authenticating service account: ", fmt.Sprintf("%s-vt", requirements.Cluster.ClusterName), true, "Please specify the service account used to authenticate against Vault", fileHandles)
+	if err != nil {
+		return errors.Wrap(err, "unable to get service account from user")
+	}
+	requirements.Vault.ServiceAccount = sa
+
+	ns, err := util.PickValue("Namespace of authenticating service account: ", requirements.Cluster.Namespace, true, "Please specify the namespace of the authenticating service account", fileHandles)
+	if err != nil {
+		return errors.Wrap(err, "unable to get namespace from user")
+	}
+	requirements.Vault.Namespace = ns
+
+	authPath, err := util.PickValue("Path under which to enable Vault's Kubernetes auth plugin: ", vault.DefaultKubernetesAuthPath, true, "Please specify the path for Vault's Kubernetes auth plugin. See https://www.vaultproject.io/docs/auth/kubernetes.", fileHandles)
+	if err != nil {
+		return errors.Wrap(err, "unable to get Kubernetes auth path from user")
+	}
+	requirements.Vault.KubernetesAuthPath = authPath
+
+	mountPoint, err := util.PickValue("Mount point for Vault's KV secret engine: ", vault.DefaultKVEngineMountPoint, true, "Please specify the mount point for Vault's KV secrets engine. See https://www.vaultproject.io/docs/secrets/kv", fileHandles)
+	if err != nil {
+		return errors.Wrap(err, "unable to get Vault URL from user")
+	}
+	requirements.Vault.SecretEngineMountPoint = mountPoint
+
+	return nil
 }
 
 func (o *StepBootVaultOptions) setupExternalVault(requirements *config.RequirementsConfig, ns string, kubeClient kubernetes.Interface) error {
