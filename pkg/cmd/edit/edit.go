@@ -56,7 +56,6 @@ func NewCmdEdit(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	cmd.AddCommand(NewCmdEditAddon(commonOpts))
 	cmd.AddCommand(NewCmdEditAppJenkinsPlugins(commonOpts))
-	cmd.AddCommand(NewCmdEditBuildpack(commonOpts))
 	cmd.AddCommand(NewCmdEditConfig(commonOpts))
 	cmd.AddCommand(NewCmdEditDeployKind(commonOpts))
 	cmd.AddCommand(NewCmdEditEnv(commonOpts))

@@ -690,11 +690,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "verifying Tiller is running")
 	}
 
-	err = options.configureBuildPackMode()
-	if err != nil {
-		return errors.Wrap(err, "configuring the build pack mode")
-	}
-
 	log.Logger().Infof("Installing jx into namespace %s", util.ColorInfo(ns))
 
 	version, err := options.getPlatformVersion(versionsRepoDir, configStore)
@@ -2463,15 +2458,6 @@ func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSec
 		}
 	}
 	return nil
-}
-
-func (options *InstallOptions) configureBuildPackMode() error {
-	ebp := &edit.EditBuildPackOptions{
-		BuildPackName: options.Flags.BuildPackName,
-	}
-	ebp.CommonOptions = options.CommonOptions
-
-	return ebp.Run()
 }
 
 func (options *InstallOptions) configureLongTermStorageBucket() error {
