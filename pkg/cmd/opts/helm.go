@@ -796,7 +796,7 @@ func (o *CommonOptions) ReleaseChartRepositoryURL() string {
 		if err != nil {
 			log.Logger().Warnf("failed to get the team settings: %s", err.Error())
 		} else {
-			requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+			requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 			if err != nil {
 				log.Logger().Warnf("failed to get the requirements from team settings: %s", err.Error())
 			} else if requirements != nil {

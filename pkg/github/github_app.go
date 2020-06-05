@@ -103,7 +103,7 @@ func (gh *GithubApp) getRequirementConfig() (*config.RequirementsConfig, error) 
 		return nil, err
 	}
 
-	requirementConfig, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	requirementConfig, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	if err != nil {
 		log.Logger().Errorf("error getting requirement config from team settings %v", err)
 		return nil, err

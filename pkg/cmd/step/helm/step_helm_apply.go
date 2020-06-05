@@ -417,7 +417,7 @@ func (o *StepHelmApplyOptions) getRequirements() (*config.RequirementsConfig, st
 		return nil, "", errors.Wrap(err, "getting the team setting from the cluster")
 	}
 
-	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	requirements, err = config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting the requirements from team settings")
 	}

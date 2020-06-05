@@ -594,7 +594,7 @@ func NewBucketProviderFromTeamSettingsConfiguration(jxClient versioned.Interface
 	if err != nil {
 		return nil, errors.Wrap(err, "error obtaining the dev environment teamSettings to select the correct bucket provider")
 	}
-	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	if err != nil || requirements == nil {
 		return nil, errorutil.CombineErrors(err, errors.New("error obtaining the requirements file to decide bucket provider"))
 	}

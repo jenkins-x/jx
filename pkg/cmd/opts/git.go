@@ -320,7 +320,7 @@ func (o *CommonOptions) IsGitHubAppMode() (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "error loading TeamSettings to determine if in GitHub app mode")
 	}
-	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, false)
 	if err != nil {
 		return false, errors.Wrap(err, "error getting Requirements from TeamSettings to determine if in GitHub app mode")
 	}

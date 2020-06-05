@@ -626,7 +626,7 @@ func LoadRequirementsConfigFile(fileName string, failOnValidationErrors bool) (*
 }
 
 // GetRequirementsConfigFromTeamSettings reads the BootRequirements string from TeamSettings and unmarshals it
-func GetRequirementsConfigFromTeamSettings(settings *v1.TeamSettings) (*RequirementsConfig, error) {
+func GetRequirementsConfigFromTeamSettings(settings *v1.TeamSettings, failOnValidationErrors bool) (*RequirementsConfig, error) {
 	if settings == nil {
 		return nil, nil
 	}
@@ -643,7 +643,11 @@ func GetRequirementsConfigFromTeamSettings(settings *v1.TeamSettings) (*Requirem
 		return config, fmt.Errorf("failed to validate requirements from team settings due to %s", err)
 	}
 	if len(validationErrors) > 0 {
-		return config, fmt.Errorf("validation failures in requirements from team settings:\n%s", strings.Join(validationErrors, "\n"))
+		log.Logger().Warnf("validation failures in requirements from team settings:\n%s", strings.Join(validationErrors, "\n"))
+
+		if failOnValidationErrors {
+			return config, fmt.Errorf("validation failures in requirements from team settings:\n%s", strings.Join(validationErrors, "\n"))
+		}
 	}
 	err = yaml.Unmarshal(data, config)
 	if err != nil {

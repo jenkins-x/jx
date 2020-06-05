@@ -979,7 +979,7 @@ func (o *PreviewOptions) getContainerRegistry(projectConfig *config.ProjectConfi
 	if err != nil {
 		return "", errors.Wrap(err, "could not load team")
 	}
-	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	if err != nil {
 		return "", errors.Wrap(err, "could not get requirements from team setting")
 	}

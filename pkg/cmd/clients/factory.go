@@ -628,7 +628,7 @@ func (f *factory) useVaultIngress(devNamespace string) (bool, error) {
 	if err != nil {
 		return false, errors.Wrapf(err, "getting team settings from namespace %s", devNamespace)
 	}
-	reqsFromTeamSettings, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	reqsFromTeamSettings, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	if err == nil && reqsFromTeamSettings != nil && reqsFromTeamSettings.Vault.DisableURLDiscovery {
 		log.Logger().Debugf("Using vault ingress because the requirements.Vault.DisableURLDiscovery is set in team settings")
 		return true, nil

@@ -61,7 +61,7 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsInTeamSettings(t *testin
 	requirementsCm := teamSettings.BootRequirements
 	assert.NotEqual(t, "", requirementsCm, "the BootRequirements field should be present and not empty")
 
-	mapRequirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	mapRequirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	assert.NoError(t, err)
 
 	assert.Equal(t, requirements, mapRequirements)
@@ -114,7 +114,7 @@ func TestStepVerifyEnvironmentsOptions_StoreRequirementsConfigMapWithModificatio
 	requirementsCm := teamSettings.BootRequirements
 	assert.NotEqual(t, "", requirementsCm, "the BootRequirements field should be present and not empty")
 
-	mapRequirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	mapRequirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings, config.DefaultFailOnValidationError)
 	assert.NoError(t, err)
 
 	assert.Equal(t, requirements.Storage.Logs, mapRequirements.Storage.Logs, "the change done before calling"+

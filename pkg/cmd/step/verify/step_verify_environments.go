@@ -99,7 +99,7 @@ func (o *StepVerifyEnvironmentsOptions) Run() error {
 	} else {
 		devEnv := envMap[kube.LabelValueDevEnvironment]
 		if devEnv != nil {
-			requirements, err = config.GetRequirementsConfigFromTeamSettings(&devEnv.Spec.TeamSettings)
+			requirements, err = config.GetRequirementsConfigFromTeamSettings(&devEnv.Spec.TeamSettings, config.DefaultFailOnValidationError)
 			if err != nil {
 				return errors.Wrap(err, "failed to load requirements from team settings")
 			}
