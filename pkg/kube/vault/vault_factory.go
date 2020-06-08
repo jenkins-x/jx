@@ -125,7 +125,6 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string, useIn
 		return nil, err
 	}
 
-	// TODO: issue:7090
 	vaultConfig := vault.Vault{
 		Name:                   name,
 		ServiceAccountName:     serviceAccountName,

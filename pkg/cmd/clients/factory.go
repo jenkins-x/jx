@@ -466,12 +466,11 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 		return nil, errors.Errorf("unable to create Vault client for secret location kind '%s'", installValues[secrets.SecretsLocationKey])
 	}
 
-	vaultConfig, err := vault.FromMap(installValues, namespace)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error parsing Vault configuration from ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
-	}
-
-	if vaultConfig.IsExternal() {
+	if installValues[vault.URL] != "" {
+		vaultConfig, err := vault.FromMap(installValues, namespace)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error parsing Vault configuration from ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+		}
 		return f.CreateExternalVaultClient(vaultConfig, kubeClient)
 	}
 
