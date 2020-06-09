@@ -58,12 +58,7 @@ You can also browse the [jx command reference documentation](https://jenkins-x.i
   
   
 ## Opening Consoles
-
-To open the Jenkins console try:
-
-    jx console
-    
-Or to open other consoles:
+To open a console for `foo`:
 
     jx open foo
     
