@@ -8,84 +8,85 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deprecatedCommands list of deprecated commands along with some more deprecation details
-var deprecatedCommands map[string]deprecationInfo = map[string]deprecationInfo{
+// DeprecatedCommands list of deprecated commands along with some more deprecation details
+var DeprecatedCommands = map[string]DeprecationInfo{
 	"install": {
-		replacement: "jx boot",
-		date:        "Jun 1 2020",
-		info: fmt.Sprintf("Please check %s for more details.",
+		Replacement: "jx boot",
+		Date:        "Jun 1 2020",
+		Info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
 	"init": {
-		replacement: "jx boot",
-		date:        "Jun 1 2020",
-		info: fmt.Sprintf("Please check %s for more details.",
+		Replacement: "jx boot",
+		Date:        "Jun 1 2020",
+		Info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
 	"create post": {
-		date: "Feb 1 2020",
+		Date: "Feb 1 2020",
 	},
 	"create spring": {
-		replacement: "jx create project",
-		date:        "Mar 1 2020",
-		info: fmt.Sprintf("Please check %s for more details.",
+		Replacement: "jx create project",
+		Date:        "Mar 1 2020",
+		Info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/commands/jx_create_project/")),
 	},
 	"upgrade platform": {
-		replacement: "jx upgrade boot",
-		date:        "Jun 1 2020",
-		info: fmt.Sprintf("Please check %s for more details.",
+		Replacement: "jx upgrade boot",
+		Date:        "Jun 1 2020",
+		Info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
 	"upgrade ingress": {
-		replacement: "jx boot",
-		date:        "Jun 1 2020",
-		info: fmt.Sprintf("Please check %s for more details.",
+		Replacement: "jx boot",
+		Date:        "Jun 1 2020",
+		Info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
 	"get post": {
-		date: "Feb 1 2020",
+		Date: "Feb 1 2020",
 	},
 	"delete extension": {
-		date: "Feb 1 2020",
-		info: "This is now replaced by apps",
+		Date: "Feb 1 2020",
+		Info: "This is now replaced by apps",
 	},
 	"edit extensionsrepository": {
-		date: "Feb 1 2020",
-		info: "This is now replaced by apps",
+		Date: "Feb 1 2020",
+		Info: "This is now replaced by apps",
 	},
 	"step post": {
-		date: "Feb 1 2020",
+		Date: "Feb 1 2020",
 	},
 	"step nexus drop": {
-		date: "Feb 1 2020",
+		Date: "Feb 1 2020",
 	},
 	"step nexus release": {
-		date: "Feb 1 2020",
+		Date: "Feb 1 2020",
 	},
 	"create vault": {
-		date: "Sep 1 2020",
-		info: "This commands will have no replacement.",
+		Date: "Sep 1 2020",
+		Info: "This commands will have no replacement.",
 	},
 	"delete vault": {
-		date: "Sep 1 2020",
-		info: "This commands will have no replacement.",
+		Date: "Sep 1 2020",
+		Info: "This commands will have no replacement.",
 	},
 }
 
 // deprecateInfo keeps some deprecation details related to a command
-type deprecationInfo struct {
-	replacement string
-	date        string
-	info        string
+type DeprecationInfo struct {
+	Replacement string
+	Date        string
+	Info        string
 }
 
 // DeprecateCommands runs recursively over all commands and set the deprecation message
 // on every command defined the deprecated commands map.
 func DeprecateCommands(cmd *cobra.Command) {
 	path := commandPath(cmd)
-	if deprecation, ok := deprecatedCommands[path]; ok {
-		cmd.Deprecated = deprecationMessage(deprecation)
+	if deprecation, ok := DeprecatedCommands[path]; ok {
+		updatedLongMessage := fmt.Sprintf("command 'jx %s' is deprecated. %s\n\n", path, deprecationMessage(deprecation)) + cmd.Long
+		cmd.Long = updatedLongMessage
 	}
 	if !cmd.HasSubCommands() {
 		return
@@ -98,8 +99,8 @@ func DeprecateCommands(cmd *cobra.Command) {
 // GetRemovalDate returns the date when the command is planned to be removed
 func GetRemovalDate(cmd *cobra.Command) string {
 	path := commandPath(cmd)
-	if deprecation, ok := deprecatedCommands[path]; ok {
-		return deprecation.date
+	if deprecation, ok := DeprecatedCommands[path]; ok {
+		return deprecation.Date
 	}
 	return ""
 }
@@ -107,26 +108,26 @@ func GetRemovalDate(cmd *cobra.Command) string {
 // GetReplacement returns the command replacement if any available
 func GetReplacement(cmd *cobra.Command) string {
 	path := commandPath(cmd)
-	if deprecation, ok := deprecatedCommands[path]; ok {
-		return deprecation.replacement
+	if deprecation, ok := DeprecatedCommands[path]; ok {
+		return deprecation.Replacement
 	}
 	return ""
 }
 
-func deprecationMessage(dep deprecationInfo) string {
+func deprecationMessage(dep DeprecationInfo) string {
 	var date string
-	if dep.date != "" {
-		date = fmt.Sprintf("it will be removed on %s.", util.ColorInfo(dep.date))
+	if dep.Date != "" {
+		date = fmt.Sprintf("it will be removed on %s.", util.ColorInfo(dep.Date))
 	} else {
 		date = "it will be soon removed."
 	}
 	var replacement string
-	if dep.replacement != "" {
-		replacement = fmt.Sprintf("We now highly recommend you use %s instead.", util.ColorInfo(dep.replacement))
+	if dep.Replacement != "" {
+		replacement = fmt.Sprintf("We now highly recommend you use %s instead.", util.ColorInfo(dep.Replacement))
 	}
 	msg := fmt.Sprintf("%s %s", date, replacement)
-	if dep.info != "" {
-		return fmt.Sprintf("%s %s", msg, dep.info)
+	if dep.Info != "" {
+		return fmt.Sprintf("%s %s", msg, dep.Info)
 	}
 	return msg
 }

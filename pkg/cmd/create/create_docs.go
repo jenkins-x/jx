@@ -3,6 +3,7 @@ package create
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/v2/pkg/log"
 	"io"
 	"os"
 	"path"
@@ -32,7 +33,7 @@ slug: %s
 url: %s
 description: %s
 ---
-`
+%s`
 )
 
 var (
@@ -100,12 +101,32 @@ func (o *CreateDocsOptions) Run(jxCommand *cobra.Command) error {
 		name := filepath.Base(filename)
 		base := strings.TrimSuffix(name, path.Ext(name))
 		url := "/commands/" + strings.ToLower(base) + "/"
-		return fmt.Sprintf(gendocFrontmatterTemplate, now, strings.Replace(base, "_", " ", -1), base, url, "list of jx commands")
+		commandName := strings.Replace(base, "_", " ", -1)
+		key := strings.Replace(commandName, "jx ", "", -1)
+		deprecationNotice := ""
+		log.Logger().Infof("Checking '%s' with key '%s'", commandName, key)
+		dc, ok := deprecation.DeprecatedCommands[key]
+		if ok {
+			log.Logger().Infof("Command '%s' is deprecated", commandName)
+			deprecationNotice = "### This command is deprecated\n\n"
+			if dc.Replacement  != "" {
+				deprecationNotice += fmt.Sprintf("It is recommended that you use '%s' instead\n\n", dc.Replacement)
+			}
+			if dc.Date != ""  {
+				deprecationNotice += fmt.Sprintf("This command will be removed on '%s'\n\n", dc.Date)
+			}
+			if dc.Info != "" {
+				deprecationNotice += fmt.Sprintf("%s\n\n", dc.Info)
+			}
+		}
+		return fmt.Sprintf(gendocFrontmatterTemplate, now, commandName, base, url, "list of jx commands", deprecationNotice)
 	}
+
 	linkHandler := func(name string) string {
 		base := strings.TrimSuffix(name, path.Ext(name))
 		return "/commands/" + strings.ToLower(base) + "/"
 	}
+
 	if err := o.genMarkdownDeprecation(jxCommand, dir, now); err != nil {
 		return errors.Wrapf(err, "generating the deprecation doc")
 	}
@@ -122,7 +143,7 @@ func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir strin
 	defer f.Close() //nolint:errcheck
 
 	header := fmt.Sprintf(gendocFrontmatterTemplate, date, "deprecated commands",
-		basename, "/commands/"+strings.ToLower(basename)+"/", "list of jx commands which have been deprecated")
+		basename, "/commands/"+strings.ToLower(basename)+"/", "list of jx commands which have been deprecated","")
 
 	if _, err := io.WriteString(f, header); err != nil {
 		return err

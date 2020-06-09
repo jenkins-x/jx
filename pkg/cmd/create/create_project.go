@@ -75,7 +75,7 @@ func NewCmdCreateProject(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements the command
 func (o *CreateProjectWizardOptions) Run() error {
 	name, err := util.PickName(createProjectNames, "Which kind of project you want to create: ",
-		"Jenkins X supports a number of diffferent wizards for creating or importing new projects.",
+		"Jenkins X supports a number of different wizards for creating or importing new projects.",
 		o.GetIOFileHandles())
 	if err != nil {
 		return err
