@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/config"
 
 	"github.com/jenkins-x/jx/v2/pkg/builds"
 
@@ -20,6 +21,7 @@ import (
 
 var (
 	editBuildpackLong = templates.LongDesc(`
+		** This command does not work on boot based clusters and has been disabled **
 		Edits the build pack configuration for your team
 `)
 
@@ -32,7 +34,7 @@ var (
 
         # to switch to kubernetes workloads for your team
 		jx edit buildpack -n kubernetes-workloads
-		
+
 		For more documentation see: [https://jenkins-x.io/architecture/build-packs/](https://jenkins-x.io/architecture/build-packs/)
 	`)
 )
@@ -77,6 +79,21 @@ func NewCmdEditBuildpack(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *EditBuildPackOptions) Run() error {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
+
+	isBoot, err := o.isBoot(teamSettings)
+	if err != nil {
+		return err
+	}
+
+	if isBoot {
+		log.Logger().Warnf("This functionality is not supported in boot based clusters, please checkout https://jenkins-x.io/commands/jx_edit_buildpack/ for how to specify custom buildpacks for boot clusters.")
+		return nil
+	}
+
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -120,11 +137,6 @@ func (o *EditBuildPackOptions) Run() error {
 		}
 	} else {
 		if buildPackURL == "" || BuildPackRef == "" {
-			teamSettings, err := o.TeamSettings()
-			if err != nil {
-				return err
-			}
-
 			defaultValue := buildPackName
 			if defaultValue == "" {
 				for k, v := range m {
@@ -179,4 +191,17 @@ func (o *EditBuildPackOptions) Run() error {
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)
+}
+
+func (o *EditBuildPackOptions) isBoot(teamSettings *v1.TeamSettings) (bool, error) {
+	isBoot := false
+	requirements, err := config.GetRequirementsConfigFromTeamSettings(teamSettings)
+	if err != nil {
+		return isBoot, err
+	}
+
+	if requirements != nil {
+		isBoot = true
+	}
+	return isBoot, nil
 }
