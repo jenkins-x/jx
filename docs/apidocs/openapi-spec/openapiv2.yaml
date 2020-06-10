@@ -2970,6 +2970,39 @@ definitions:
     - secretName
     - shareName
     type: object
+  io.k8s.api.core.v1.CSIVolumeSource:
+    description: Represents a source location of a volume to mount, managed by an
+      external CSI driver
+    properties:
+      driver:
+        description: Driver is the name of the CSI driver that handles this volume.
+          Consult with your admin for the correct name as registered in the cluster.
+        type: string
+      fsType:
+        description: Filesystem type to mount. Ex. "ext4", "xfs", "ntfs". If not provided,
+          the empty value is passed to the associated CSI driver which will determine
+          the default filesystem to apply.
+        type: string
+      nodePublishSecretRef:
+        $ref: '#/definitions/io.k8s.api.core.v1.LocalObjectReference'
+        description: NodePublishSecretRef is a reference to the secret object containing
+          sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume
+          and NodeUnpublishVolume calls. This field is optional, and  may be empty
+          if no secret is required. If the secret object contains more than one secret,
+          all secret references are passed.
+      readOnly:
+        description: Specifies a read-only configuration for the volume. Defaults
+          to false (read/write).
+        type: boolean
+      volumeAttributes:
+        additionalProperties:
+          type: string
+        description: VolumeAttributes stores driver-specific properties that are passed
+          to the CSI driver. Consult your driver's documentation for supported values.
+        type: object
+    required:
+    - driver
+    type: object
   io.k8s.api.core.v1.Capabilities:
     description: Adds and removes POSIX capabilities from running containers.
     properties:
@@ -3065,7 +3098,7 @@ definitions:
         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
         type: string
       optional:
-        description: Specify whether the ConfigMap or it's key must be defined
+        description: Specify whether the ConfigMap or its key must be defined
         type: boolean
     required:
     - key
@@ -3091,7 +3124,7 @@ definitions:
         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
         type: string
       optional:
-        description: Specify whether the ConfigMap or it's keys must be defined
+        description: Specify whether the ConfigMap or its keys must be defined
         type: boolean
     type: object
   io.k8s.api.core.v1.ConfigMapVolumeSource:
@@ -3123,7 +3156,7 @@ definitions:
         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
         type: string
       optional:
-        description: Specify whether the ConfigMap or it's keys must be defined
+        description: Specify whether the ConfigMap or its keys must be defined
         type: boolean
     type: object
   io.k8s.api.core.v1.Container:
@@ -3202,6 +3235,10 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.ContainerPort'
         type: array
+        x-kubernetes-list-map-keys:
+        - containerPort
+        - protocol
+        x-kubernetes-list-type: map
         x-kubernetes-patch-merge-key: containerPort
         x-kubernetes-patch-strategy: merge
       readinessProbe:
@@ -3255,7 +3292,7 @@ definitions:
         type: boolean
       volumeDevices:
         description: volumeDevices is the list of block devices to be used by the
-          container. This is an alpha feature and may change in the future.
+          container. This is a beta feature.
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.VolumeDevice'
         type: array
@@ -3761,11 +3798,15 @@ definitions:
           hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
       preStop:
         $ref: '#/definitions/io.k8s.api.core.v1.Handler'
-        description: 'PreStop is called immediately before a container is terminated.
-          The container is terminated after the handler completes. The reason for
-          termination is passed to the handler. Regardless of the outcome of the handler,
-          the container is eventually terminated. Other management of the container
-          blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
+        description: 'PreStop is called immediately before a container is terminated
+          due to an API request or management event such as liveness probe failure,
+          preemption, resource contention, etc. The handler is not called if the container
+          crashes or exits. The reason for termination is passed to the handler. The
+          Pod''s termination grace period countdown begins before the PreStop hooked
+          is executed. Regardless of the outcome of the handler, the container will
+          eventually terminate within the Pod''s termination grace period. Other management
+          of the container blocks until the hook completes or until the termination
+          grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
     type: object
   io.k8s.api.core.v1.LocalObjectReference:
     description: LocalObjectReference contains enough information to let you locate
@@ -4098,6 +4139,9 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.Sysctl'
         type: array
+      windowsOptions:
+        $ref: '#/definitions/io.k8s.api.core.v1.WindowsSecurityContextOptions'
+        description: Windows security options.
     type: object
   io.k8s.api.core.v1.PodSpec:
     description: PodSpec is a description of a pod.
@@ -4135,6 +4179,11 @@ definitions:
           with DNSPolicy. To have DNS options set along with hostNetwork, you have
           to specify DNS policy explicitly to 'ClusterFirstWithHostNet'.
         type: string
+      enableServiceLinks:
+        description: 'EnableServiceLinks indicates whether information about services
+          should be injected into pod''s environment variables, matching the syntax
+          of Docker links. Optional: Defaults to true.'
+        type: boolean
       hostAliases:
         description: HostAliases is an optional list of hosts and IPs that will be
           injected into the pod's hosts file if specified. This is only valid for
@@ -4199,6 +4248,12 @@ definitions:
           fit on a node. Selector which must match a node''s labels for the pod to
           be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
         type: object
+      preemptionPolicy:
+        description: PreemptionPolicy is the Policy for preempting pods with lower
+          priority. One of Never, PreemptLowerPriority. Defaults to PreemptLowerPriority
+          if unset. This field is alpha-level and is only honored by servers that
+          enable the NonPreemptingPriority feature.
+        type: string
       priority:
         description: The priority value. Various system components use this field
           to find the priority of the pod. When Priority Admission Controller is enabled,
@@ -4219,7 +4274,7 @@ definitions:
         description: 'If specified, all readiness gates will be evaluated for pod
           readiness. A pod is ready when all its containers are ready AND all conditions
           specified in the readiness gates have status equal to "True" More info:
-          https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+          https://git.k8s.io/enhancements/keps/sig-network/0007-pod-ready%2B%2B.md'
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.PodReadinessGate'
         type: array
@@ -4232,8 +4287,8 @@ definitions:
           group, which should be used to run this pod.  If no RuntimeClass resource
           matches the named class, the pod will not be run. If unset or empty, the
           "legacy" RuntimeClass will be used, which is an implicit class with an empty
-          definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-          This is an alpha feature and may change in the future.'
+          definition that uses the default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/runtime-class.md
+          This is a beta feature as of Kubernetes v1.14.'
         type: string
       schedulerName:
         description: If specified, the pod will be dispatched by specified scheduler.
@@ -4415,6 +4470,10 @@ definitions:
           specified as a string as host:port pair (multiple entries are separated
           with commas) which acts as the central registry for volumes
         type: string
+      tenant:
+        description: Tenant owning the given Quobyte volume in the Backend Used with
+          dynamically provisioned Quobyte volumes, value is set by the plugin
+        type: string
       user:
         description: User to map volume access to Defaults to serivceaccount user
         type: string
@@ -4586,7 +4645,7 @@ definitions:
         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
         type: string
       optional:
-        description: Specify whether the Secret or it's key must be defined
+        description: Specify whether the Secret or its key must be defined
         type: boolean
     required:
     - key
@@ -4641,7 +4700,7 @@ definitions:
           $ref: '#/definitions/io.k8s.api.core.v1.KeyToPath'
         type: array
       optional:
-        description: Specify whether the Secret or it's keys must be defined
+        description: Specify whether the Secret or its keys must be defined
         type: boolean
       secretName:
         description: 'Name of the secret in the pod''s namespace to use. More info:
@@ -4705,6 +4764,9 @@ definitions:
           the container runtime will allocate a random SELinux context for each container.  May
           also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext,
           the value specified in SecurityContext takes precedence.
+      windowsOptions:
+        $ref: '#/definitions/io.k8s.api.core.v1.WindowsSecurityContextOptions'
+        description: Windows security options.
     type: object
   io.k8s.api.core.v1.ServiceAccountTokenProjection:
     description: ServiceAccountTokenProjection represents a projected service account
@@ -4850,6 +4912,10 @@ definitions:
       configMap:
         $ref: '#/definitions/io.k8s.api.core.v1.ConfigMapVolumeSource'
         description: ConfigMap represents a configMap that should populate this volume
+      csi:
+        $ref: '#/definitions/io.k8s.api.core.v1.CSIVolumeSource'
+        description: CSI (Container Storage Interface) represents storage that is
+          handled by an external CSI driver (Alpha feature).
       downwardAPI:
         $ref: '#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeSource'
         description: DownwardAPI represents downward API about the pod that should
@@ -4982,6 +5048,13 @@ definitions:
         description: Path within the volume from which the container's volume should
           be mounted. Defaults to "" (volume's root).
         type: string
+      subPathExpr:
+        description: Expanded path within the volume from which the container's volume
+          should be mounted. Behaves similarly to SubPath but environment variable
+          references $(VAR_NAME) are expanded using the container's environment. Defaults
+          to "" (volume's root). SubPathExpr and SubPath are mutually exclusive. This
+          field is beta in 1.15.
+        type: string
     required:
     - name
     - mountPath
@@ -5040,6 +5113,22 @@ definitions:
     required:
     - weight
     - podAffinityTerm
+    type: object
+  io.k8s.api.core.v1.WindowsSecurityContextOptions:
+    description: WindowsSecurityContextOptions contain Windows-specific options and
+      credentials.
+    properties:
+      gmsaCredentialSpec:
+        description: GMSACredentialSpec is where the GMSA admission webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+          inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName
+          field. This field is alpha-level and is only honored by servers that enable
+          the WindowsGMSA feature flag.
+        type: string
+      gmsaCredentialSpecName:
+        description: GMSACredentialSpecName is the name of the GMSA credential spec
+          to use. This field is alpha-level and is only honored by servers that enable
+          the WindowsGMSA feature flag.
+        type: string
     type: object
   io.k8s.api.rbac.v1.PolicyRule:
     description: PolicyRule holds information that describes a policy rule, but does
@@ -5107,8 +5196,6 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.rbac.v1.PolicyRule'
         type: array
-    required:
-    - rules
     type: object
   io.k8s.api.rbac.v1.RoleRef:
     description: RoleRef contains information that points to the role being used
@@ -5188,6 +5275,10 @@ definitions:
 
       This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
     type: string
+  io.k8s.apimachinery.pkg.apis.meta.v1.Fields:
+    description: 'Fields stores a set of fields in a data structure like a Trie. To
+      understand how this is used, see: https://github.com/kubernetes-sigs/structured-merge-diff'
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.Initializer:
     description: Initializer is information about an initializer that has not yet
       completed.
@@ -5280,6 +5371,13 @@ definitions:
           when using this continue value will be identical to the value in the first
           response, unless you have received this token from an error message.
         type: string
+      remainingItemCount:
+        description: |-
+          remainingItemCount is the number of subsequent items in the list which are not included in this list response. If the list request contained label or field selectors, then the number of remaining items is unknown and the field will be left unset and omitted during serialization. If the list is complete (either because it is not chunking or because this is the last chunk), then there are no more remaining items and this field will be left unset and omitted during serialization. Servers older than v1.15 do not set this field. The intended use of the remainingItemCount is *estimating* the size of a collection. Clients should not rely on the remainingItemCount to be set or to be exact.
+
+          This field is alpha and can be changed or removed without notice.
+        format: int64
+        type: integer
       resourceVersion:
         description: 'String that identifies the server''s internal version of this
           object that can be used by clients to determine when objects have changed.
@@ -5290,6 +5388,31 @@ definitions:
         description: selfLink is a URL representing this object. Populated by the
           system. Read-only.
         type: string
+    type: object
+  io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry:
+    description: ManagedFieldsEntry is a workflow-id, a FieldSet and the group version
+      of the resource that the fieldset applies to.
+    properties:
+      apiVersion:
+        description: APIVersion defines the version of this resource that this field
+          set applies to. The format is "group/version" just like the top-level APIVersion
+          field. It is necessary to track the version of a field set because it cannot
+          be automatically converted.
+        type: string
+      fields:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Fields'
+        description: Fields identifies a set of fields.
+      manager:
+        description: Manager is an identifier of the workflow managing these fields.
+        type: string
+      operation:
+        description: Operation is the type of operation which lead to this ManagedFieldsEntry
+          being created. The only valid values for this field are 'Apply' and 'Update'.
+        type: string
+      time:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        description: Time is timestamp of when these fields were set. It should always
+          be empty if Operation is 'Apply'
     type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta:
     description: ObjectMeta is metadata that all persisted resources must have, which
@@ -5355,6 +5478,8 @@ definitions:
           An initializer is a controller which enforces some system invariant at object creation time. This field is a list of initializers that have not yet acted on this object. If nil or empty, this object has been completely initialized. Otherwise, the object is considered uninitialized and is hidden (in list/watch and get calls) from clients that haven't explicitly asked to observe uninitialized objects.
 
           When an object is created, the system will populate this list with the current set of initializers. Only privileged users may set or modify this list. Once it is empty, it may not be modified further by any user.
+
+          DEPRECATED - initializers are an alpha field and will be removed in v1.15.
       labels:
         additionalProperties:
           type: string
@@ -5362,6 +5487,14 @@ definitions:
           categorize (scope and select) objects. May match selectors of replication
           controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
         type: object
+      managedFields:
+        description: |-
+          ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like "ci-cd". The set of fields is always in the version that the workflow used when modifying the object.
+
+          This field is alpha and can be changed or removed without notice.
+        items:
+          $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry'
+        type: array
       name:
         description: 'Name must be unique within a namespace. Is required when creating
           resources, although some resources may allow a client to request the generation
@@ -5405,8 +5538,8 @@ definitions:
     type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.OwnerReference:
     description: OwnerReference contains enough information to let you identify an
-      owning object. Currently, an owning object must be in the same namespace, so
-      there is no namespace field.
+      owning object. An owning object must be in the same namespace as the dependent,
+      or be cluster-scoped, so there is no namespace field.
     properties:
       apiVersion:
         description: API version of the referent.

@@ -152,12 +152,19 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 		}
 	}
 
-	defer cleanupFunc()
-
 	err = generator.InstallOpenApiGen(o.GeneratorVersion, gopath)
+	// Reset the go.mod and go.sum after installing openapi-gen
+	cleanupFunc()
 	if err != nil {
 		return errors.Wrapf(err, "error installing kubernetes openapi tools")
 	}
+
+	cleanupFunc, err = util.BackupGoModAndGoSum()
+	if err != nil {
+		return errors.Wrapf(err, "backing up go.mod and go.sum")
+	}
+	// Reset again after we've completed generation.
+	defer cleanupFunc()
 
 	if !filepath.IsAbs(o.OpenAPIOutputDir) {
 		o.OpenAPIOutputDir = filepath.Join(o.OutputBase, o.OpenAPIOutputDir)
@@ -176,5 +183,6 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "generating schema to %s", o.OpenAPIOutputDir)
 	}
+
 	return nil
 }

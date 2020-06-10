@@ -103,7 +103,6 @@ func schema_k8sio_api_rbac_v1_ClusterRole(ref common.ReferenceCallback) common.O
 						},
 					},
 				},
-				Required: []string{"rules"},
 			},
 		},
 		Dependencies: []string{
@@ -390,7 +389,6 @@ func schema_k8sio_api_rbac_v1_Role(ref common.ReferenceCallback) common.OpenAPID
 						},
 					},
 				},
-				Required: []string{"rules"},
 			},
 		},
 		Dependencies: []string{
