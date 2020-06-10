@@ -8,9 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+
 	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	"github.com/jenkins-x/jx/v2/pkg/util"
@@ -209,6 +214,82 @@ func TestImportOptions_GetOrganisation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetPreviewNamespace(t *testing.T) {
+	t.Parallel()
+	factory := clients.NewFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
+	commonOpts.SetGit(gits.NewGitFake())
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testFolderPath := filepath.Join(wd, "test_data", "application_with_preview")
+	tmpDirPath, err := ioutil.TempDir("", "preview_check")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(tmpDirPath)
+	}()
+	err = util.CopyDir(testFolderPath, tmpDirPath, true)
+	assert.NoError(t, err)
+
+	o := &ImportOptions{
+		CommonOptions:    &commonOpts,
+		PreviewNamespace: "preview-ns",
+		Dir:              tmpDirPath,
+	}
+
+	err = o.setPreviewNamespace()
+	assert.NoError(t, err)
+
+	previewsValuesFilePath := filepath.Join(o.Dir, "charts", "preview", opts.ValuesFile)
+	exists, err := util.FileExists(previewsValuesFilePath)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	values, err := ioutil.ReadFile(previewsValuesFilePath)
+	assert.NoError(t, err)
+	var valuesMap map[string]interface{}
+	err = yaml.Unmarshal(values, &valuesMap)
+
+	assert.Equal(t, "preview-ns", valuesMap["preview"].(map[string]interface{})["namespace"])
+}
+
+func TestSetPreviewNamespaceWithPermanentNs(t *testing.T) {
+	t.Parallel()
+	factory := fake.NewFakeFactory()
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
+	options := &commonOpts
+	testhelpers.ConfigureTestOptions(options, gits.NewGitFake(), options.Helm())
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testFolderPath := filepath.Join(wd, "test_data", "application_with_preview")
+	tmpDirPath, err := ioutil.TempDir("", "preview_check")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(tmpDirPath)
+	}()
+	err = util.CopyDir(testFolderPath, tmpDirPath, true)
+	assert.NoError(t, err)
+
+	o := &ImportOptions{
+		CommonOptions:    &commonOpts,
+		PreviewNamespace: "jx",
+		Dir:              tmpDirPath,
+	}
+
+	err = o.setPreviewNamespace()
+	assert.NoError(t, err)
+
+	previewsValuesFilePath := filepath.Join(o.Dir, "charts", "preview", opts.ValuesFile)
+	exists, err := util.FileExists(previewsValuesFilePath)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	values, err := ioutil.ReadFile(previewsValuesFilePath)
+	assert.NoError(t, err)
+	var valuesMap map[string]interface{}
+	err = yaml.Unmarshal(values, &valuesMap)
+	_, keyExists := valuesMap["preview"].(map[string]interface{})["namespace"]
+	assert.False(t, keyExists, "the key \"namespace\" shouldn't exist in the values map")
 }
 
 func TestWriteSourceRepoToYaml(t *testing.T) {
