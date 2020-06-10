@@ -12,8 +12,6 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	JenkinsV1() jenkinsv1.JenkinsV1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Jenkins() jenkinsv1.JenkinsV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -25,12 +23,6 @@ type Clientset struct {
 
 // JenkinsV1 retrieves the JenkinsV1Client
 func (c *Clientset) JenkinsV1() jenkinsv1.JenkinsV1Interface {
-	return c.jenkinsV1
-}
-
-// Deprecated: Jenkins retrieves the default version of JenkinsClient.
-// Please explicitly pick a version.
-func (c *Clientset) Jenkins() jenkinsv1.JenkinsV1Interface {
 	return c.jenkinsV1
 }
 
