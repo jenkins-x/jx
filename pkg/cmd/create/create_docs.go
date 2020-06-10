@@ -3,13 +3,14 @@ package create
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/v2/pkg/log"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/v2/pkg/log"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/deprecation"
@@ -109,10 +110,10 @@ func (o *CreateDocsOptions) Run(jxCommand *cobra.Command) error {
 		if ok {
 			log.Logger().Infof("Command '%s' is deprecated", commandName)
 			deprecationNotice = "### This command is deprecated\n\n"
-			if dc.Replacement  != "" {
+			if dc.Replacement != "" {
 				deprecationNotice += fmt.Sprintf("It is recommended that you use '%s' instead\n\n", dc.Replacement)
 			}
-			if dc.Date != ""  {
+			if dc.Date != "" {
 				deprecationNotice += fmt.Sprintf("This command will be removed on '%s'\n\n", dc.Date)
 			}
 			if dc.Info != "" {
@@ -143,7 +144,7 @@ func (o *CreateDocsOptions) genMarkdownDeprecation(cmd *cobra.Command, dir strin
 	defer f.Close() //nolint:errcheck
 
 	header := fmt.Sprintf(gendocFrontmatterTemplate, date, "deprecated commands",
-		basename, "/commands/"+strings.ToLower(basename)+"/", "list of jx commands which have been deprecated","")
+		basename, "/commands/"+strings.ToLower(basename)+"/", "list of jx commands which have been deprecated", "")
 
 	if _, err := io.WriteString(f, header); err != nil {
 		return err
