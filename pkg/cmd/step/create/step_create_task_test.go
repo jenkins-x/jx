@@ -28,7 +28,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"knative.de/pkg/kmp"
+	"knative.dev/pkg/kmp"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
