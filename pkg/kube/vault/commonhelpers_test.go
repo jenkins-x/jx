@@ -55,7 +55,7 @@ func createMockedVault(vaultName string, namespace string, vaultUrl string, jwt 
 		},
 	}
 	secretName := vaultName + "-secret"
-	_, _ = vaultOperatorClient.Vault().Vaults(namespace).Create(&v)
+	_, _ = vaultOperatorClient.VaultV1alpha1().Vaults(namespace).Create(&v)
 	serviceAccountName := vaultName + "-auth-sa"
 	_, _ = kubeClient.CoreV1().ServiceAccounts(namespace).Create(&v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{Name: serviceAccountName},

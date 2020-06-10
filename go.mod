@@ -3,7 +3,7 @@ module github.com/jenkins-x/jx/v2
 require (
 	code.gitea.io/sdk/gitea v0.12.0
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0 // indirect
-	contrib.go.opencensus.io/exporter/stackdriver v0.12.9 // indirect
+	contrib.go.opencensus.io/exporter/stackdriver v0.12.5
 	github.com/Azure/draft v0.15.0
 	github.com/Comcast/kuberhealthy v1.0.2
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
@@ -22,9 +22,10 @@ require (
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
 	github.com/antham/chyle v1.6.0
-	github.com/aws/aws-sdk-go v1.24.0
+	github.com/aws/aws-sdk-go v1.24.1
 	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
-	github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
+	github.com/banzaicloud/bank-vaults v0.0.0-20191212164220-b327d7f2b681
+	github.com/banzaicloud/bank-vaults/pkg/sdk v0.2.1
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.7.0 // indirect
@@ -43,7 +44,7 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/fatih/structs v1.1.0
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20200320173742-022f4bab9090
-	github.com/ghodss/yaml v1.0.0
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-openapi/jsonreference v0.19.3
 	github.com/go-openapi/spec v0.19.7
@@ -51,15 +52,13 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2
-	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.3.1
-	github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1
-	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hashicorp/hcl v1.0.0
-	github.com/hashicorp/vault v1.1.2
+	github.com/hashicorp/vault v1.2.0-beta2.0.20190725165751-afd9e759ca82
+	github.com/hashicorp/vault/api v1.0.4
 	github.com/heptio/sonobuoy v0.16.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13
@@ -69,10 +68,8 @@ require (
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jenkins-x/jx-logging v0.0.10
 	github.com/jenkins-x/lighthouse-config v0.0.3
-	github.com/jetstack/cert-manager v0.5.2
+	github.com/jetstack/cert-manager v0.9.1
 	github.com/json-iterator/go v1.1.9 // indirect
-	github.com/knative/pkg v0.0.0-20190624141606-d82505e6c5b4
-	github.com/knative/serving v0.7.0
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
@@ -83,12 +80,11 @@ require (
 	github.com/mitchellh/mapstructure v1.2.2
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
-	github.com/onsi/ginkgo v1.7.0
-	github.com/onsi/gomega v1.4.3
+	github.com/onsi/ginkgo v1.8.0
+	github.com/onsi/gomega v1.5.0
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/petergtz/pegomock v2.7.0+incompatible
-	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.9.1
 	github.com/rickar/props v0.0.0-20170718221555-0b06aeb2f037
@@ -102,10 +98,10 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.3.2
+	github.com/spf13/viper v1.4.0
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.6.0
-	github.com/tektoncd/pipeline v0.8.0
+	github.com/tektoncd/pipeline v0.9.2
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d // indirect
@@ -124,39 +120,45 @@ require (
 	golang.org/x/sys v0.0.0-20200511232937-7e40ca221e25
 	golang.org/x/tools v0.0.0-20200415034506-5d8e1897c761
 	gopkg.in/AlecAivazis/survey.v1 v1.8.3
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.0.0-20190816222004-e3a6b8045b0b
-	k8s.io/apiextensions-apiserver v0.0.0-20190718185103-d1ef975d28ce
-	k8s.io/apimachinery v0.0.0-20190816221834-a9f1d8a9c101
+	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
+	k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833
+	k8s.io/apimachinery v0.0.0-20191028221656-72ed19daf4bb
 	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
 	k8s.io/helm v2.7.2+incompatible
-	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
-	k8s.io/kubernetes v1.11.3
+	k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf
+	k8s.io/kubernetes v1.14.0
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
 	k8s.io/test-infra v0.0.0-20190131093439-a22cef183a8f
-	knative.dev/pkg v0.0.0-20191217184203-cf220a867b3d
+	knative.dev/pkg v0.0.0-20191107185656-884d50f09454
+	knative.dev/serving v0.10.1
 	sigs.k8s.io/yaml v1.1.0
 
 )
 
-replace k8s.io/api => k8s.io/api v0.0.0-20190528110122-9ad12a4af326
+replace k8s.io/api => k8s.io/api v0.0.0-20190819141258-3544db3b9e44
 
-replace k8s.io/metrics => k8s.io/metrics v0.0.0-20181128195641-3954d62a524d
+replace k8s.io/metrics => k8s.io/metrics v0.0.0-20190819143841-305e1cef1ab1
 
-replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
+replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
 
-replace k8s.io/client-go => k8s.io/client-go v0.0.0-20190528110200-4f3abb12cae2
+replace k8s.io/client-go => k8s.io/client-go v0.0.0-20190819141724-e14f31a72a77
 
-replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190528110544-fa58353d80f3
+replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190819143637-0dbe462fe92d
 
 replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
 
 replace github.com/sirupsen/logrus => github.com/jtnord/logrus v1.4.2-0.20190423161236-606ffcaf8f5d
 
-replace github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v21.1.0+incompatible
+replace github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v23.2.0+incompatible
 
-replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v10.14.0+incompatible
+replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.1+incompatible
+
+replace github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults v0.0.0-20191212164220-b327d7f2b681
+
+replace github.com/banzaicloud/bank-vaults/pkg/sdk => github.com/banzaicloud/bank-vaults/pkg/sdk v0.0.0-20191212164220-b327d7f2b681
+
+replace k8s.io/test-infra => github.com/abayer/test-infra v0.0.0-20200105180038-f2f6e1a9da0f
 
 go 1.13

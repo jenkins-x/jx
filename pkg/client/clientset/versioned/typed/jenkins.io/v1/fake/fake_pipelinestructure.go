@@ -103,7 +103,7 @@ func (c *FakePipelineStructures) DeleteCollection(options *v1.DeleteOptions, lis
 // Patch applies the patch and returns the patched pipelineStructure.
 func (c *FakePipelineStructures) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.PipelineStructure, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(pipelinestructuresResource, c.ns, name, data, subresources...), &jenkinsiov1.PipelineStructure{})
+		Invokes(testing.NewPatchSubresourceAction(pipelinestructuresResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.PipelineStructure{})
 
 	if obj == nil {
 		return nil, err

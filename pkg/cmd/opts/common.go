@@ -11,8 +11,6 @@ import (
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/heptio/sonobuoy/pkg/client"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	istioclient "github.com/knative/pkg/client/clientset/versioned"
-	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -24,6 +22,8 @@ import (
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
+	istioclient "knative.dev/pkg/client/clientset/versioned"
+	kserve "knative.dev/serving/pkg/client/clientset/versioned"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx-logging/pkg/log"

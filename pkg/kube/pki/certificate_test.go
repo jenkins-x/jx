@@ -26,20 +26,20 @@ func TestWaitCertificateIssuedReady(t *testing.T) {
 		Type:   certmng.CertificateConditionReady,
 		Status: certmng.ConditionTrue,
 	})
-	_, err := client.Certmanager().Certificates(ns).Create(cert)
+	_, err := client.CertmanagerV1alpha1().Certificates(ns).Create(cert)
 	assert.NoError(t, err, "should create a test certificate whithout an error")
 
 	err = pki.WaitCertificateIssuedReady(client, name, ns, 3*time.Second)
 	assert.NoError(t, err, "should find a cert in ready state")
 
-	err = client.Certmanager().Certificates(ns).Delete(name, &metav1.DeleteOptions{})
+	err = client.CertmanagerV1alpha1().Certificates(ns).Delete(name, &metav1.DeleteOptions{})
 	assert.NoError(t, err, "should delete the test certificate whithout an error")
 
 	cert = newCert(name, certmng.CertificateCondition{
-		Type:   certmng.CertificateConditionValidationFailed,
-		Status: certmng.ConditionTrue,
+		Type:   certmng.CertificateConditionReady,
+		Status: certmng.ConditionFalse,
 	})
-	_, err = client.Certmanager().Certificates(ns).Create(cert)
+	_, err = client.CertmanagerV1alpha1().Certificates(ns).Create(cert)
 	assert.NoError(t, err, "should create a test certificate whithout an error")
 
 	err = pki.WaitCertificateIssuedReady(client, name, ns, 5*time.Second)
@@ -129,13 +129,13 @@ func TestWatchCertificatesIssuedReady(t *testing.T) {
 
 func createAndUpdateCert(t *testing.T, client certclient.Interface, name, ns string, condition certmng.CertificateCondition) {
 	cert := newCert(name, certmng.CertificateCondition{})
-	cert, err := client.Certmanager().Certificates(ns).Create(cert)
+	cert, err := client.CertmanagerV1alpha1().Certificates(ns).Create(cert)
 	assert.NoError(t, err, "should create a test certificate without an error")
 	cert.Status = certmng.CertificateStatus{
 		Conditions: []certmng.CertificateCondition{
 			condition,
 		},
 	}
-	_, err = client.Certmanager().Certificates(ns).Update(cert)
+	_, err = client.CertmanagerV1alpha1().Certificates(ns).Update(cert)
 	assert.NoError(t, err, "should update the test crtificate without an error")
 }
