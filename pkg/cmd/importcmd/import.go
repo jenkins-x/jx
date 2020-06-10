@@ -88,8 +88,8 @@ type ImportOptions struct {
 	ImportMode            string
 	UseDefaultGit         bool
 	GithubAppInstalled    bool
-
-	reporter ImportReporter
+	PreviewNamespace      string
+	reporter              ImportReporter
 }
 
 var (
@@ -189,6 +189,7 @@ func (options *ImportOptions) AddImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.DeployKind, "deploy-kind", "", "", fmt.Sprintf("The kind of deployment to use for the project. Should be one of %s", strings.Join(deployKinds, ", ")))
 	cmd.Flags().BoolVarP(&options.DeployOptions.Canary, opts.OptionCanary, "", false, "should we use canary rollouts (progressive delivery) by default for this application. e.g. using a Canary deployment via flagger. Requires the installation of flagger and istio/gloo in your cluster")
 	cmd.Flags().BoolVarP(&options.DeployOptions.HPA, opts.OptionHPA, "", false, "should we enable the Horizontal Pod Autoscaler for this application.")
+	cmd.Flags().StringVarP(&options.PreviewNamespace, "preview-namespace", "", "", "The namespace to deploy application previews into")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
@@ -394,6 +395,11 @@ func (options *ImportOptions) Run() error {
 	}
 
 	err = options.fixMaven()
+	if err != nil {
+		return err
+	}
+
+	err = options.setPreviewNamespace()
 	if err != nil {
 		return err
 	}
@@ -1494,6 +1500,69 @@ func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 	return errors.New("GitUserAuth.Username not set")
 }
 
+func (options *ImportOptions) setPreviewNamespace() error {
+	jxClient, ns, err := options.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	envsList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	var previewNamespaceName string
+	if options.PreviewNamespace == "" {
+		if options.BatchMode {
+			return nil
+		}
+		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+		prompt := &survey.Confirm{
+			Message: "Would you like to define a different preview namespace?",
+			Default: false,
+		}
+		var modifyPreviewNamespace bool
+		err := survey.AskOne(prompt, &modifyPreviewNamespace, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
+
+		if !modifyPreviewNamespace {
+			return nil
+		}
+
+		nsNamePrompt := &survey.Input{
+			Message: "Enter the name for the preview namespace: ",
+			Default: "jx-previews",
+		}
+
+		err = survey.AskOne(nsNamePrompt, &previewNamespaceName, func(ans interface{}) error {
+			return isValidPreviewNamespace(ans, envsList)
+		}, surveyOpts)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err := isValidPreviewNamespace(options.PreviewNamespace, envsList); err == nil {
+			previewNamespaceName = options.PreviewNamespace
+		} else {
+			// We don't want to error at this point, we'll not define a custom namespace and ask users to modify it later in the repos
+			log.Logger().Warnf("%s - will use the default preview namespace pattern", err.Error())
+		}
+	}
+
+	previewsValuesFilePath := filepath.Join(options.Dir, "charts", "preview", opts.ValuesFile)
+	exists, err := util.FileExists(previewsValuesFilePath)
+	if err != nil {
+		return err
+	}
+	if exists && previewNamespaceName != "" {
+		log.Logger().Debugf("Modifying the default previews namespace to %s", previewNamespaceName)
+		err = options.modifyApplicationPreviewNamespace(previewsValuesFilePath, previewNamespaceName)
+		if err != nil {
+			return errors.Wrap(err, "there was a problem modifying the preview chart to add a different preview namespace")
+		}
+	}
+	return nil
+}
 func (options *ImportOptions) fixMaven() error {
 	if options.DisableMaven {
 		return nil
@@ -1672,6 +1741,51 @@ func (options *ImportOptions) modifyDeployKind() error {
 	err = eo.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to modify the deployment kind to %s", deployKind)
+	}
+	return nil
+}
+
+func isValidPreviewNamespace(ns interface{}, envs *v1.EnvironmentList) error {
+	for _, env := range envs.Items {
+		if ns == env.Spec.Namespace && env.Spec.Kind.IsPermanent() {
+			return fmt.Errorf("can't use a permanent environment namespace for previews")
+		}
+	}
+	return nil
+}
+
+func (options *ImportOptions) modifyApplicationPreviewNamespace(previewsValuesFilePath string, previewNamespaceName string) error {
+	values, err := ioutil.ReadFile(previewsValuesFilePath)
+	if err != nil {
+		return errors.Wrap(err, "there was a problem reading the previews values file")
+	}
+	var valuesMap map[string]interface{}
+	err = yaml.Unmarshal(values, &valuesMap)
+	if err != nil {
+		return errors.Wrap(err, "there was a problem unmarshalling the previews values file")
+	}
+	if v, valExists := valuesMap["preview"]; valExists {
+		v.(map[string]interface{})["namespace"] = previewNamespaceName
+	}
+	valuesB, err := yaml.Marshal(valuesMap)
+	if err != nil {
+		return errors.Wrap(err, "there was a problem marshalling the modified previews values file")
+	}
+	log.Logger().Debugf("Resulting previews values.yaml file:")
+	log.Logger().Debugf(util.ColorStatus(string(valuesB)))
+
+	err = ioutil.WriteFile(previewsValuesFilePath, valuesB, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrap(err, "there was a problem writing the values file")
+	}
+
+	err = options.Git().Add(options.Dir, "*")
+	if err != nil {
+		return err
+	}
+	err = options.Git().CommitIfChanges(options.Dir, "Add customized preview namespace")
+	if err != nil {
+		return err
 	}
 	return nil
 }
