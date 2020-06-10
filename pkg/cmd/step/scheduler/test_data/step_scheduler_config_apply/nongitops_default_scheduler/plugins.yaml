@@ -1,9 +1,20 @@
 blunderbuss: {}
 cat: {}
 cherry_pick_unapproved: {}
-config_updater: {}
+config_updater:
+  gzip: false
+golint: {}
 heart: {}
+label:
+  additional_labels: null
 owners: {}
+project_config: {}
 requiresig: {}
 sigmention: {}
+size:
+  l: 0
+  m: 0
+  s: 0
+  xl: 0
+  xxl: 0
 slack: {}

@@ -241,7 +241,7 @@ func TestStructureForPipelineRun(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.PipelineRunSpec{
-			PipelineRef: v1alpha1.PipelineRef{
+			PipelineRef: &v1alpha1.PipelineRef{
 				Name: pipelineName,
 			},
 		},
@@ -256,7 +256,7 @@ func TestStructureForPipelineRun(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.PipelineRunSpec{
-			PipelineRef: v1alpha1.PipelineRef{
+			PipelineRef: &v1alpha1.PipelineRef{
 				Name: pipelineName,
 			},
 		},
@@ -271,7 +271,7 @@ func TestStructureForPipelineRun(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.PipelineRunSpec{
-			PipelineRef: v1alpha1.PipelineRef{
+			PipelineRef: &v1alpha1.PipelineRef{
 				Name: pipelineName + unrelatedSuffix,
 			},
 		},
