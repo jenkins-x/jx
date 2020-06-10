@@ -103,7 +103,7 @@ func (c *FakePlugins) DeleteCollection(options *v1.DeleteOptions, listOptions v1
 // Patch applies the patch and returns the patched plugin.
 func (c *FakePlugins) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Plugin, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(pluginsResource, c.ns, name, data, subresources...), &jenkinsiov1.Plugin{})
+		Invokes(testing.NewPatchSubresourceAction(pluginsResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.Plugin{})
 
 	if obj == nil {
 		return nil, err

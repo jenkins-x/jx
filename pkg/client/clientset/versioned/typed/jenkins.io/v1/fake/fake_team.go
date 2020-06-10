@@ -103,7 +103,7 @@ func (c *FakeTeams) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 // Patch applies the patch and returns the patched team.
 func (c *FakeTeams) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Team, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(teamsResource, c.ns, name, data, subresources...), &jenkinsiov1.Team{})
+		Invokes(testing.NewPatchSubresourceAction(teamsResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.Team{})
 
 	if obj == nil {
 		return nil, err

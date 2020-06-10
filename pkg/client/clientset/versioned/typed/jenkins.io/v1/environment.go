@@ -3,6 +3,8 @@
 package v1
 
 import (
+	"time"
+
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,11 +61,16 @@ func (c *environments) Get(name string, options metav1.GetOptions) (result *v1.E
 
 // List takes label and field selectors, and returns the list of Environments that match those selectors.
 func (c *environments) List(opts metav1.ListOptions) (result *v1.EnvironmentList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.EnvironmentList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("environments").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -71,11 +78,16 @@ func (c *environments) List(opts metav1.ListOptions) (result *v1.EnvironmentList
 
 // Watch returns a watch.Interface that watches the requested environments.
 func (c *environments) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("environments").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -117,10 +129,15 @@ func (c *environments) Delete(name string, options *metav1.DeleteOptions) error 
 
 // DeleteCollection deletes a collection of objects.
 func (c *environments) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("environments").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

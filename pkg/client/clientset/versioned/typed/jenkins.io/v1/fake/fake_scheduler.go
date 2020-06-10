@@ -103,7 +103,7 @@ func (c *FakeSchedulers) DeleteCollection(options *v1.DeleteOptions, listOptions
 // Patch applies the patch and returns the patched scheduler.
 func (c *FakeSchedulers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Scheduler, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(schedulersResource, c.ns, name, data, subresources...), &jenkinsiov1.Scheduler{})
+		Invokes(testing.NewPatchSubresourceAction(schedulersResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.Scheduler{})
 
 	if obj == nil {
 		return nil, err

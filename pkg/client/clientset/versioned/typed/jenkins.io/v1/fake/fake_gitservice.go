@@ -103,7 +103,7 @@ func (c *FakeGitServices) DeleteCollection(options *v1.DeleteOptions, listOption
 // Patch applies the patch and returns the patched gitService.
 func (c *FakeGitServices) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.GitService, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(gitservicesResource, c.ns, name, data, subresources...), &jenkinsiov1.GitService{})
+		Invokes(testing.NewPatchSubresourceAction(gitservicesResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.GitService{})
 
 	if obj == nil {
 		return nil, err

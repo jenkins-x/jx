@@ -103,7 +103,7 @@ func (c *FakeFacts) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 // Patch applies the patch and returns the patched fact.
 func (c *FakeFacts) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Fact, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(factsResource, c.ns, name, data, subresources...), &jenkinsiov1.Fact{})
+		Invokes(testing.NewPatchSubresourceAction(factsResource, c.ns, name, pt, data, subresources...), &jenkinsiov1.Fact{})
 
 	if obj == nil {
 		return nil, err
