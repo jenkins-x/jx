@@ -36,6 +36,8 @@ import (
 	"github.com/pkg/errors"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
+	resourceclient "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
+	resourcefake "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned/fake"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -64,6 +66,7 @@ type FakeFactory struct {
 	kubeClient    kubernetes.Interface
 	kserveClient  kserve.Interface
 	tektonClient  tektonclient.Interface
+	resourceClient resourceclient.Interface
 	prowJobClient prowjobclient.Interface
 	dyncClient    dynamic.Interface
 }
@@ -300,6 +303,14 @@ func (f *FakeFactory) CreateTektonClient() (tektonclient.Interface, string, erro
 		f.tektonClient = tektonfake.NewSimpleClientset()
 	}
 	return f.tektonClient, f.namespace, nil
+}
+
+// CreateTektonPipelineResourceClient create a new Kubernetes client for Tekton PipelineResource resources
+func (f *FakeFactory) CreateTektonPipelineResourceClient() (resourceclient.Interface, string, error) {
+	if f.resourceClient == nil {
+		f.resourceClient = resourcefake.NewSimpleClientset()
+	}
+	return f.resourceClient, f.namespace, nil
 }
 
 // CreateDynamicClient creates a new Kubernetes Dynamic client

@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	resourceclient "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -181,6 +182,23 @@ func (f *factory) CreateTektonClient() (tektonclient.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := tektonclient.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateTektonPipelineResourceClient() (resourceclient.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := resourceclient.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}

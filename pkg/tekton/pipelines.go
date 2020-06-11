@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	clientv1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
+	"github.com/jenkins-x/jx/v2/pkg/jxfactory"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/apimachinery/pkg/labels"
@@ -75,9 +76,15 @@ func GeneratePipelineActivity(buildNumber string, branch string, gitInfo *gits.G
 // CreateOrUpdateSourceResource lazily creates a Tekton Pipeline PipelineResource for the given git repository
 func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string, created *v1alpha1.PipelineResource) (*v1alpha1.PipelineResource, error) {
 	resourceName := created.Name
-	resourceInterface := tektonClient.TektonV1alpha1().PipelineResources(ns)
+	factory := jxfactory.NewFactory()
 
-	_, err := resourceInterface.Create(created)
+	resourceClient, _, err := factory.CreateTektonPipelineResourceClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create Tekton PipelineResource client")
+	}
+	resourceInterface := resourceClient.TektonV1alpha1().PipelineResources(ns)
+
+	_, err = resourceInterface.Create(created)
 	if err == nil {
 		return created, nil
 	}
@@ -330,7 +337,7 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 			Params:    pipelineParams,
 			// TODO: We shouldn't have to set a default timeout in the first place. See https://github.com/tektoncd/pipeline/issues/978
 			Timeout: timeout,
-			PodTemplate: pipelineapi.PodTemplate{
+			PodTemplate: &pipelineapi.PodTemplate{
 				Affinity:    affinity,
 				Tolerations: tolerations,
 			},

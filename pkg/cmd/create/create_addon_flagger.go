@@ -11,7 +11,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	istiov1alpha3 "knative.dev/pkg/apis/istio/v1alpha3"
+	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/pkg/errors"
@@ -164,12 +165,12 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 					Name:      o.IstioGateway,
 					Namespace: DefaultIstioNamespace,
 				},
-				Spec: istiov1alpha3.GatewaySpec{
+				Spec: networkingv1alpha3.Gateway{
 					Selector: map[string]string{"istio": "ingressgateway"},
-					Servers: []istiov1alpha3.Server{
+					Servers: []*networkingv1alpha3.Server{
 						// TODO add https port if enabled
 						{
-							Port: istiov1alpha3.Port{
+							Port: &networkingv1alpha3.Port{
 								Number:   80,
 								Name:     "http",
 								Protocol: "HTTP",

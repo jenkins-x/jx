@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/table"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	resourceclient "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -129,6 +130,9 @@ type Factory interface {
 
 	// CreateTektonClient create a new Kubernetes client for Tekton resources
 	CreateTektonClient() (tektonclient.Interface, string, error)
+
+	// CreateTektonPipelineResourceClient creates a new Kubernetes client for Tekton PipelineResources
+	CreateTektonPipelineResourceClient() (resourceclient.Interface, string, error)
 
 	// CreateProwJobClient creates a new Kubernetes client for ProwJob resources
 	CreateProwJobClient() (prowjobclient.Interface, string, error)

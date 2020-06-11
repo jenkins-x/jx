@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -55,7 +56,9 @@ func TestPipelineRunIsNotPendingCompletedRun(t *testing.T) {
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
-			CompletionTime: &now,
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				CompletionTime: &now,
+			},
 		},
 	}
 
@@ -66,11 +69,13 @@ func TestPipelineRunIsNotPendingRunningSteps(t *testing.T) {
 	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
 	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
 		Status: &v1alpha1.TaskRunStatus{
-			Steps: []v1alpha1.StepState{{
-				ContainerState: corev1.ContainerState{
-					Running: &corev1.ContainerStateRunning{},
-				},
-			}},
+			TaskRunStatusFields: tektonv1beta1.TaskRunStatusFields{
+				Steps: []v1alpha1.StepState{{
+					ContainerState: corev1.ContainerState{
+						Running: &corev1.ContainerStateRunning{},
+					},
+				}},
+			},
 		},
 	}
 
@@ -92,7 +97,9 @@ func TestPipelineRunIsNotPendingRunningSteps(t *testing.T) {
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
-			TaskRuns: taskRunStatusMap,
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				TaskRuns: taskRunStatusMap,
+			},
 		},
 	}
 
@@ -103,13 +110,15 @@ func TestPipelineRunIsNotPendingWaitingSteps(t *testing.T) {
 	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
 	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
 		Status: &v1alpha1.TaskRunStatus{
-			Steps: []v1alpha1.StepState{{
-				ContainerState: corev1.ContainerState{
-					Waiting: &corev1.ContainerStateWaiting{
-						Message: "Pending",
+			TaskRunStatusFields: tektonv1beta1.TaskRunStatusFields{
+				Steps: []v1alpha1.StepState{{
+					ContainerState: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Message: "Pending",
+						},
 					},
-				},
-			}},
+				}},
+			},
 		},
 	}
 
@@ -131,7 +140,9 @@ func TestPipelineRunIsNotPendingWaitingSteps(t *testing.T) {
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
-			TaskRuns: taskRunStatusMap,
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				TaskRuns: taskRunStatusMap,
+			},
 		},
 	}
 
@@ -142,13 +153,15 @@ func TestPipelineRunIsNotPendingWaitingStepsInPodInitializing(t *testing.T) {
 	taskRunStatusMap := make(map[string]*v1alpha1.PipelineRunTaskRunStatus)
 	taskRunStatusMap["faketaskrun"] = &v1alpha1.PipelineRunTaskRunStatus{
 		Status: &v1alpha1.TaskRunStatus{
-			Steps: []v1alpha1.StepState{{
-				ContainerState: corev1.ContainerState{
-					Waiting: &corev1.ContainerStateWaiting{
-						Reason: "PodInitializing",
+			TaskRunStatusFields: tektonv1beta1.TaskRunStatusFields{
+				Steps: []v1alpha1.StepState{{
+					ContainerState: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "PodInitializing",
+						},
 					},
-				},
-			}},
+				}},
+			},
 		},
 	}
 
@@ -170,7 +183,9 @@ func TestPipelineRunIsNotPendingWaitingStepsInPodInitializing(t *testing.T) {
 			},
 		},
 		Status: v1alpha1.PipelineRunStatus{
-			TaskRuns: taskRunStatusMap,
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				TaskRuns: taskRunStatusMap,
+			},
 		},
 	}
 

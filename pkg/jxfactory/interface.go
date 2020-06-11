@@ -7,6 +7,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	resourceclient "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -32,6 +33,9 @@ type Factory interface {
 
 	// CreateTektonClient create a new Kubernetes client for Tekton resources
 	CreateTektonClient() (tektonclient.Interface, string, error)
+
+	// CreateTektonPipelineResourceClient creates a new Kubernetes client for Tekton PipelineResources
+	CreateTektonPipelineResourceClient() (resourceclient.Interface, string, error)
 
 	// KubeConfig returns a Kuber instance to interact with the kube configuration.
 	KubeConfig() kube.Kuber

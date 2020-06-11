@@ -22,8 +22,8 @@ import (
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
-	istioclient "knative.dev/pkg/client/clientset/versioned"
 	kserve "knative.dev/serving/pkg/client/clientset/versioned"
+	istioclient "knative.dev/serving/pkg/client/istio/clientset/versioned"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx-logging/pkg/log"
