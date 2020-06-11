@@ -12,12 +12,11 @@ import (
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/scheme"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	fakerest "k8s.io/client-go/rest/fake"
 )
 
 var (
-	codecs = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+	codecs = scheme.Codecs.WithoutConversion()
 )
 
 type fakeGetPatchRequest struct {

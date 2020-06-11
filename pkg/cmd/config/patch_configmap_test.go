@@ -47,7 +47,7 @@ func TestStepModifyConfigMapRootLevel(t *testing.T) {
 			CommonOptions: options,
 		},
 
-		JSONPatch:     `{"metadata": {"initializers": {"result": {"status": "newstatus"}}}}`,
+		JSONPatch:     `{"metadata": {"labels": {"status": "newstatus"}}}`,
 		ConfigMapName: "config",
 		// The fake client only supports strategic
 		Type: "strategic",
@@ -59,7 +59,7 @@ func TestStepModifyConfigMapRootLevel(t *testing.T) {
 	updatedConfig, err := kubeClient.CoreV1().ConfigMaps(ns).Get("config", k8sv1.GetOptions{})
 	assert.NoError(t, err, "there should be a config map called config")
 
-	assert.Equal(t, "newstatus", updatedConfig.Initializers.Result.Status)
+	assert.Equal(t, "newstatus", updatedConfig.Labels["status"])
 }
 
 func TestStepModifyConfigMapFirstLevelPropertySet(t *testing.T) {

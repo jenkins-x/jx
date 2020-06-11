@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 
@@ -161,7 +162,9 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 			Name: "run1",
 		},
 		Status: tektonv1alpha1.PipelineRunStatus{
-			CompletionTime: &metav1.Time{Time: nowMinusThreeHours},
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				CompletionTime: &metav1.Time{Time: nowMinusThreeHours},
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -170,7 +173,9 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 			Name: "run2",
 		},
 		Status: tektonv1alpha1.PipelineRunStatus{
-			CompletionTime: &metav1.Time{Time: nowMinusOneHour},
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				CompletionTime: &metav1.Time{Time: nowMinusOneHour},
+			},
 		},
 	})
 	assert.NoError(t, err)

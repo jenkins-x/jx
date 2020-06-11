@@ -21,6 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -2015,7 +2016,7 @@ func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv
 	} else {
 		pTask := tektonv1alpha1.PipelineTask{
 			Name: stage.Stage.stageLabelName(),
-			TaskRef: tektonv1alpha1.TaskRef{
+			TaskRef: &tektonv1alpha1.TaskRef{
 				Name: stage.Task.Name,
 			},
 			Retries: int(stage.Stage.Options.Retry),
@@ -2211,7 +2212,9 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container,
 	}
 
 	return tektonv1alpha1.TaskSpec{
-		Steps: []tektonv1alpha1.Step{{Container: *childContainer}},
+		TaskSpec: tektonv1beta1.TaskSpec{
+			Steps: []tektonv1alpha1.Step{{Container: *childContainer}},
+		},
 	}, nil
 }
 

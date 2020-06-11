@@ -12,6 +12,7 @@ import (
 	kube "github.com/jenkins-x/jx/v2/pkg/kube"
 	pegomock "github.com/petergtz/pegomock"
 	versioned0 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	versioned1 "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 )
@@ -108,6 +109,29 @@ func (mock *MockFactory) CreateTektonClient() (versioned0.Interface, string, err
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(versioned0.Interface)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
+}
+
+func (mock *MockFactory) CreateTektonPipelineResourceClient() (versioned1.Interface, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateTektonPipelineResourceClient", params, []reflect.Type{reflect.TypeOf((*versioned1.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned1.Interface
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(versioned1.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(string)

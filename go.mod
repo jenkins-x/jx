@@ -2,8 +2,7 @@ module github.com/jenkins-x/jx/v2
 
 require (
 	code.gitea.io/sdk/gitea v0.12.0
-	contrib.go.opencensus.io/exporter/prometheus v0.1.0 // indirect
-	contrib.go.opencensus.io/exporter/stackdriver v0.12.5
+	contrib.go.opencensus.io/exporter/stackdriver v0.12.9-0.20191108183826-59d068f8d8ff // indirect
 	github.com/Azure/draft v0.15.0
 	github.com/Comcast/kuberhealthy v1.0.2
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
@@ -16,16 +15,15 @@ require (
 	github.com/TV4/logrus-stackdriver-formatter v0.1.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alecthomas/jsonschema v0.0.0-20190504002508-159cbd5dba26
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
 	github.com/antham/chyle v1.6.0
-	github.com/aws/aws-sdk-go v1.24.1
+	github.com/aws/aws-sdk-go v1.27.1
 	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
 	github.com/banzaicloud/bank-vaults v0.0.0-20191212164220-b327d7f2b681
-	github.com/banzaicloud/bank-vaults/pkg/sdk v0.2.1
+	github.com/banzaicloud/bank-vaults/pkg/sdk v0.2.1 // indirect
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.7.0 // indirect
@@ -51,13 +49,13 @@ require (
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.3.2
-	github.com/google/go-cmp v0.3.1
+	github.com/golang/protobuf v1.3.3
+	github.com/google/go-cmp v0.4.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hashicorp/hcl v1.0.0
-	github.com/hashicorp/vault v1.2.0-beta2.0.20190725165751-afd9e759ca82
+	github.com/hashicorp/vault v1.2.0-beta2.0.20190725165751-afd9e759ca82 // indirect
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/heptio/sonobuoy v0.16.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
@@ -80,8 +78,8 @@ require (
 	github.com/mitchellh/mapstructure v1.2.2
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
-	github.com/onsi/ginkgo v1.8.0
-	github.com/onsi/gomega v1.5.0
+	github.com/onsi/ginkgo v1.10.1
+	github.com/onsi/gomega v1.7.0
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/petergtz/pegomock v2.7.0+incompatible
@@ -101,7 +99,7 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.6.0
-	github.com/tektoncd/pipeline v0.9.2
+	github.com/tektoncd/pipeline v0.11.3
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d // indirect
@@ -115,36 +113,37 @@ require (
 	go.opencensus.io v0.22.2 // indirect
 	gocloud.dev v0.9.0
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/sys v0.0.0-20200511232937-7e40ca221e25
 	golang.org/x/tools v0.0.0-20200415034506-5d8e1897c761
-	gomodules.xyz/jsonpatch/v2 v2.0.1
 	gopkg.in/AlecAivazis/survey.v1 v1.8.3
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
+	istio.io/api v0.0.0-20191115173247-e1a1952e5b81
+	istio.io/client-go v0.0.0-20191120150049-26c62a04cdbc
+	k8s.io/api v0.17.2
 	k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833
-	k8s.io/apimachinery v0.0.0-20191028221656-72ed19daf4bb
+	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
 	k8s.io/helm v2.7.2+incompatible
-	k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf
+	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
 	k8s.io/kubernetes v1.14.0
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
 	k8s.io/test-infra v0.0.0-20190131093439-a22cef183a8f
-	knative.dev/pkg v0.0.0-20191107185656-884d50f09454
-	knative.dev/serving v0.10.1
+	knative.dev/pkg v0.0.0-20200207181514-32ea84581573
+	knative.dev/serving v0.12.1-0.20200210194206-365600fcbe27
 	sigs.k8s.io/yaml v1.1.0
 
 )
 
-replace k8s.io/api => k8s.io/api v0.0.0-20190819141258-3544db3b9e44
+replace k8s.io/api => k8s.io/api v0.16.5
 
 replace k8s.io/metrics => k8s.io/metrics v0.0.0-20190819143841-305e1cef1ab1
 
-replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
+replace k8s.io/apimachinery => k8s.io/apimachinery v0.16.5
 
-replace k8s.io/client-go => k8s.io/client-go v0.0.0-20190819141724-e14f31a72a77
+replace k8s.io/client-go => k8s.io/client-go v0.16.5
 
 replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190819143637-0dbe462fe92d
 
@@ -160,8 +159,10 @@ replace github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults
 
 replace github.com/banzaicloud/bank-vaults/pkg/sdk => github.com/banzaicloud/bank-vaults/pkg/sdk v0.0.0-20191212164220-b327d7f2b681
 
-replace k8s.io/test-infra => github.com/abayer/test-infra v0.0.0-20200105180038-f2f6e1a9da0f
+replace k8s.io/test-infra => github.com/abayer/test-infra v0.0.0-20200611142252-211a92405c22
 
 replace gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
+
+replace github.com/jenkins-x/lighthouse-config => github.com/abayer/lighthouse-config v0.0.0-20200615130443-ad6d5f3a2d9c
 
 go 1.13

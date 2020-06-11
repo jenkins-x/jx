@@ -24,6 +24,7 @@ import (
 	versioned1 "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	pegomock "github.com/petergtz/pegomock"
 	versioned2 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	versioned6 "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	dynamic "k8s.io/client-go/dynamic"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -581,6 +582,29 @@ func (mock *MockFactory) CreateTektonClient() (versioned2.Interface, string, err
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(versioned2.Interface)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
+}
+
+func (mock *MockFactory) CreateTektonPipelineResourceClient() (versioned6.Interface, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateTektonPipelineResourceClient", params, []reflect.Type{reflect.TypeOf((*versioned6.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned6.Interface
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(versioned6.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(string)
