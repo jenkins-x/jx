@@ -66,7 +66,6 @@ func NewCmdDelete(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdDeleteTracker(commonOpts))
 	cmd.AddCommand(NewCmdDeleteUser(commonOpts))
 	cmd.AddCommand(NewCmdDeleteVault(commonOpts))
-	cmd.AddCommand(NewCmdDeleteExtension(commonOpts))
 	return cmd
 }
 

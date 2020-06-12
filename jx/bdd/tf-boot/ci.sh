@@ -151,11 +151,16 @@ module "jx" {
   git_owner_requirement_repos = "jenkins-x-bot-test"
   force_destroy               = true
 }
+
+output "jx_requirements" {
+  value = module.jx.jx_requirements
+}
 EOF
   cat main.tf
 
   terraform init
   terraform apply -auto-approve
+  terraform output jx_requirements > jx-requirements.yml
   echo "Logging generated jx-requirements.yml..."
   cat jx-requirements.yml
 
@@ -253,7 +258,7 @@ function run_tests() {
 # Main
 ###############################################################################
 function main() {
-  exe echo "Running BDD tests with jx version :$( jx --version)"
+  exe echo "Running BDD tests with jx version :$( jx version --short)"
 
   exe setup_env
   exe print_exported

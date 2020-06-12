@@ -12,56 +12,28 @@ import (
 var deprecatedCommands = map[string]deprecationInfo{
 	"install": {
 		replacement: "jx boot",
-		date:        "Jun 1 2020",
+		date:        "Sep 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
 	},
+	// Todo: Implementation is very tightly coupled with jx install, better to remove it once we remove jx install
 	"init": {
 		replacement: "jx boot",
-		date:        "Jun 1 2020",
+		date:        "Sep 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
-	},
-	"create post": {
-		date: "Feb 1 2020",
 	},
 	"create spring": {
 		replacement: "jx create project",
-		date:        "Mar 1 2020",
+		date:        "Sep 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/commands/jx_create_project/")),
 	},
-	"upgrade platform": {
-		replacement: "jx upgrade boot",
-		date:        "Jun 1 2020",
-		info: fmt.Sprintf("Please check %s for more details.",
-			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
-	},
 	"upgrade ingress": {
 		replacement: "jx boot",
-		date:        "Jun 1 2020",
+		date:        "Sep 1 2020",
 		info: fmt.Sprintf("Please check %s for more details.",
 			util.ColorStatus("https://jenkins-x.io/docs/getting-started/setup/boot/")),
-	},
-	"get post": {
-		date: "Feb 1 2020",
-	},
-	"delete extension": {
-		date: "Feb 1 2020",
-		info: "This is now replaced by apps",
-	},
-	"edit extensionsrepository": {
-		date: "Feb 1 2020",
-		info: "This is now replaced by apps",
-	},
-	"step post": {
-		date: "Feb 1 2020",
-	},
-	"step nexus drop": {
-		date: "Feb 1 2020",
-	},
-	"step nexus release": {
-		date: "Feb 1 2020",
 	},
 	"create vault": {
 		date: "Sep 1 2020",

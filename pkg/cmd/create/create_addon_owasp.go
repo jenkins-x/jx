@@ -65,9 +65,6 @@ func (o *CreateAddonOwaspOptions) Run() error {
 	name := "owasp-zap"
 	commands := []string{"zap-baseline.py", "-I", "-t", "$(JX_PREVIEW_URL)"}
 	image := o.Image
-	if name == "" {
-		return util.MissingOption(optionName)
-	}
 	if image == "" {
 		return util.MissingOption(optionImage)
 	}

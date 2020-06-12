@@ -16,7 +16,7 @@ COPY OUTPUT HERE
 
 ### Diagnostic information
 
-The output of `jx diagnose --show=version` is:
+The output of `jx diagnose version` is:
 
 ```
 COPY OUTPUT HERE
@@ -27,6 +27,13 @@ COPY OUTPUT HERE
 <!--
 What kind of Kubernetes cluster are you using & how did you create it?
 -->
+
+### Kubectl version
+The output of `kubectl version --client` is:
+
+```
+Copy output here
+```
 
 ### Operating system / Environment
 

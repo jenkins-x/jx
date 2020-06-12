@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
+	"github.com/jenkins-x/jx/v2/pkg/spring"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/importcmd"
@@ -48,6 +49,14 @@ type CreateProjectWizardOptions struct {
 	options.CreateOptions
 }
 
+// SpringOptions the options for the create spring command
+type SpringOptions struct {
+	CreateProjectOptions
+
+	Advanced   bool
+	SpringForm spring.SpringBootForm
+}
+
 // NewCmdCreateProject creates a command object for the "create" command
 func NewCmdCreateProject(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateProjectWizardOptions{
@@ -75,7 +84,7 @@ func NewCmdCreateProject(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements the command
 func (o *CreateProjectWizardOptions) Run() error {
 	name, err := util.PickName(createProjectNames, "Which kind of project you want to create: ",
-		"Jenkins X supports a number of diffferent wizards for creating or importing new projects.",
+		"Jenkins X supports a number of different wizards for creating or importing new projects.",
 		o.GetIOFileHandles())
 	if err != nil {
 		return err
@@ -103,7 +112,7 @@ func (o *CreateProjectWizardOptions) createQuickstart() error {
 }
 
 func (o *CreateProjectWizardOptions) createSpring() error {
-	w := &CreateSpringOptions{}
+	w := &SpringOptions{}
 	w.CommonOptions = o.CommonOptions
 	return w.Run()
 }

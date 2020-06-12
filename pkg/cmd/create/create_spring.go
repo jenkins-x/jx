@@ -44,17 +44,9 @@ var (
 	`)
 )
 
-// CreateSpringOptions the options for the create spring command
-type CreateSpringOptions struct {
-	CreateProjectOptions
-
-	Advanced   bool
-	SpringForm spring.SpringBootForm
-}
-
 // NewCmdCreateSpring creates a command object for the "create" command
 func NewCmdCreateSpring(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &CreateSpringOptions{
+	options := &SpringOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: importcmd.ImportOptions{
 				CommonOptions: commonOpts,
@@ -92,7 +84,7 @@ func NewCmdCreateSpring(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run implements the command
-func (o *CreateSpringOptions) Run() error {
+func (o *SpringOptions) Run() error {
 	cacheDir, err := util.CacheDir()
 	if err != nil {
 		return err

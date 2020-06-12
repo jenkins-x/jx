@@ -65,6 +65,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "error obtaining the ")
 	}
 
+	//Todo: Possibly used with jx install, if so, it should not be removed now
 	if devEnv.Spec.TeamSettings.BootRequirements != "" {
 		return errors.New(`jx upgrade ingress shouldn't be used in a Jenkins X Boot cluster.
 For more documentation on Ingress configuration see: [https://jenkins-x.io/docs/getting-started/setup/boot/#ingress](https://jenkins-x.io/docs/getting-started/setup/boot/#ingress)`)
