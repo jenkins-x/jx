@@ -13,6 +13,11 @@ type VersionResolver struct {
 	VersionsDir string
 }
 
+// GetVersionsDir returns the versionsdir
+func (v *VersionResolver) GetVersionsDir() string {
+	return v.VersionsDir
+}
+
 // ResolveDockerImage ensures the given docker image has a valid version if there is one in the version stream
 func (v *VersionResolver) ResolveDockerImage(image string) (string, error) {
 	return ResolveDockerImage(v.VersionsDir, image)

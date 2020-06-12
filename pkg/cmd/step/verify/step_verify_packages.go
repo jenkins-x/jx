@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
+	options2 "github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -118,52 +118,68 @@ func (o *StepVerifyPackagesOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver *versionstream.VersionResolver) error {
+func (o *StepVerifyPackagesOptions) verifyJXVersion(resolver versionstream.Streamer) error {
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
 		return errors.Wrap(err, "getting current jx version")
 	}
-	newVersion, err := o.GetLatestJXVersion(resolver)
+	versionStreamVersion, err := o.GetLatestJXVersion(resolver)
 	if err != nil {
 		return errors.Wrap(err, "getting latest jx version")
 	}
 	info := util.ColorInfo
-	versionText := newVersion.String()
+	latestVersionText := versionStreamVersion.String()
 
-	if currentVersion.EQ(newVersion) {
-		log.Logger().Infof("using version %s of %s", info(versionText), info("jx"))
+	if currentVersion.EQ(versionStreamVersion) {
+		log.Logger().Infof("using version %s of %s", info(latestVersionText), info("jx"))
+		return nil
+	}
+
+	// The case this happens is when we have a version stream ref which is outdated, should the version stream not get updated before the binary version is checked?
+	if currentVersion.GE(versionStreamVersion) {
+		log.Logger().Warnf("jx version specified in the version stream %s is %s. You are using %s. We highly recommend you upgrade versionstream ref", util.ColorInfo(resolver.GetVersionsDir()), util.ColorInfo(latestVersionText), util.ColorInfo(currentVersion.String()))
 		return nil
 	}
 
 	log.Logger().Info("\n")
-	log.Logger().Warnf("jx version specified in the version stream %s is %s. You are using %s. We highly recommend you upgrade to it.", util.ColorInfo(resolver.VersionsDir), util.ColorInfo(newVersion.String()), util.ColorInfo(currentVersion.String()))
+	log.Logger().Warnf("jx version specified in the version stream %s is %s. You are using %s. We highly recommend you upgrade to it.", util.ColorInfo(resolver.GetVersionsDir()), util.ColorInfo(latestVersionText), util.ColorInfo(currentVersion.String()))
+
 	if o.BatchMode {
 		log.Logger().Warnf("To upgrade to this new version use: %s then re-run %s", info("jx upgrade cli"), info("jx boot"))
-	} else if strings.Contains(currentVersion.String(), "-dev") {
-		log.Logger().Warn("Skipping version upgrade since a dev version is used")
-	} else {
-		log.Logger().Info("\n")
-		message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
-		if answer, err := util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles()); err != nil {
-			return err
-		} else if answer {
-			options := &upgrade.UpgradeCLIOptions{
-				CreateOptions: options.CreateOptions{
-					CommonOptions: o.CommonOptions,
-				},
-			}
-			options.Version = versionText
-			options.NoBrew = true
-			err = options.Run()
-			if err != nil {
-				return err
-			}
-			log.Logger().Info("\n")
-			log.Logger().Warnf("the version of %s has been updated to %s. Please re-run: %s", info("jx"), info(versionText), info("jx boot"))
-			log.Logger().Info("\n")
-
-			return fmt.Errorf("the version of jx has been updated. Please re-run: jx boot")
-		}
+		return nil
 	}
+	// skip checks for dev version
+	if strings.Contains(currentVersion.String(), "-dev") {
+		log.Logger().Warn("Skipping version upgrade since a dev version is used")
+		return nil
+	}
+
+	// Todo: verify function should not upgrade, probably a different function is the right thing
+	log.Logger().Info("\n")
+	message := fmt.Sprintf("Would you like to upgrade to the %s version?", info("jx"))
+	answer, err := util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.GetIOFileHandles())
+	if err != nil {
+		return err
+	}
+
+	if answer {
+		options := &upgrade.UpgradeCLIOptions{
+			CreateOptions: options2.CreateOptions{
+				CommonOptions: o.CommonOptions,
+			},
+		}
+		options.Version = latestVersionText
+		options.NoBrew = true
+		err = options.Run()
+		if err != nil {
+			return err
+		}
+		log.Logger().Info("\n")
+		log.Logger().Warnf("the version of %s has been updated to %s. Please re-run: %s", info("jx"), info(latestVersionText), info("jx boot"))
+		log.Logger().Info("\n")
+
+		return fmt.Errorf("the version of jx has been updated. Please re-run: jx boot")
+	}
+
 	return nil
 }

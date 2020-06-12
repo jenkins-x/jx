@@ -368,7 +368,7 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 }
 
 // GetLatestJXVersion returns latest jx version
-func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolver) (semver.Version, error) {
+func (o *CommonOptions) GetLatestJXVersion(resolver versionstream.Streamer) (semver.Version, error) {
 	if config.LatestVersionStringsBucket != "" {
 		err := o.InstallRequirements(cloud.GKE)
 		if err != nil {
@@ -382,7 +382,7 @@ func (o *CommonOptions) GetLatestJXVersion(resolver *versionstream.VersionResolv
 		return util.GetLatestVersionStringFromBucketURLs(latestVersionStrings)
 	}
 
-	dir := resolver.VersionsDir
+	dir := resolver.GetVersionsDir()
 	matrix, err := dependencymatrix.LoadDependencyMatrix(dir)
 	if err != nil {
 		return semver.Version{}, errors.Wrapf(err, "failed to load dependency matrix from version stream at %s", dir)
