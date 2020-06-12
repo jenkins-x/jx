@@ -20,6 +20,10 @@ type CreateProjectOptions struct {
 	GithubAppInstalled bool
 }
 
+const (
+	optionImage = "image"
+)
+
 var (
 	create_resources = `Valid resource types include:
 
@@ -68,7 +72,6 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateGit(commonOpts))
 	cmd.AddCommand(NewCmdCreateIssue(commonOpts))
 	cmd.AddCommand(NewCmdCreateJenkins(commonOpts))
-	cmd.AddCommand(NewCmdCreatePostPreviewJob(commonOpts))
 	cmd.AddCommand(NewCmdCreateProject(commonOpts))
 	cmd.AddCommand(NewCmdCreatePullRequest(commonOpts))
 	cmd.AddCommand(NewCmdCreateQuickstart(commonOpts))

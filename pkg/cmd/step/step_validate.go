@@ -97,11 +97,8 @@ func (o *StepValidateOptions) verifyJxVersion(minJxVersion string) error {
 		info := util.ColorInfo
 		log.Logger().Infof("\nThe current installation of the %s CLI is too old: %s.\nWe require an installation of %s or later.\n", info("jx"), info(current.String()), info(require.String()))
 		log.Logger().Infof(`To upgrade try these commands:
-
-* to upgrade the platform:    %s
 * to upgrade the CLI locally: %s
-
-`, info("jx upgrade platform"), info("jx upgrade cli"))
+`, info("jx upgrade cli"))
 
 		return fmt.Errorf("The current jx install is too old: %s. We require: %s or later", current.String(), require.String())
 	}

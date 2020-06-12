@@ -109,6 +109,7 @@ func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreD
 	cmd.Flags().StringVarP(&c.ExposeController.Config.IngressClass, "ingress-class", "", "", "Used to set the ingress.class annotation in exposecontroller created ingress")
 	cmd.Flags().BoolVarP(&keepJob, "keep-exposecontroller-job", "", false, "Prevents Helm deleting the exposecontroller Job and Pod after running.  Useful for debugging exposecontroller logs but you will need to manually delete the job if you update an environment")
 
+	// Todo: Again recommendation to use a command which is deprecated. On another note, what is the policy for removing deprecated flags? No mention of a date
 	cmd.Flags().MarkDeprecated("http", "please use `jx upgrade ingress` after install instead")     //nolint:errcheck
 	cmd.Flags().MarkDeprecated("tls-acme", "please use `jx upgrade ingress` after install instead") //nolint:errcheck
 

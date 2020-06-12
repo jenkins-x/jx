@@ -43,13 +43,13 @@ Find out more about our bi-weekly office hours, where we discuss all things Jenk
 ## Getting Help
 
 To find out the available commands type:
-
-    jx
-
+```
+jx
+```
 Or to get help on a specific command, say, `create` then type:
-
-    jx help create
-
+```
+jx help create
+```
 You can also browse the [jx command reference documentation](https://jenkins-x.io/commands/jx/).
 
 ## Reference
@@ -59,187 +59,189 @@ You can also browse the [jx command reference documentation](https://jenkins-x.i
   
 ## Opening Consoles
 To open a console for `foo`:
-
-    jx open foo
-    
+```sh
+jx open foo
+```
 If you do not know the name:
-
-    jx open
-    
-
+```sh
+jx open
+```
 ## Tail logs
 
 To tail the logs of anything running on Kubernetes (jenkins or your own applications) type.
-
-    jx logs
-    
+```sh
+jx logs
+```
 Which prompts you for the deployment to log then tails the logs of the newest pod for an app.
 
 You can filter the list of deployments via:
-
-    jx logs -f cheese
-
+```sh
+jx logs -f cheese
+```
 Then if there's only one deployment with a name that contains `cheese` then it'll tail the logs of the latest pod or will prompt you to choose the exact deployment to use.
 
 ## Remote shells
 
 You can open a remote shell inside any pods container via the `rsh` command:
-
-    jx rsh
-    
+```sh
+jx rsh
+```
 Or to open a shell inside a pod named foo:
-
-    jx rsh foo
-
+```sh
+jx rsh foo
+```
 Pass `-c` to specify the container name. e.g. to open a shell in a maven build pod:
-
-    jx rsh -c maven maven
-
+```sh
+jx rsh -c maven maven
+```
 ## Importing or Creating apps
 
 To import an application from the current directory:
-
-    jx import
-    
+```sh
+jx import
+```
 Or to create a new Spring Boot application from scratch:
-
-    jx create spring
-    
+```sh
+jx create spring
+```
 e.g. to create a new WebMVC and Spring Boot Actuator microservice try this:
-
-    jx create spring -d web -d actuator
-        
-    
+```sh
+jx create spring -d web -d actuator
+```
+Or to create a new project from scratch:
+```sh
+jx create project
+```
 ## Starting builds
 
 To start a pipeline using a specific name try:
-
-    jx start pipeline myorg/myrepo
-
+```sh
+jx start pipeline myorg/myrepo
+```
 Or to pick the pipeline to start:
-
-    jx start pipeline
-
+```sh
+jx start pipeline
+```
 If you know part of the name of the pipeline to run you can filter the list via:
-
-    jx start pipeline -f thingy
-
+```sh
+jx start pipeline -f thingy
+```
 You can start and tail the build log via:
-		
-    jx start pipeline -t
-
+```sh
+jx start pipeline -t
+```
 ## Viewing Apps and Environments
 
 To view environments for a team:
-
-    jx get env
-    
+```sh
+jx get env
+```
 To view the application versions across environments:
-
-    jx get version
-            
+```sh
+jx get version
+```
 ## Manual promotions
 
 Typically we setup Environments to use _automatic_ promotion so that the CI / CD pipelines will automatically promote versions through the available Environments using the CI / CD Pipeline.
 
 However if you wish to manually promote a version to an environment you can use the following command:
-
-    jx promote myapp -e prod 
-    
+```sh
+jx promote myapp -e prod
+```
 Or if you wish to use a custom namespace:   
-
-    jx promote myapp -n my-dummy-namespace
- 
+```sh
+jx promote myapp -n my-dummy-namespace
+```
 ## Switching Environments
 
 The `jx` CLI tool uses the same Kubernetes cluster and namespace context as `kubectl`. 
 
 You can switch Environments via:
-
-    jx env
-    
+```sh
+jx env
+```
 Or change it via:
-
-    jx env staging
-    jx env prod
+```sh
+jx env staging
+jx env prod
+```
     
 To display the current environment without trying to change it:
-
-    jx env -b
-
+```sh
+jx env -b
+```
 To view all the environments type:
-
-    jx get env
-    
+```sh
+jx get env
+```
 You can create or edit environments too:
-
-    jx create env
-    
-    jx edit env staging
-    
+```sh
+jx create env # Create an environment
+jx edit env staging # Edit staging environment
+```
 You can switch namespaces in the same way via:
-
-    jx ns
-
+```sh
+jx ns
+```
 or
-
-    jx ns awesome-staging    
-
+```sh
+jx ns awesome-staging
+```
 ## Switching Clusters
 
 If you have multiple Kubernetes clusters then you can switch between them via:
-
-    jx ctx
-
+```sh
+jx ctx
+```
 **Note** that changing the namespace ,environment or cluster changes the current context for **ALL** shells!
 
 ### Sub shells
 
 So if you want to work temporarily with, say, the production cluster we highly recommend you use a sub shell for that.
-
-    jx shell my-prod-context
-    
+```sh
+jx shell my-prod-context
+```
 Or to pick the context to use for the sub shell:
-
-    jx shell 
-
+```sh
+jx shell
+```
 Then your bash prompt will be updated to reflect that you are in a different context and/or namespace. Any changes to the namespace, environment or context will be local to the current shell only!    
 
 ### Setting your prompt
 
 You can use the `jx prompt` to configure your CLI prompt to display the current team and environment you are working within:          
-                                            
-		# Enable the prompt for bash
-		PS1="[\u@\h \W \$(jx prompt)]\$ "
+```sh
+# Enable the prompt for bash
+PS1="[\u@\h \W \$(jx prompt)]\$ "
 
-		# Enable the prompt for zsh
-		PROMPT='$(jx prompt)'$PROMPT
-
+# Enable the prompt for zsh
+PROMPT='$(jx prompt)'$PROMPT
+```
 **Note** that the prompt is updated automatically for you via the `jx shell` command too.
 
 ### Bash completion
 
 On a Mac to enable bash completion try:
-
-    jx completion bash > ~/.jx/bash
-    source ~/.jx/bash   
-    
+```sh
+jx completion bash > ~/.jx/bash
+source ~/.jx/bash
+```
 Or try:
-
-    source <(jx completion bash)
-
+```sh
+source <(jx completion bash)
+```
 For more help try:
-
-    jx help completion bash
-           
+```sh
+jx help completion bash
+```
 ## Addons
 
 We are adding a number of addon capabilities to Jenkins X. To add or remove addons use the `jx create addon` or `jx delete addon` commands.
 
 For example to add the [Gitea Git server](https://gitea.io/en-US/) to your Jenkins X installation try:
-
-    jx create addon gitea
-
+```sh
+jx create addon gitea
+```
 This will:
 
 * install the Gitea Helm chart.

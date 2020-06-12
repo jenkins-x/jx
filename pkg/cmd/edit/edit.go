@@ -64,7 +64,6 @@ func NewCmdEdit(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(requirements.NewCmdEditRequirements(commonOpts))
 	cmd.AddCommand(NewCmdEditStorage(commonOpts))
 	cmd.AddCommand(NewCmdEditUserRole(commonOpts))
-	cmd.AddCommand(NewCmdEditExtensionsRepository(commonOpts))
 
 	err := addTeamSettingsCommandsFromTags(cmd, options)
 	helper.CheckErr(err)

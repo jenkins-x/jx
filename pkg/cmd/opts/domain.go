@@ -167,6 +167,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		log.Logger().Infof("If you don't have a wildcard DNS setup then create a DNS (A) record and point it at: %s, then use the DNS domain in the next input...", util.ColorInfo(address))
 
 		log.Logger().Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic DNS nip.io.")
+		// Todo: Evaluate mention of this deprecated command
 		log.Logger().Infof("Once you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
 		if domain == "" {

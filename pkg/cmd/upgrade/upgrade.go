@@ -21,9 +21,6 @@ var (
 		# upgrade the command line tools 
 		jx upgrade cli
 
-		# upgrade the platform 
-		jx upgrade platform
-
 		# upgrade extensions
 		jx upgrade extensions 
 	`)
@@ -53,7 +50,6 @@ func NewCmdUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdUpgradeCLI(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeBinaries(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeIngress(commonOpts))
-	cmd.AddCommand(NewCmdUpgradePlatform(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeApps(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeCRDs(commonOpts))
 	cmd.AddCommand(NewCmdUpgradeBoot(commonOpts))
