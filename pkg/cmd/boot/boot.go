@@ -568,13 +568,17 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 
 func (o *BootOptions) verifyClusterConnection() error {
 	client, ns, err := o.KubeClientAndNamespace()
-	if err == nil {
-		_, err = client.CoreV1().Pods(ns).List(metav1.ListOptions{})
-	}
 	if err != nil {
-		return fmt.Errorf("You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
+		return errors.Wrapf(err, "Unable to get current kube client/namespace  You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
 			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
 	}
+
+	_, err = client.CoreV1().Pods(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "Unable to list pods. You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
+			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
+	}
+
 	return nil
 }
 
