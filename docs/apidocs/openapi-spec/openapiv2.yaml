@@ -14,12 +14,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -33,7 +33,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -42,7 +42,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -148,12 +148,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -167,7 +167,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -176,7 +176,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -214,12 +214,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -278,12 +278,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -490,12 +490,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -526,7 +526,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -535,7 +535,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -563,12 +563,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -584,7 +584,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -593,7 +593,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -680,12 +680,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -830,7 +830,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -839,7 +839,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -942,12 +942,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -971,7 +971,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -980,7 +980,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -1029,12 +1029,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -1048,7 +1048,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -1057,7 +1057,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -1289,12 +1289,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -1310,7 +1310,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -1319,7 +1319,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -1448,12 +1448,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -1476,7 +1476,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -1485,7 +1485,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -1537,12 +1537,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -1556,7 +1556,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -1565,7 +1565,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -1900,12 +1900,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -1921,7 +1921,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -1930,7 +1930,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2098,12 +2098,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2126,7 +2126,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -2135,7 +2135,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2186,12 +2186,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2205,12 +2205,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2224,7 +2224,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -2233,7 +2233,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2247,12 +2247,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2273,7 +2273,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -2282,7 +2282,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2381,12 +2381,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2402,7 +2402,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -2411,7 +2411,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2566,12 +2566,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2612,7 +2612,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -2621,7 +2621,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2653,12 +2653,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -2674,7 +2674,7 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       items:
         items:
@@ -2683,7 +2683,7 @@ definitions:
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
@@ -2737,22 +2737,22 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
-        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/io.k8s.api.batch.v1.JobSpec'
-        description: 'Specification of the desired behavior of a job. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+        description: 'Specification of the desired behavior of a job. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
       status:
         $ref: '#/definitions/io.k8s.api.batch.v1.JobStatus'
-        description: 'Current status of a job. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+        description: 'Current status of a job. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
     type: object
   io.k8s.api.batch.v1.JobCondition:
     description: JobCondition describes current state of a job.
@@ -3023,7 +3023,7 @@ definitions:
     properties:
       monitors:
         description: 'Required: Monitors is a collection of Ceph monitors More info:
-          https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
+          https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
         items:
           type: string
         type: array
@@ -3033,19 +3033,19 @@ definitions:
         type: string
       readOnly:
         description: 'Optional: Defaults to false (read/write). ReadOnly here will
-          force the ReadOnly setting in VolumeMounts. More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
+          force the ReadOnly setting in VolumeMounts. More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
         type: boolean
       secretFile:
         description: 'Optional: SecretFile is the path to key ring for User, default
-          is /etc/ceph/user.secret More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
+          is /etc/ceph/user.secret More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
         type: string
       secretRef:
         $ref: '#/definitions/io.k8s.api.core.v1.LocalObjectReference'
         description: 'Optional: SecretRef is reference to the authentication secret
-          for User, default is empty. More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
+          for User, default is empty. More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
       user:
         description: 'Optional: User is the rados user name, default is admin More
-          info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
+          info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
         type: string
     required:
     - monitors
@@ -3059,18 +3059,19 @@ definitions:
       fsType:
         description: 'Filesystem type to mount. Must be a filesystem type supported
           by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly
-          inferred to be "ext4" if unspecified. More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
+          inferred to be "ext4" if unspecified. More info: https://examples.k8s.io/mysql-cinder-pd/README.md'
         type: string
       readOnly:
         description: 'Optional: Defaults to false (read/write). ReadOnly here will
-          force the ReadOnly setting in VolumeMounts. More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
+          force the ReadOnly setting in VolumeMounts. More info: https://examples.k8s.io/mysql-cinder-pd/README.md'
         type: boolean
       secretRef:
         $ref: '#/definitions/io.k8s.api.core.v1.LocalObjectReference'
         description: 'Optional: points to a secret object containing parameters used
           to connect to OpenStack.'
       volumeID:
-        description: 'volume id used to identify the volume in cinder More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
+        description: 'volume id used to identify the volume in cinder. More info:
+          https://examples.k8s.io/mysql-cinder-pd/README.md'
         type: string
     required:
     - volumeID
@@ -3254,6 +3255,16 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.SecurityContext'
         description: 'Security options the pod should run with. More info: https://kubernetes.io/docs/concepts/policy/security-context/
           More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/'
+      startupProbe:
+        $ref: '#/definitions/io.k8s.api.core.v1.Probe'
+        description: 'StartupProbe indicates that the Pod has successfully initialized.
+          If specified, no other probes are executed until this completes successfully.
+          If this probe fails, the Pod will be restarted, just as if the livenessProbe
+          failed. This can be used to provide different probe parameters at the beginning
+          of a Pod''s lifecycle, when it might take a long time to load data or warm
+          a cache, than during steady-state operation. This cannot be updated. This
+          is an alpha feature enabled by the StartupProbe feature flag. More info:
+          https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
       stdin:
         description: Whether this container should allocate a buffer for stdin in
           the container runtime. If this is not set, reads from stdin in the container
@@ -3471,6 +3482,161 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.SecretKeySelector'
         description: Selects a key of a secret in the pod's namespace
     type: object
+  io.k8s.api.core.v1.EphemeralContainer:
+    description: An EphemeralContainer is a container that may be added temporarily
+      to an existing pod for user-initiated activities such as debugging. Ephemeral
+      containers have no resource or scheduling guarantees, and they will not be restarted
+      when they exit or when a pod is removed or restarted. If an ephemeral container
+      causes a pod to exceed its resource allocation, the pod may be evicted. Ephemeral
+      containers may not be added by directly updating the pod spec. They must be
+      added via the pod's ephemeralcontainers subresource, and they will appear in
+      the pod spec once added. This is an alpha feature enabled by the EphemeralContainers
+      feature flag.
+    properties:
+      args:
+        description: 'Arguments to the entrypoint. The docker image''s CMD is used
+          if this is not provided. Variable references $(VAR_NAME) are expanded using
+          the container''s environment. If a variable cannot be resolved, the reference
+          in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped
+          with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+          regardless of whether the variable exists or not. Cannot be updated. More
+          info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+        items:
+          type: string
+        type: array
+      command:
+        description: 'Entrypoint array. Not executed within a shell. The docker image''s
+          ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME)
+          are expanded using the container''s environment. If a variable cannot be
+          resolved, the reference in the input string will be unchanged. The $(VAR_NAME)
+          syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references
+          will never be expanded, regardless of whether the variable exists or not.
+          Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+        items:
+          type: string
+        type: array
+      env:
+        description: List of environment variables to set in the container. Cannot
+          be updated.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvVar'
+        type: array
+        x-kubernetes-patch-merge-key: name
+        x-kubernetes-patch-strategy: merge
+      envFrom:
+        description: List of sources to populate environment variables in the container.
+          The keys defined within a source must be a C_IDENTIFIER. All invalid keys
+          will be reported as an event when the container is starting. When a key
+          exists in multiple sources, the value associated with the last source will
+          take precedence. Values defined by an Env with a duplicate key will take
+          precedence. Cannot be updated.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EnvFromSource'
+        type: array
+      image:
+        description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images'
+        type: string
+      imagePullPolicy:
+        description: 'Image pull policy. One of Always, Never, IfNotPresent. Defaults
+          to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot
+          be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
+        type: string
+      lifecycle:
+        $ref: '#/definitions/io.k8s.api.core.v1.Lifecycle'
+        description: Lifecycle is not allowed for ephemeral containers.
+      livenessProbe:
+        $ref: '#/definitions/io.k8s.api.core.v1.Probe'
+        description: Probes are not allowed for ephemeral containers.
+      name:
+        description: Name of the ephemeral container specified as a DNS_LABEL. This
+          name must be unique among all containers, init containers and ephemeral
+          containers.
+        type: string
+      ports:
+        description: Ports are not allowed for ephemeral containers.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.ContainerPort'
+        type: array
+      readinessProbe:
+        $ref: '#/definitions/io.k8s.api.core.v1.Probe'
+        description: Probes are not allowed for ephemeral containers.
+      resources:
+        $ref: '#/definitions/io.k8s.api.core.v1.ResourceRequirements'
+        description: Resources are not allowed for ephemeral containers. Ephemeral
+          containers use spare resources already allocated to the pod.
+      securityContext:
+        $ref: '#/definitions/io.k8s.api.core.v1.SecurityContext'
+        description: SecurityContext is not allowed for ephemeral containers.
+      startupProbe:
+        $ref: '#/definitions/io.k8s.api.core.v1.Probe'
+        description: Probes are not allowed for ephemeral containers.
+      stdin:
+        description: Whether this container should allocate a buffer for stdin in
+          the container runtime. If this is not set, reads from stdin in the container
+          will always result in EOF. Default is false.
+        type: boolean
+      stdinOnce:
+        description: Whether the container runtime should close the stdin channel
+          after it has been opened by a single attach. When stdin is true the stdin
+          stream will remain open across multiple attach sessions. If stdinOnce is
+          set to true, stdin is opened on container start, is empty until the first
+          client attaches to stdin, and then remains open and accepts data until the
+          client disconnects, at which time stdin is closed and remains closed until
+          the container is restarted. If this flag is false, a container processes
+          that reads from stdin will never receive an EOF. Default is false
+        type: boolean
+      targetContainerName:
+        description: If set, the name of the container from PodSpec that this ephemeral
+          container targets. The ephemeral container will be run in the namespaces
+          (IPC, PID, etc) of this container. If not set then the ephemeral container
+          is run in whatever namespaces are shared for the pod. Note that the container
+          runtime must support this feature.
+        type: string
+      terminationMessagePath:
+        description: 'Optional: Path at which the file to which the container''s termination
+          message will be written is mounted into the container''s filesystem. Message
+          written is intended to be brief final status, such as an assertion failure
+          message. Will be truncated by the node if greater than 4096 bytes. The total
+          message length across all containers will be limited to 12kb. Defaults to
+          /dev/termination-log. Cannot be updated.'
+        type: string
+      terminationMessagePolicy:
+        description: Indicate how the termination message should be populated. File
+          will use the contents of terminationMessagePath to populate the container
+          status message on both success and failure. FallbackToLogsOnError will use
+          the last chunk of container log output if the termination message file is
+          empty and the container exited with an error. The log output is limited
+          to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot
+          be updated.
+        type: string
+      tty:
+        description: Whether this container should allocate a TTY for itself, also
+          requires 'stdin' to be true. Default is false.
+        type: boolean
+      volumeDevices:
+        description: volumeDevices is the list of block devices to be used by the
+          container. This is a beta feature.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.VolumeDevice'
+        type: array
+        x-kubernetes-patch-merge-key: devicePath
+        x-kubernetes-patch-strategy: merge
+      volumeMounts:
+        description: Pod volumes to mount into the container's filesystem. Cannot
+          be updated.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.VolumeMount'
+        type: array
+        x-kubernetes-patch-merge-key: mountPath
+        x-kubernetes-patch-strategy: merge
+      workingDir:
+        description: Container's working directory. If not specified, the container
+          runtime's default will be used, which might be configured in the container
+          image. Cannot be updated.
+        type: string
+    required:
+    - name
+    type: object
   io.k8s.api.core.v1.ExecAction:
     description: ExecAction describes a "run in container" action.
     properties:
@@ -3615,14 +3781,14 @@ definitions:
     properties:
       endpoints:
         description: 'EndpointsName is the endpoint name that details Glusterfs topology.
-          More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod'
+          More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
         type: string
       path:
-        description: 'Path is the Glusterfs volume path. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod'
+        description: 'Path is the Glusterfs volume path. More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
         type: string
       readOnly:
         description: 'ReadOnly here will force the Glusterfs volume to be mounted
-          with read-only permissions. Defaults to false. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md#create-a-pod'
+          with read-only permissions. Defaults to false. More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
         type: boolean
     required:
     - endpoints
@@ -3799,14 +3965,14 @@ definitions:
       preStop:
         $ref: '#/definitions/io.k8s.api.core.v1.Handler'
         description: 'PreStop is called immediately before a container is terminated
-          due to an API request or management event such as liveness probe failure,
-          preemption, resource contention, etc. The handler is not called if the container
-          crashes or exits. The reason for termination is passed to the handler. The
-          Pod''s termination grace period countdown begins before the PreStop hooked
-          is executed. Regardless of the outcome of the handler, the container will
-          eventually terminate within the Pod''s termination grace period. Other management
-          of the container blocks until the hook completes or until the termination
-          grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
+          due to an API request or management event such as liveness/startup probe
+          failure, preemption, resource contention, etc. The handler is not called
+          if the container crashes or exits. The reason for termination is passed
+          to the handler. The Pod''s termination grace period countdown begins before
+          the PreStop hooked is executed. Regardless of the outcome of the handler,
+          the container will eventually terminate within the Pod''s termination grace
+          period. Other management of the container blocks until the hook completes
+          or until the termination grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
     type: object
   io.k8s.api.core.v1.LocalObjectReference:
     description: LocalObjectReference contains enough information to let you locate
@@ -4141,7 +4307,10 @@ definitions:
         type: array
       windowsOptions:
         $ref: '#/definitions/io.k8s.api.core.v1.WindowsSecurityContextOptions'
-        description: Windows security options.
+        description: The Windows specific settings applied to all containers. If unspecified,
+          the options within a container's SecurityContext will be used. If set in
+          both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+          takes precedence.
     type: object
   io.k8s.api.core.v1.PodSpec:
     description: PodSpec is a description of a pod.
@@ -4184,6 +4353,19 @@ definitions:
           should be injected into pod''s environment variables, matching the syntax
           of Docker links. Optional: Defaults to true.'
         type: boolean
+      ephemeralContainers:
+        description: List of ephemeral containers run in this pod. Ephemeral containers
+          may be run in an existing pod to perform user-initiated actions such as
+          debugging. This list cannot be specified when creating a pod, and it cannot
+          be modified by updating the pod spec. In order to add an ephemeral container
+          to an existing pod, use the pod's ephemeralcontainers subresource. This
+          field is alpha-level and is only honored by servers that enable the EphemeralContainers
+          feature.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.EphemeralContainer'
+        type: array
+        x-kubernetes-patch-merge-key: name
+        x-kubernetes-patch-strategy: merge
       hostAliases:
         description: HostAliases is an optional list of hosts and IPs that will be
           injected into the pod's hosts file if specified. This is only valid for
@@ -4225,12 +4407,12 @@ definitions:
           init container fails, the pod is considered to have failed and is handled
           according to its restartPolicy. The name for an init container or normal
           container must be unique among all containers. Init containers may not have
-          Lifecycle actions, Readiness probes, or Liveness probes. The resourceRequirements
-          of an init container are taken into account during scheduling by finding
-          the highest request/limit for each resource type, and then using the max
-          of of that value or the sum of the normal containers. Limits are applied
-          to init containers in a similar fashion. Init containers cannot currently
-          be added or removed. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/'
+          Lifecycle actions, Readiness probes, Liveness probes, or Startup probes.
+          The resourceRequirements of an init container are taken into account during
+          scheduling by finding the highest request/limit for each resource type,
+          and then using the max of of that value or the sum of the normal containers.
+          Limits are applied to init containers in a similar fashion. Init containers
+          cannot currently be added or removed. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/'
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.Container'
         type: array
@@ -4247,6 +4429,21 @@ definitions:
         description: 'NodeSelector is a selector which must be true for the pod to
           fit on a node. Selector which must match a node''s labels for the pod to
           be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
+        type: object
+      overhead:
+        additionalProperties:
+          $ref: '#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity'
+        description: 'Overhead represents the resource overhead associated with running
+          a pod for a given RuntimeClass. This field will be autopopulated at admission
+          time by the RuntimeClass admission controller. If the RuntimeClass admission
+          controller is enabled, overhead must not be set in Pod create requests.
+          The RuntimeClass admission controller will reject Pod create requests which
+          have the overhead already set. If RuntimeClass is configured and selected
+          in the PodSpec, Overhead will be set to the value defined in the corresponding
+          RuntimeClass, otherwise it will remain unset and treated as zero. More info:
+          https://git.k8s.io/enhancements/keps/sig-node/20190226-pod-overhead.md This
+          field is alpha-level as of Kubernetes v1.16, and is only honored by servers
+          that enable the PodOverhead feature.'
         type: object
       preemptionPolicy:
         description: PreemptionPolicy is the Policy for preempting pods with lower
@@ -4336,6 +4533,21 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.Toleration'
         type: array
+      topologySpreadConstraints:
+        description: TopologySpreadConstraints describes how a group of pods ought
+          to spread across topology domains. Scheduler will schedule pods in a way
+          which abides by the constraints. This field is alpha-level and is only honored
+          by clusters that enables the EvenPodsSpread feature. All topologySpreadConstraints
+          are ANDed.
+        items:
+          $ref: '#/definitions/io.k8s.api.core.v1.TopologySpreadConstraint'
+        type: array
+        x-kubernetes-list-map-keys:
+        - topologyKey
+        - whenUnsatisfiable
+        x-kubernetes-list-type: map
+        x-kubernetes-patch-merge-key: topologyKey
+        x-kubernetes-patch-strategy: merge
       volumes:
         description: 'List of volumes that can be mounted by containers belonging
           to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes'
@@ -4353,11 +4565,11 @@ definitions:
     properties:
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
-        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/io.k8s.api.core.v1.PodSpec'
         description: 'Specification of the desired behavior of the pod. More info:
-          https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+          https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
     type: object
   io.k8s.api.core.v1.PortworxVolumeSource:
     description: PortworxVolumeSource represents a Portworx volume resource.
@@ -4422,8 +4634,8 @@ definitions:
         type: integer
       successThreshold:
         description: Minimum consecutive successes for the probe to be considered
-          successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum
-          value is 1.
+          successful after having failed. Defaults to 1. Must be 1 for liveness and
+          startup. Minimum value is 1.
         format: int32
         type: integer
       tcpSocket:
@@ -4496,30 +4708,30 @@ definitions:
           More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
         type: string
       image:
-        description: 'The rados image name. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+        description: 'The rados image name. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
         type: string
       keyring:
         description: 'Keyring is the path to key ring for RBDUser. Default is /etc/ceph/keyring.
-          More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+          More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
         type: string
       monitors:
-        description: 'A collection of Ceph monitors. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+        description: 'A collection of Ceph monitors. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
         items:
           type: string
         type: array
       pool:
-        description: 'The rados pool name. Default is rbd. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+        description: 'The rados pool name. Default is rbd. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
         type: string
       readOnly:
         description: 'ReadOnly here will force the ReadOnly setting in VolumeMounts.
-          Defaults to false. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+          Defaults to false. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
         type: boolean
       secretRef:
         $ref: '#/definitions/io.k8s.api.core.v1.LocalObjectReference'
         description: 'SecretRef is name of the authentication secret for RBDUser.
-          If provided overrides keyring. Default is nil. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+          If provided overrides keyring. Default is nil. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
       user:
-        description: 'The rados user name. Default is admin. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
+        description: 'The rados user name. Default is admin. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
         type: string
     required:
     - monitors
@@ -4766,7 +4978,9 @@ definitions:
           the value specified in SecurityContext takes precedence.
       windowsOptions:
         $ref: '#/definitions/io.k8s.api.core.v1.WindowsSecurityContextOptions'
-        description: Windows security options.
+        description: The Windows specific settings applied to all containers. If unspecified,
+          the options from the PodSecurityContext will be used. If set in both SecurityContext
+          and PodSecurityContext, the value specified in SecurityContext takes precedence.
     type: object
   io.k8s.api.core.v1.ServiceAccountTokenProjection:
     description: ServiceAccountTokenProjection represents a projected service account
@@ -4884,6 +5098,51 @@ definitions:
           is Exists, the value should be empty, otherwise just a regular string.
         type: string
     type: object
+  io.k8s.api.core.v1.TopologySpreadConstraint:
+    description: TopologySpreadConstraint specifies how to spread matching pods among
+      the given topology.
+    properties:
+      labelSelector:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector'
+        description: LabelSelector is used to find matching pods. Pods that match
+          this label selector are counted to determine the number of pods in their
+          corresponding topology domain.
+      maxSkew:
+        description: 'MaxSkew describes the degree to which pods may be unevenly distributed.
+          It''s the maximum permitted difference between the number of matching pods
+          in any two topology domains of a given topology type. For example, in a
+          3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector
+          spread as 1/1/0: | zone1 | zone2 | zone3 | |   P   |   P   |       | - if
+          MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 1/1/1;
+          scheduling it onto zone1(zone2) would make the ActualSkew(2-0) on zone1(zone2)
+          violate MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled onto
+          any zone. It''s a required field. Default value is 1 and 0 is not allowed.'
+        format: int32
+        type: integer
+      topologyKey:
+        description: TopologyKey is the key of node labels. Nodes that have a label
+          with this key and identical values are considered to be in the same topology.
+          We consider each <key, value> as a "bucket", and try to put balanced number
+          of pods into each bucket. It's a required field.
+        type: string
+      whenUnsatisfiable:
+        description: 'WhenUnsatisfiable indicates how to deal with a pod if it doesn''t
+          satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler
+          not to schedule it - ScheduleAnyway tells the scheduler to still schedule
+          it It''s considered as "Unsatisfiable" if and only if placing incoming pod
+          on any topology violates "MaxSkew". For example, in a 3-zone cluster, MaxSkew
+          is set to 1, and pods with the same labelSelector spread as 3/1/1: | zone1
+          | zone2 | zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable is set
+          to DoNotSchedule, incoming pod can only be scheduled to zone2(zone3) to
+          become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies MaxSkew(1).
+          In other words, the cluster can still be imbalanced, but scheduler won''t
+          make it *more* imbalanced. It''s a required field.'
+        type: string
+    required:
+    - maxSkew
+    - topologyKey
+    - whenUnsatisfiable
+    type: object
   io.k8s.api.core.v1.Volume:
     description: Volume represents a named volume in a pod that may be accessed by
       any container in the pod.
@@ -4908,7 +5167,7 @@ definitions:
       cinder:
         $ref: '#/definitions/io.k8s.api.core.v1.CinderVolumeSource'
         description: 'Cinder represents a cinder volume attached and mounted on kubelets
-          host machine More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
+          host machine. More info: https://examples.k8s.io/mysql-cinder-pd/README.md'
       configMap:
         $ref: '#/definitions/io.k8s.api.core.v1.ConfigMapVolumeSource'
         description: ConfigMap represents a configMap that should populate this volume
@@ -4949,7 +5208,7 @@ definitions:
       glusterfs:
         $ref: '#/definitions/io.k8s.api.core.v1.GlusterfsVolumeSource'
         description: 'Glusterfs represents a Glusterfs mount on the host that shares
-          a pod''s lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md'
+          a pod''s lifetime. More info: https://examples.k8s.io/volumes/glusterfs/README.md'
       hostPath:
         $ref: '#/definitions/io.k8s.api.core.v1.HostPathVolumeSource'
         description: 'HostPath represents a pre-existing file or directory on the
@@ -4959,7 +5218,7 @@ definitions:
       iscsi:
         $ref: '#/definitions/io.k8s.api.core.v1.ISCSIVolumeSource'
         description: 'ISCSI represents an ISCSI Disk resource that is attached to
-          a kubelet''s host machine and then exposed to the pod. More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md'
+          a kubelet''s host machine and then exposed to the pod. More info: https://examples.k8s.io/volumes/iscsi/README.md'
       name:
         description: 'Volume''s name. Must be a DNS_LABEL and unique within the pod.
           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
@@ -4991,7 +5250,7 @@ definitions:
       rbd:
         $ref: '#/definitions/io.k8s.api.core.v1.RBDVolumeSource'
         description: 'RBD represents a Rados Block Device mount on the host that shares
-          a pod''s lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md'
+          a pod''s lifetime. More info: https://examples.k8s.io/volumes/rbd/README.md'
       scaleIO:
         $ref: '#/definitions/io.k8s.api.core.v1.ScaleIOVolumeSource'
         description: ScaleIO represents a ScaleIO persistent volume attached and mounted
@@ -5129,6 +5388,14 @@ definitions:
           to use. This field is alpha-level and is only honored by servers that enable
           the WindowsGMSA feature flag.
         type: string
+      runAsUserName:
+        description: The UserName in Windows to run the entrypoint of the container
+          process. Defaults to the user specified in image metadata if unspecified.
+          May also be set in PodSecurityContext. If set in both SecurityContext and
+          PodSecurityContext, the value specified in SecurityContext takes precedence.
+          This field is alpha-level and it is only honored by servers that enable
+          the WindowsRunAsUserName feature flag.
+        type: string
     type: object
   io.k8s.api.rbac.v1.PolicyRule:
     description: PolicyRule holds information that describes a policy rule, but does
@@ -5181,12 +5448,12 @@ definitions:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation
           of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
         type: string
       kind:
         description: 'Kind is a string value representing the REST resource this object
           represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
@@ -5243,7 +5510,7 @@ definitions:
     type: object
   io.k8s.apimachinery.pkg.api.resource.Quantity:
     description: |-
-      Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
+      Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and AsInt64() accessors.
 
       The serialization format is:
 
@@ -5275,41 +5542,13 @@ definitions:
 
       This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
     type: string
-  io.k8s.apimachinery.pkg.apis.meta.v1.Fields:
-    description: 'Fields stores a set of fields in a data structure like a Trie. To
-      understand how this is used, see: https://github.com/kubernetes-sigs/structured-merge-diff'
-    type: object
-  io.k8s.apimachinery.pkg.apis.meta.v1.Initializer:
-    description: Initializer is information about an initializer that has not yet
-      completed.
-    properties:
-      name:
-        description: name of the process that is responsible for initializing this
-          object.
-        type: string
-    required:
-    - name
-    type: object
-  io.k8s.apimachinery.pkg.apis.meta.v1.Initializers:
-    description: Initializers tracks the progress of initialization.
-    properties:
-      pending:
-        description: Pending is a list of initializers that must execute in order
-          before this object is visible. When the last pending initializer is removed,
-          and no failing result is set, the initializers struct will be set to nil
-          and the object is considered as initialized and visible to all clients.
-        items:
-          $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Initializer'
-        type: array
-        x-kubernetes-patch-merge-key: name
-        x-kubernetes-patch-strategy: merge
-      result:
-        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status'
-        description: If result is set with the Failure field, the object will be persisted
-          to storage and then deleted, ensuring that other clients can observe the
-          deletion.
-    required:
-    - pending
+  io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1:
+    description: |-
+      FieldsV1 stores a set of fields in a data structure like a Trie, in JSON format.
+
+      Each key is either a '.' representing the field itself, and will always map to an empty set, or a string representing a sub-field or item. The string will follow one of these four formats: 'f:<name>', where <name> is the name of a field in a struct, or key in a map 'v:<value>', where <value> is the exact json formatted value of a list item 'i:<index>', where <index> is position of a item in a list 'k:<keys>', where <keys> is a map of  a list item's key fields to their unique values If a key maps to an empty Fields value, the field that key represents is part of the set.
+
+      The exact format is defined in sigs.k8s.io/structured-merge-diff
     type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector:
     description: A label selector is a label query over a set of resources. The result
@@ -5372,21 +5611,29 @@ definitions:
           response, unless you have received this token from an error message.
         type: string
       remainingItemCount:
-        description: |-
-          remainingItemCount is the number of subsequent items in the list which are not included in this list response. If the list request contained label or field selectors, then the number of remaining items is unknown and the field will be left unset and omitted during serialization. If the list is complete (either because it is not chunking or because this is the last chunk), then there are no more remaining items and this field will be left unset and omitted during serialization. Servers older than v1.15 do not set this field. The intended use of the remainingItemCount is *estimating* the size of a collection. Clients should not rely on the remainingItemCount to be set or to be exact.
-
-          This field is alpha and can be changed or removed without notice.
+        description: remainingItemCount is the number of subsequent items in the list
+          which are not included in this list response. If the list request contained
+          label or field selectors, then the number of remaining items is unknown
+          and the field will be left unset and omitted during serialization. If the
+          list is complete (either because it is not chunking or because this is the
+          last chunk), then there are no more remaining items and this field will
+          be left unset and omitted during serialization. Servers older than v1.15
+          do not set this field. The intended use of the remainingItemCount is *estimating*
+          the size of a collection. Clients should not rely on the remainingItemCount
+          to be set or to be exact.
         format: int64
         type: integer
       resourceVersion:
         description: 'String that identifies the server''s internal version of this
           object that can be used by clients to determine when objects have changed.
           Value must be treated as opaque by clients and passed unmodified back to
-          the server. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+          the server. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
         type: string
       selfLink:
-        description: selfLink is a URL representing this object. Populated by the
-          system. Read-only.
+        description: |-
+          selfLink is a URL representing this object. Populated by the system. Read-only.
+
+          DEPRECATED Kubernetes will stop propagating this field in 1.20 release and the field is planned to be removed in 1.21 release.
         type: string
     type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry:
@@ -5399,9 +5646,14 @@ definitions:
           field. It is necessary to track the version of a field set because it cannot
           be automatically converted.
         type: string
-      fields:
-        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Fields'
-        description: Fields identifies a set of fields.
+      fieldsType:
+        description: 'FieldsType is the discriminator for the different fields format
+          and version. There is currently only one possible value: "FieldsV1"'
+        type: string
+      fieldsV1:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1'
+        description: FieldsV1 holds the first JSON version format as described in
+          the "FieldsV1" type.
       manager:
         description: Manager is an identifier of the workflow managing these fields.
         type: string
@@ -5437,7 +5689,7 @@ definitions:
         description: |-
           CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
 
-          Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+          Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
       deletionGracePeriodSeconds:
         description: Number of seconds allowed for this object to gracefully terminate
           before it will be removed from the system. Only set when deletionTimestamp
@@ -5449,7 +5701,7 @@ definitions:
         description: |-
           DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This field is set by the server when a graceful deletion is requested by the user, and is not directly settable by a client. The resource is expected to be deleted (no longer visible from resource lists, and not reachable by name) after the time in this field, once the finalizers list is empty. As long as the finalizers list contains items, deletion is blocked. Once the deletionTimestamp is set, this value may not be unset or be set further into the future, although it may be shortened or the resource may be deleted prior to this time. For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination signal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup, remove the pod from the API. In the presence of network partitions, this object may still exist after this timestamp, until an administrator or automated process can determine the resource is fully terminated. If not set, graceful deletion of the object has not been requested.
 
-          Populated by the system when a graceful deletion is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+          Populated by the system when a graceful deletion is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
       finalizers:
         description: Must be empty before the object is deleted from the registry.
           Each entry is an identifier for the responsible component that will remove
@@ -5465,21 +5717,13 @@ definitions:
 
           If this field is specified and the generated name exists, the server will NOT return a 409 - instead, it will either return 201 Created or 500 with Reason ServerTimeout indicating a unique name could not be found in the time allotted, and the client should retry (optionally after the time indicated in the Retry-After header).
 
-          Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency
+          Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
         type: string
       generation:
         description: A sequence number representing a specific generation of the desired
           state. Populated by the system. Read-only.
         format: int64
         type: integer
-      initializers:
-        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Initializers'
-        description: |-
-          An initializer is a controller which enforces some system invariant at object creation time. This field is a list of initializers that have not yet acted on this object. If nil or empty, this object has been completely initialized. Otherwise, the object is considered uninitialized and is hidden (in list/watch and get calls) from clients that haven't explicitly asked to observe uninitialized objects.
-
-          When an object is created, the system will populate this list with the current set of initializers. Only privileged users may set or modify this list. Once it is empty, it may not be modified further by any user.
-
-          DEPRECATED - initializers are an alpha field and will be removed in v1.15.
       labels:
         additionalProperties:
           type: string
@@ -5488,10 +5732,12 @@ definitions:
           controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
         type: object
       managedFields:
-        description: |-
-          ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like "ci-cd". The set of fields is always in the version that the workflow used when modifying the object.
-
-          This field is alpha and can be changed or removed without notice.
+        description: ManagedFields maps workflow-id and version to the set of fields
+          that are managed by that workflow. This is mostly for internal housekeeping,
+          and users typically shouldn't need to set or understand this field. A workflow
+          can be the user's name, a controller's name, or the name of a specific apply
+          path like "ci-cd". The set of fields is always in the version that the workflow
+          used when modifying the object.
         items:
           $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry'
         type: array
@@ -5523,11 +5769,13 @@ definitions:
         description: |-
           An opaque value that represents the internal version of this object that can be used by clients to determine when objects have changed. May be used for optimistic concurrency, change detection, and the watch operation on a resource or set of resources. Clients must treat these values as opaque and passed unmodified back to the server. They may only be valid for a particular resource or set of resources.
 
-          Populated by the system. Read-only. Value must be treated as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+          Populated by the system. Read-only. Value must be treated as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
         type: string
       selfLink:
-        description: SelfLink is a URL representing this object. Populated by the
-          system. Read-only.
+        description: |-
+          SelfLink is a URL representing this object. Populated by the system. Read-only.
+
+          DEPRECATED Kubernetes will stop propagating this field in 1.20 release and the field is planned to be removed in 1.21 release.
         type: string
       uid:
         description: |-
@@ -5554,7 +5802,7 @@ definitions:
         description: If true, this reference points to the managing controller.
         type: boolean
       kind:
-        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
         type: string
       name:
         description: 'Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
@@ -5567,104 +5815,6 @@ definitions:
     - kind
     - name
     - uid
-    type: object
-  io.k8s.apimachinery.pkg.apis.meta.v1.Status:
-    description: Status is a return value for calls that don't return other objects.
-    properties:
-      apiVersion:
-        description: 'APIVersion defines the versioned schema of this representation
-          of an object. Servers should convert recognized schemas to the latest internal
-          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
-        type: string
-      code:
-        description: Suggested HTTP return code for this status, 0 if not set.
-        format: int32
-        type: integer
-      details:
-        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails'
-        description: Extended data associated with the reason.  Each reason may define
-          its own extended details. This field is optional and the data returned is
-          not guaranteed to conform to any schema except that defined by the reason
-          type.
-      kind:
-        description: 'Kind is a string value representing the REST resource this object
-          represents. Servers may infer this from the endpoint the client submits
-          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-        type: string
-      message:
-        description: A human-readable description of the status of this operation.
-        type: string
-      metadata:
-        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
-        description: 'Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-      reason:
-        description: A machine-readable description of why this operation is in the
-          "Failure" status. If this value is empty there is no information available.
-          A Reason clarifies an HTTP status code but does not override it.
-        type: string
-      status:
-        description: 'Status of the operation. One of: "Success" or "Failure". More
-          info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
-        type: string
-    type: object
-  io.k8s.apimachinery.pkg.apis.meta.v1.StatusCause:
-    description: StatusCause provides more information about an api.Status failure,
-      including cases when multiple errors are encountered.
-    properties:
-      field:
-        description: |-
-          The field of the resource that has caused this error, as named by its JSON serialization. May include dot and postfix notation for nested attributes. Arrays are zero-indexed.  Fields may appear more than once in an array of causes due to fields having multiple errors. Optional.
-
-          Examples:
-            "name" - the field "name" on the current resource
-            "items[0].name" - the field "name" on the first array entry in "items"
-        type: string
-      message:
-        description: A human-readable description of the cause of the error.  This
-          field may be presented as-is to a reader.
-        type: string
-      reason:
-        description: A machine-readable description of the cause of the error. If
-          this value is empty there is no information available.
-        type: string
-    type: object
-  io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails:
-    description: StatusDetails is a set of additional properties that MAY be set by
-      the server to provide additional information about a response. The Reason field
-      of a Status object defines what attributes will be set. Clients must ignore
-      fields that do not match the defined type of each attribute, and should assume
-      that any attribute may be empty, invalid, or under defined.
-    properties:
-      causes:
-        description: The Causes array includes more details associated with the StatusReason
-          failure. Not all StatusReasons may provide detailed causes.
-        items:
-          $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusCause'
-        type: array
-      group:
-        description: The group attribute of the resource associated with the status
-          StatusReason.
-        type: string
-      kind:
-        description: 'The kind attribute of the resource associated with the status
-          StatusReason. On some operations may differ from the requested resource
-          Kind. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-        type: string
-      name:
-        description: The name attribute of the resource associated with the status
-          StatusReason (when there is a single name which can be described).
-        type: string
-      retryAfterSeconds:
-        description: If specified, the time in seconds before the operation should
-          be retried. Some errors may indicate the client must take an alternate action
-          - for those errors this field may indicate how long to wait before taking
-          the alternate action.
-        format: int32
-        type: integer
-      uid:
-        description: 'UID of the resource. (when there is a single resource which
-          can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
-        type: string
     type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.Time:
     description: Time is a wrapper around time.Time which supports correct marshaling

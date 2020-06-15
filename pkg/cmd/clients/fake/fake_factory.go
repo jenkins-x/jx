@@ -61,14 +61,14 @@ type FakeFactory struct {
 	offline         bool
 
 	// cached fake clients
-	apiClient     apiextensionsclientset.Interface
-	jxClient      versioned.Interface
-	kubeClient    kubernetes.Interface
-	kserveClient  kserve.Interface
-	tektonClient  tektonclient.Interface
+	apiClient      apiextensionsclientset.Interface
+	jxClient       versioned.Interface
+	kubeClient     kubernetes.Interface
+	kserveClient   kserve.Interface
+	tektonClient   tektonclient.Interface
 	resourceClient resourceclient.Interface
-	prowJobClient prowjobclient.Interface
-	dyncClient    dynamic.Interface
+	prowJobClient  prowjobclient.Interface
+	dyncClient     dynamic.Interface
 }
 
 var _ clients.Factory = (*FakeFactory)(nil)
