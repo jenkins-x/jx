@@ -16,7 +16,8 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-golang-qs-test-master-twkr2-1
-  podTemplate: {}
+  podTemplate:
+    schedulerName: ""
   resources:
   - name: abayer-golang-qs-test-master-twkr2
     resourceRef:

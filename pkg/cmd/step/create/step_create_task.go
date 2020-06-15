@@ -1520,7 +1520,7 @@ func (o *StepCreateTaskOptions) interpretStep(ns string, step *corev1.Container)
 
 	// ignore some unnecessary commands
 	// TODO is there a nicer way to disable the git-merge step?
-	if step.Name == "git-merge" {
+	if step.Name == "git-merge" || step.Name == "setup-builder-home" {
 		return nil
 	}
 	commandAndArgs := append(step.Command, step.Args...)

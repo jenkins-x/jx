@@ -29,6 +29,7 @@ spec:
               fruit: apple
               way-too-long-a-label-seriously-this-just-goes-on-for-so-many-ch: this-hasinvalidcharacters
           topologyKey: kubernetes.io/hostname
+    schedulerName: ""
   resources:
   - name: abayer-js-test-repo-really-long-m97mw
     resourceRef:
