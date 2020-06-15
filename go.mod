@@ -65,7 +65,7 @@ require (
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jenkins-x/jx-logging v0.0.10
-	github.com/jenkins-x/lighthouse-config v0.0.3
+	github.com/jenkins-x/lighthouse-config v0.0.4
 	github.com/jetstack/cert-manager v0.9.1
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -162,7 +162,5 @@ replace github.com/banzaicloud/bank-vaults/pkg/sdk => github.com/banzaicloud/ban
 replace k8s.io/test-infra => github.com/abayer/test-infra v0.0.0-20200611142252-211a92405c22
 
 replace gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
-
-replace github.com/jenkins-x/lighthouse-config => github.com/abayer/lighthouse-config v0.0.0-20200615130443-ad6d5f3a2d9c
 
 go 1.13
