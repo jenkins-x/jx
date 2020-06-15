@@ -1492,7 +1492,11 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 		if params.previousSiblingStage == nil && isNestedFirstStepsStage(params.enclosingStage) {
 			t.Spec = defaultTaskSpec
 		}
-
+		prependedSteps, err := builderHomeStep(env, stageContainer, params.parentParams.DefaultImage, params.parentParams.VersionsDir)
+		if err != nil {
+			return nil, err
+		}
+		t.Spec.Steps = append(prependedSteps, t.Spec.Steps...)
 		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
@@ -2180,6 +2184,41 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	return
 }
 
+func builderHomeStep(envs []corev1.EnvVar, parentContainer *corev1.Container, defaultImage string, versionsDir string) ([]tektonv1alpha1.Step, error) {
+	var err error
+	image := defaultImage
+	if image == "" {
+		image = os.Getenv("BUILDER_JX_IMAGE")
+		if image == "" {
+			image, err = versionstream.ResolveDockerImage(versionsDir, GitMergeImage)
+			if err != nil {
+				return []tektonv1alpha1.Step{}, err
+			}
+		}
+	}
+
+	builderHomeContainer := &corev1.Container{
+		Name:       "setup-builder-home",
+		Image:      image,
+		Command:    []string{util.GetSh(), "-c"},
+		Args:       []string{`[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home`},
+		WorkingDir: "/workspace/source",
+		Env:        envs,
+	}
+
+	if parentContainer != nil {
+		mergedHome, err := MergeContainers(parentContainer, builderHomeContainer)
+		if err != nil {
+			return []tektonv1alpha1.Step{}, err
+		}
+		builderHomeContainer = mergedHome
+	}
+
+	return []tektonv1alpha1.Step{{
+		Container: *builderHomeContainer,
+	}}, nil
+}
+
 // todo JR lets remove this when we switch tekton to using git merge type pipelineresources
 func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container, defaultImage string, versionsDir string) (tektonv1alpha1.TaskSpec, error) {
 	var err error
@@ -2204,16 +2243,20 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container,
 	}
 
 	if parentContainer != nil {
-		merged, err := MergeContainers(parentContainer, childContainer)
+		mergedChild, err := MergeContainers(parentContainer, childContainer)
 		if err != nil {
 			return tektonv1alpha1.TaskSpec{}, err
 		}
-		childContainer = merged
+		childContainer = mergedChild
 	}
 
 	return tektonv1alpha1.TaskSpec{
 		TaskSpec: tektonv1beta1.TaskSpec{
-			Steps: []tektonv1alpha1.Step{{Container: *childContainer}},
+			Steps: []tektonv1alpha1.Step{
+				{
+					Container: *childContainer,
+				},
+			},
 		},
 	}, nil
 }

@@ -31,6 +31,54 @@ items:
         type: git
     steps:
     - args:
+      - '[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home'
+      command:
+      - /bin/sh
+      - -c
+      env:
+      - name: FRUIT
+        value: BANANA
+      - name: GIT_AUTHOR_NAME
+        value: somebodyelse
+      - name: DOCKER_REGISTRY
+      - name: BUILD_NUMBER
+        value: "1"
+      - name: PIPELINE_KIND
+        value: release
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: REPO_OWNER
+        value: abayer
+      - name: REPO_NAME
+        value: js-test-repo
+      - name: JOB_NAME
+        value: abayer/js-test-repo/really-long
+      - name: APP_NAME
+        value: js-test-repo
+      - name: BRANCH_NAME
+        value: really-long
+      - name: JX_BATCH_MODE
+        value: "true"
+      - name: VERSION
+        value: $(inputs.params.version)
+      - name: PREVIEW_VERSION
+        value: $(inputs.params.version)
+      image: gcr.io/jenkinsxio/builder-jx:0.1.527
+      name: setup-builder-home
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      volumeMounts:
+      - mountPath: /etc/podinfo
+        name: podinfo
+        readOnly: true
+      workingDir: /workspace/source
+    - args:
       - step
       - git
       - merge
@@ -255,6 +303,57 @@ items:
         targetPath: source
         type: git
     steps:
+    - args:
+      - '[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home'
+      command:
+      - /bin/sh
+      - -c
+      env:
+      - name: FRUIT
+        value: BANANA
+      - name: GIT_AUTHOR_NAME
+        value: somebodyelse
+      - name: DOCKER_REGISTRY
+      - name: BUILD_NUMBER
+        value: "1"
+      - name: PIPELINE_KIND
+        value: release
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: REPO_OWNER
+        value: abayer
+      - name: REPO_NAME
+        value: js-test-repo
+      - name: JOB_NAME
+        value: abayer/js-test-repo/really-long
+      - name: APP_NAME
+        value: js-test-repo
+      - name: BRANCH_NAME
+        value: really-long
+      - name: JX_BATCH_MODE
+        value: "true"
+      - name: VERSION
+        value: $(inputs.params.version)
+      - name: PREVIEW_VERSION
+        value: $(inputs.params.version)
+      image: gcr.io/jenkinsxio/builder-jx:0.1.527
+      name: setup-builder-home
+      resources:
+        limits:
+          cpu: 400m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      volumeMounts:
+      - mountPath: /etc/podinfo
+        name: podinfo
+        readOnly: true
+      workingDir: /workspace/source
     - args:
       - echo no fruit here thanks
       command:

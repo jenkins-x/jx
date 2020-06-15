@@ -24,6 +24,7 @@ spec:
             matchLabels:
               tekton.dev/pipelineRun: abayer-js-test-repo-really-long-shnql-1
           topologyKey: kubernetes.io/hostname
+    schedulerName: ""
   resources:
   - name: abayer-js-test-repo-really-long-shnql
     resourceRef:

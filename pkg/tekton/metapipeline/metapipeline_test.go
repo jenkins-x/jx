@@ -73,34 +73,35 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(tasks).Should(HaveLen(1))
 			})
 
-			It("contain four task steps", func() {
+			It("contain five task steps", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				Expect(steps).Should(HaveLen(4))
-				Expect(steps[0].Name).Should(Equal("git-merge"))
-				Expect(steps[1].Name).Should(Equal(mergePullRefsStepName))
-				Expect(steps[2].Name).Should(Equal(createEffectivePipelineStepName))
-				Expect(steps[3].Name).Should(Equal(createTektonCRDsStepName))
+				Expect(steps).Should(HaveLen(5))
+				Expect(steps[0].Name).Should(Equal("setup-builder-home"))
+				Expect(steps[1].Name).Should(Equal("git-merge"))
+				Expect(steps[2].Name).Should(Equal(mergePullRefsStepName))
+				Expect(steps[3].Name).Should(Equal(createEffectivePipelineStepName))
+				Expect(steps[4].Name).Should(Equal(createTektonCRDsStepName))
 			})
 
 			It("merge pull refs step passes correct pull ref", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				mergePullRefStep := steps[1]
+				mergePullRefStep := steps[2]
 				Expect(mergePullRefStep.Args).Should(Equal([]string{"jx step git merge --verbose --baseBranch master --baseSHA 0967f9ecd7dd2d0acf883c7656c9dc2ad2bf9815 --sha db8e2d275df53477b1c6871f7d7f4281dacf3169"}))
 			})
 
 			It("should pass custom env variables to step syntax effective to be applied to effective project config", func() {
-				step := actualCRDs.Tasks()[0].Spec.Steps[2]
+				step := actualCRDs.Tasks()[0].Spec.Steps[3]
 				Expect(step.Args[0]).Should(ContainSubstring("--env SOME_VAR=SOME_VAL"))
 				Expect(step.Args[0]).Should(ContainSubstring("--env OTHER_VAR=OTHER_VAL"))
 			})
 
 			It("should have correct step create task args", func() {
-				step := actualCRDs.Tasks()[0].Spec.Steps[3]
+				step := actualCRDs.Tasks()[0].Spec.Steps[4]
 				Expect(step.Args).Should(Equal([]string{"jx step create task --clone-dir /workspace/source --kind pullrequest --pr-number 42 --service-account tekton-bot --source source --branch master --build-number 1 --label someLabel=someValue"}))
 			})
 
 			It("should pass labels to step create task to be applied to generated CRDs", func() {
-				step := actualCRDs.Tasks()[0].Spec.Steps[3]
+				step := actualCRDs.Tasks()[0].Spec.Steps[4]
 				Expect(step.Args[0]).Should(ContainSubstring("--label someLabel=someValue"))
 			})
 		})
@@ -132,13 +133,14 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(tasks).Should(HaveLen(1))
 			})
 
-			It("contain three task steps", func() {
+			It("contain five task steps", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				Expect(steps).Should(HaveLen(4))
-				Expect(steps[0].Name).Should(Equal("git-merge"))
-				Expect(steps[1].Name).Should(Equal(mergePullRefsStepName))
-				Expect(steps[2].Name).Should(Equal(createEffectivePipelineStepName))
-				Expect(steps[3].Name).Should(Equal(createTektonCRDsStepName))
+				Expect(steps).Should(HaveLen(5))
+				Expect(steps[0].Name).Should(Equal("setup-builder-home"))
+				Expect(steps[1].Name).Should(Equal("git-merge"))
+				Expect(steps[2].Name).Should(Equal(mergePullRefsStepName))
+				Expect(steps[3].Name).Should(Equal(createEffectivePipelineStepName))
+				Expect(steps[4].Name).Should(Equal(createTektonCRDsStepName))
 			})
 		})
 
@@ -176,19 +178,20 @@ var _ = Describe("Meta pipeline", func() {
 				Expect(tasks).Should(HaveLen(1))
 			})
 
-			It("contain three task steps", func() {
+			It("contain six task steps", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				Expect(steps).Should(HaveLen(5))
-				Expect(steps[0].Name).Should(Equal("git-merge"))
-				Expect(steps[1].Name).Should(Equal(mergePullRefsStepName))
-				Expect(steps[2].Name).Should(Equal(createEffectivePipelineStepName))
-				Expect(steps[2].Image).Should(Equal("gcr.io/jenkinsxio/builder-maven:0.1.527"))
-				Expect(steps[3].Name).Should(Equal("acme-ext"))
-				Expect(steps[4].Name).Should(Equal(createTektonCRDsStepName))
+				Expect(steps).Should(HaveLen(6))
+				Expect(steps[0].Name).Should(Equal("setup-builder-home"))
+				Expect(steps[1].Name).Should(Equal("git-merge"))
+				Expect(steps[2].Name).Should(Equal(mergePullRefsStepName))
+				Expect(steps[3].Name).Should(Equal(createEffectivePipelineStepName))
+				Expect(steps[3].Image).Should(Equal("gcr.io/jenkinsxio/builder-maven:0.1.527"))
+				Expect(steps[4].Name).Should(Equal("acme-ext"))
+				Expect(steps[5].Name).Should(Equal(createTektonCRDsStepName))
 			})
 			It("uses version stream for default image", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				Expect(steps[2].Image).Should(Equal("gcr.io/jenkinsxio/builder-maven:0.1.527"))
+				Expect(steps[3].Image).Should(Equal("gcr.io/jenkinsxio/builder-maven:0.1.527"))
 			})
 		})
 
@@ -201,7 +204,7 @@ var _ = Describe("Meta pipeline", func() {
 
 			It("merge pull refs step passes correct pull ref", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				mergePullRefStep := steps[1]
+				mergePullRefStep := steps[2]
 				Expect(mergePullRefStep.Args[0]).Should(ContainSubstring("SKIP merge-pull-refs: Nothing to merge"))
 			})
 		})
@@ -216,7 +219,7 @@ var _ = Describe("Meta pipeline", func() {
 
 			It("merge pull refs step passes correct pull ref", func() {
 				steps := actualCRDs.Tasks()[0].Spec.Steps
-				mergePullRefStep := steps[1]
+				mergePullRefStep := steps[2]
 				Expect(mergePullRefStep.Args[0]).Should(ContainSubstring("SKIP merge-pull-refs: Nothing to merge"))
 			})
 		})

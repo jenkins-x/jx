@@ -16,7 +16,8 @@ spec:
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
     name: abayer-js-test-repo-build-pack-9l9zj-1
-  podTemplate: {}
+  podTemplate:
+    schedulerName: ""
   resources:
   - name: abayer-js-test-repo-build-pack-9l9zj
     resourceRef:
