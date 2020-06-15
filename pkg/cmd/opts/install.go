@@ -833,7 +833,8 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	prowVersion := o.Version
 
 	setValues = append(setValues,
-		"auth.git.username="+gitUsername)
+		"auth.git.username="+gitUsername,
+		"webhook.enabled=false")
 
 	ksecretValues = append(ksecretValues,
 		"auth.git.password="+o.OAUTHToken)
