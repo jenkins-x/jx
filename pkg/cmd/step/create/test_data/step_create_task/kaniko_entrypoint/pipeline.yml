@@ -31,4 +31,3 @@ spec:
         resource: jenkins-x-jx-fix-kaniko-special-6nl7g
     taskRef:
       name: jenkins-x-jx-fix-kaniko-special-6nl7g-ci-1
-status: {}

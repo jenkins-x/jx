@@ -31,4 +31,3 @@ spec:
         resource: abayer-jx-demo-qs-master-mxcdj
     taskRef:
       name: abayer-jx-demo-qs-master-mxcdj-from-build-pack-1
-status: {}

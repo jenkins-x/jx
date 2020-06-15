@@ -31,4 +31,3 @@ spec:
         resource: abayer-js-test-repo-override-de-vr6ds
     taskRef:
       name: abayer-js-test-repo-override-de-vr6ds-from-build-pack-1
-status: {}

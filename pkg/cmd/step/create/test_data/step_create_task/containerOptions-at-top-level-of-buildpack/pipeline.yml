@@ -31,4 +31,3 @@ spec:
         resource: abayer-jx-demo-qs-master-b5j7r
     taskRef:
       name: abayer-jx-demo-qs-master-b5j7r-from-build-pack-1
-status: {}

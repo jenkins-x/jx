@@ -31,4 +31,3 @@ spec:
         resource: abayer-golang-qs-test-master-78c5n
     taskRef:
       name: abayer-golang-qs-test-master-78c5n-from-build-pack-1
-status: {}
