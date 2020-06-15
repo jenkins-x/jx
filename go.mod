@@ -68,7 +68,7 @@ require (
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c // indirect
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
-	github.com/jenkins-x/lighthouse-config v0.0.3
+	github.com/jenkins-x/lighthouse-config v0.0.4
 	github.com/jetstack/cert-manager v0.5.2
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/knative/pkg v0.0.0-20190624141606-d82505e6c5b4
