@@ -31,4 +31,3 @@ spec:
         resource: abayer-js-test-repo-build-pack-9l9zj
     taskRef:
       name: abayer-js-test-repo-build-pack-9l9zj-from-build-pack-1
-status: {}

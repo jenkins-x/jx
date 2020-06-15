@@ -31,4 +31,3 @@ spec:
         resource: abayer-jx-demo-qs-master-l22wn
     taskRef:
       name: abayer-jx-demo-qs-master-l22wn-from-build-pack-1
-status: {}

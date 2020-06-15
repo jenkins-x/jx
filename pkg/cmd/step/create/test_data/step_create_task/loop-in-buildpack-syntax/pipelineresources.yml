@@ -11,5 +11,4 @@ items:
     - name: url
       value: https://github.com/abayer/jx-demo-qs
     type: git
-  status: {}
 metadata: {}

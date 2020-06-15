@@ -11,5 +11,4 @@ items:
     - name: url
       value: https://github.com/abayer/golang-qs-test
     type: git
-  status: {}
 metadata: {}

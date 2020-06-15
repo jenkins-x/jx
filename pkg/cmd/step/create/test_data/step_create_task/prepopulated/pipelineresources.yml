@@ -12,5 +12,4 @@ items:
         - name: url
           value: https://github.com/jenkins-x/jx
       type: git
-    status: {}
 metadata: {}

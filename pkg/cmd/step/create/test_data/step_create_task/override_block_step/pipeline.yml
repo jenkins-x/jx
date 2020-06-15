@@ -31,4 +31,3 @@ spec:
         resource: abayer-golang-qs-test-master-twkr2
     taskRef:
       name: abayer-golang-qs-test-master-twkr2-from-build-pack-1
-status: {}
