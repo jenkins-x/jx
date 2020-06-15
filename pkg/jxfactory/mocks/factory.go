@@ -293,6 +293,23 @@ func (c *MockFactory_CreateTektonClient_OngoingVerification) GetCapturedArgument
 func (c *MockFactory_CreateTektonClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
+func (verifier *VerifierMockFactory) CreateTektonPipelineResourceClient() *MockFactory_CreateTektonPipelineResourceClient_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateTektonPipelineResourceClient", params, verifier.timeout)
+	return &MockFactory_CreateTektonPipelineResourceClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockFactory_CreateTektonPipelineResourceClient_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockFactory_CreateTektonPipelineResourceClient_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockFactory_CreateTektonPipelineResourceClient_OngoingVerification) GetAllCapturedArguments() {
+}
+
 func (verifier *VerifierMockFactory) ImpersonateUser(_param0 string) *MockFactory_ImpersonateUser_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ImpersonateUser", params, verifier.timeout)
