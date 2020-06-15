@@ -40,7 +40,7 @@ func InstallCodeGenerators(version string, gopath string) error {
 	}
 	path := fmt.Sprintf("%s/...", basePath)
 	util.AppLogger().Infof("installing %s version %s into %s", path, version, gopath)
-	err := util.GoGet(path, version, gopath, true, false, true)
+	err := util.GoGet(path, version, gopath, true, false, false)
 	if err != nil {
 		return err
 	}
