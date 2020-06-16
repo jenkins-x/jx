@@ -30,7 +30,7 @@ golangci-lint run \
   -E typecheck \
   -E errcheck \
   -E unused \
-  --timeout 15m \
+  --timeout 30m \
   --verbose \
   --build-tags build
 
