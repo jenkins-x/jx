@@ -144,8 +144,6 @@ github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrU
 github.com/TV4/logrus-stackdriver-formatter v0.1.0 h1:nFea8RiX7ecTnWPM+9FIqwZYJdcGo58CHMGIVdYzMXg=
 github.com/TV4/logrus-stackdriver-formatter v0.1.0/go.mod h1:wwS7hOiBvP6SBD0UXCa767+VhHkaXrfX0MzUojYcN0Q=
 github.com/Venafi/vcert v0.0.0-20190613103158-62139eb19b25/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
-github.com/abayer/test-infra v0.0.0-20200611142252-211a92405c22 h1:JKu397A0Aht+anCmQsjm9xgUjhVODRAxNMO8Yr/bj8M=
-github.com/abayer/test-infra v0.0.0-20200611142252-211a92405c22/go.mod h1:vF8nlv21xTwMFXbFAhKd3jjOyBqiCCGe4fPPKKeiI84=
 github.com/abdullin/seq v0.0.0-20160510034733-d5467c17e7af/go.mod h1:5Jv4cbFiHJMsVxt52+i0Ha45fjshj6wxYr1r19tB9bw=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
@@ -791,6 +789,8 @@ github.com/jenkins-x/lighthouse-config v0.0.4 h1:P581lKt4aU2flsFLajPIGx22Si3ow/4
 github.com/jenkins-x/lighthouse-config v0.0.4/go.mod h1:4ekc+gfCMs4WWKEWhElH2UWOXUMZJkEg9hyM1nPfuys=
 github.com/jenkins-x/logrus-stackdriver-formatter v0.2.3 h1:NuRWKUPCEX1wKlXA8ZYSG28qGKd41R7BK11YDQkPwqo=
 github.com/jenkins-x/logrus-stackdriver-formatter v0.2.3/go.mod h1:litPp7VZWDRCl8LvXuqGngy+65kkg/+T23TgFnDmfTk=
+github.com/jenkins-x/test-infra v0.0.0-20200611142252-211a92405c22 h1:aBM49o8gH7ZOp4H+8wr+N6VGC55zd3wV6Wm4lH4l+fY=
+github.com/jenkins-x/test-infra v0.0.0-20200611142252-211a92405c22/go.mod h1:vF8nlv21xTwMFXbFAhKd3jjOyBqiCCGe4fPPKKeiI84=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jetstack/cert-manager v0.9.1 h1:UrkzaFmsczbu5wNBRMluF2FRzud/yd5DRmZ4vEUgdHo=
 github.com/jetstack/cert-manager v0.9.1/go.mod h1:Fs0ujd+7nobZrgYgE5leTEjdv6WANzkR6b3ens1pFZA=
