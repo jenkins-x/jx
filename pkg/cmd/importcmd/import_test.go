@@ -14,7 +14,6 @@ import (
 	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
@@ -218,9 +217,10 @@ func TestImportOptions_GetOrganisation(t *testing.T) {
 
 func TestSetPreviewNamespace(t *testing.T) {
 	t.Parallel()
-	factory := clients.NewFactory()
+	factory := fake.NewFakeFactory()
 	commonOpts := opts.NewCommonOptionsWithFactory(factory)
-	commonOpts.SetGit(gits.NewGitFake())
+	options := &commonOpts
+	testhelpers.ConfigureTestOptions(options, gits.NewGitFake(), options.Helm())
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
