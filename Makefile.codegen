@@ -66,7 +66,7 @@ generate-refdocs: generate-api-refdocs generate-config-refdocs
 generate-api-refdocs: install-refdocs
 	${GOPATH}/bin/gen-crd-api-reference-docs -config "docs/refdocs/config.json" \
 	-template-dir docs/refdocs/templates \
-    -api-dir "./pkg/apis/jenkins.io" \
+    -api-dir "./pkg/apis/jenkins.io/v1" \
     -out-file docs/apidocs.md
 
 generate-config-refdocs:

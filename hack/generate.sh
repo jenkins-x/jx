@@ -11,7 +11,9 @@ echo "Running validation scripts..."
 scripts=(
     "make verify-generation-complete"
     "make generate-docs"
+    "make generate-refdocs"
 )
+
 fail=0
 for s in "${scripts[@]}"; do
     echo "RUN ${s}"
