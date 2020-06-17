@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/metapipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -64,7 +65,7 @@ func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Comma
 	cmd.Flags().IntVar(&options.Port, portOptionName, 8080, "The TCP port to listen on.")
 	cmd.Flags().StringVar(&options.BindAddress, bindOptionName, "0.0.0.0", "The interface address to bind to (by default, will listen on all interfaces/addresses).")
 	cmd.Flags().StringVar(&options.Path, "path", "/", "The path to listen on for requests to trigger a pipeline run.")
-	cmd.Flags().StringVar(&options.ServiceAccount, "service-account", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline.")
+	cmd.Flags().StringVar(&options.ServiceAccount, "service-account", tekton.DefaultPipelineSA, "The Kubernetes ServiceAccount to use to run the pipeline.")
 	cmd.Flags().BoolVar(&options.NoGitCredentialsInit, "no-git-init", false, "Disables checking we have setup git credentials on startup.")
 	cmd.Flags().BoolVar(&options.SemanticRelease, "semantic-release", false, "Enable semantic releases")
 

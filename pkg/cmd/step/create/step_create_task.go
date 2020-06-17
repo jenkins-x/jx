@@ -201,7 +201,7 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&o.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&o.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
-	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", tekton.DefaultPipelineSA, "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&o.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")

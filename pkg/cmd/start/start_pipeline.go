@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/metapipeline"
 	"github.com/pkg/errors"
 
@@ -93,7 +94,7 @@ func NewCmdStartPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "An optional Prow pipeline context")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The branch to start. If not specified defaults to master")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "", "", "The kind of pipeline such as release or pullrequest")
-	cmd.Flags().StringVar(&options.ServiceAccount, "service-account", "tekton-bot", "The Kubernetes ServiceAccount to use to run the meta pipeline")
+	cmd.Flags().StringVar(&options.ServiceAccount, "service-account", tekton.DefaultPipelineSA, "The Kubernetes ServiceAccount to use to run the meta pipeline")
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to the generated PipelineRun (can be use multiple times)")
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to the generated PipelineRun that are created (can be use multiple times)")
 

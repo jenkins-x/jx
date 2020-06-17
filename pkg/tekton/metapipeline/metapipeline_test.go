@@ -50,7 +50,7 @@ var _ = Describe("Meta pipeline", func() {
 				EnvVars:          map[string]string{"SOME_VAR": "SOME_VAL", "OTHER_VAR": "OTHER_VAL"},
 				BuildNumber:      "1",
 				SourceDir:        "source",
-				ServiceAccount:   "tekton-bot",
+				ServiceAccount:   tekton.DefaultPipelineSA,
 				VersionsDir:      filepath.Join("test_data", "stable_versions"),
 			}
 		})
@@ -287,7 +287,7 @@ var _ = Describe("Meta pipeline", func() {
 				EnvVars:          map[string]string{"SOME_VAR": "OTHER_VALUE", "SOURCE_URL": "http://foo.git"},
 				BuildNumber:      "1",
 				SourceDir:        "source",
-				ServiceAccount:   "tekton-bot",
+				ServiceAccount:   tekton.DefaultPipelineSA,
 				VersionsDir:      filepath.Join("test_data", "stable_versions"),
 			}
 		})

@@ -519,7 +519,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				NoKaniko:            tt.noKaniko,
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
-						ServiceAccount: "tekton-bot",
+						ServiceAccount: tekton.DefaultPipelineSA,
 					},
 				},
 				BuildNumber: "1",
