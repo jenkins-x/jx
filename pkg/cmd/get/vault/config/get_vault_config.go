@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/jenkins-x/jx/v2/pkg/kube"
@@ -115,7 +116,11 @@ func (o *GetVaultConfigOptions) systemVaultClient() (vault.Client, error) {
 
 	vaultConfig, err := vault.FromMap(installValues, devNamespace)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to parse Vault configuration from ConfigMap %s", kube.ConfigMapNameJXInstallConfig)
+		if !vaultConfig.IsExternal() {
+			fmt.Fprintf(os.Stderr, "WARNING: unable to validate internal vault configuration - attempting to default to original configuration\n")
+		} else {
+			return nil, errors.Wrapf(err, "unable to parse Vault configuration from ConfigMap %s", kube.ConfigMapNameJXInstallConfig)
+		}
 	}
 
 	if vaultConfig.IsExternal() {

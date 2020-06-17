@@ -127,7 +127,8 @@ func FromMap(data map[string]string, defaultNamespace string) (Vault, error) {
 	}
 
 	var err error
-	if vault.IsExternal() {
+	external := vault.IsExternal()
+	if external {
 		err = vault.validateExternalConfiguration()
 	} else {
 		err = vault.validateInternalConfiguration()
@@ -172,22 +173,22 @@ func (v *Vault) validateExternalConfiguration() error {
 	}
 
 	if v.ServiceAccountName == "" {
-		err = errors.New("service account name cannot be empty")
+		err = errors.New("external vault service account name cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 
 	if v.Namespace == "" {
-		err = errors.New("namespace cannot be empty")
+		err = errors.New("external vault namespace cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 
 	if v.SecretEngineMountPoint == "" {
-		err = errors.New("secret engine mount point cannot be empty")
+		err = errors.New("external vault secret engine mount point cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 
 	if v.KubernetesAuthPath == "" {
-		err = errors.New("Kubernetes auth path cannot be empty")
+		err = errors.New("external vault Kubernetes auth path cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 	return errorutil.CombineErrors(validationErrors...)
@@ -198,17 +199,17 @@ func (v *Vault) validateInternalConfiguration() error {
 	var validationErrors []error
 	var err error
 	if v.Name == "" {
-		err = errors.New("name cannot be empty")
+		err = errors.New("internal vault name cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 
 	if v.ServiceAccountName == "" {
-		err = errors.New("service account name cannot be empty")
+		err = errors.New("internal vault service account name cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 
 	if v.Namespace == "" {
-		err = errors.New("namespace cannot be empty")
+		err = errors.New("internal vault namespace cannot be empty")
 		validationErrors = append(validationErrors, err)
 	}
 
