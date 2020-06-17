@@ -25,4 +25,7 @@ const (
 
 	// LabelType is the label added to Tekton CRDs for the type of pipeline.
 	LabelType = "jenkins.io/pipelineType"
+
+	// DefaultPipelineSA is the default service account used for pipelines
+	DefaultPipelineSA = "tekton-bot"
 )

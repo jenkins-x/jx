@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/metapipeline"
 	"github.com/sirupsen/logrus"
 
@@ -224,7 +225,7 @@ func (o *BehaviorOptions) runPipelineDirectly(owner string, repo string, sourceU
 	branch := "master"
 	pullRefs = branch + ":"
 	kind := metapipeline.ReleasePipeline
-	sa := "tekton-bot"
+	sa := tekton.DefaultPipelineSA
 
 	l := logrus.WithFields(logrus.Fields(map[string]interface{}{
 		"Owner":     owner,

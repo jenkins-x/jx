@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git/credentials"
 
@@ -483,7 +484,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 				sa = "jenkins"
 				if settings.IsJenkinsXPipelines() {
-					sa = "tekton-bot"
+					sa = tekton.DefaultPipelineSA
 				} else if prow {
 					sa = "knative-build-bot"
 				}

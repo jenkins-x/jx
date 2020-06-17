@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
@@ -107,7 +108,7 @@ func (o *StepSyntaxEffectiveOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&o.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&o.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
-	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", tekton.DefaultPipelineSA, "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
 	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", syntax.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")

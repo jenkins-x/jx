@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -141,7 +142,7 @@ func Test_verify_pull_refs_on_activity(t *testing.T) {
 		EnvVars:          map[string]string{"SOME_VAR": "SOME_VAL", "OTHER_VAR": "OTHER_VAL"},
 		BuildNumber:      buildNumber,
 		SourceDir:        "source",
-		ServiceAccount:   "tekton-bot",
+		ServiceAccount:   tekton.DefaultPipelineSA,
 		VersionsDir:      filepath.Join("test_data", "stable_versions"),
 	}
 

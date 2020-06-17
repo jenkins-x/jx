@@ -304,6 +304,9 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 		})
 	}
 
+	if serviceAccount == "" {
+		serviceAccount = DefaultPipelineSA
+	}
 	if timeout == nil {
 		timeout = &metav1.Duration{Duration: 240 * time.Hour}
 	}

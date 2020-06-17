@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
@@ -944,7 +945,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				SourceName: "source",
 				StepOptions: step.StepOptions{
 					CommonOptions: &opts.CommonOptions{
-						ServiceAccount: "tekton-bot",
+						ServiceAccount: tekton.DefaultPipelineSA,
 					},
 				},
 				ValidateInCluster: true,

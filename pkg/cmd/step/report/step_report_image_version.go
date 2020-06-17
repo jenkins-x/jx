@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -92,7 +93,7 @@ func NewCmdStepReportImageVersion(commonOpts *opts.CommonOptions) *cobra.Command
 
 	cmd.Flags().StringVarP(&options.FileName, "name", "n", "", "The name of the file to generate")
 	cmd.Flags().StringVarP(&options.VersionsDir, "dir", "d", "", "The dir of the version stream. If not specified it the version stream is cloned")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the Job")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", tekton.DefaultPipelineSA, "The Kubernetes ServiceAccount to use to run the Job")
 	cmd.Flags().StringVarP(&options.UserName, "username", "u", util.DefaultGitUserName, "The user if using git storage")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", util.DefaultGitUserEmail, "The email if using git storage")
 	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(1), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
