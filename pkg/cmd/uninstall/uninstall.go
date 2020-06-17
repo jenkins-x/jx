@@ -65,7 +65,6 @@ func NewCmdUninstall(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *UninstallOptions) Run() error {
-
 	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
@@ -111,6 +110,11 @@ func (o *UninstallOptions) Run() error {
 	}
 
 	log.Logger().Infof("Removing installation of Jenkins X in team namespace %s", util.ColorInfo(namespace))
+
+	err = o.setPVCFinalizerToNull(namespace)
+	if err != nil {
+		return errors.Wrapf(err, "unable to nil PVC finalizers")
+	}
 
 	envMap, envNames, err := kube.GetEnvironments(jxClient, namespace)
 	if err != nil {
@@ -235,6 +239,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 // as it checks if the release is present before deleting, it can be forced to delete in case it doesn't find it because
 // of an unrelated error
 func (o *UninstallOptions) DeleteReleaseIfPresent(ns string, releaseName string, errors []error, force bool) []error {
+	log.Logger().Debugf("Deleting release '%s'", releaseName)
 	if err := o.Helm().StatusRelease(ns, releaseName); err == nil || force {
 		err := o.Helm().DeleteRelease(ns, releaseName, true)
 		if err != nil {
@@ -244,4 +249,29 @@ func (o *UninstallOptions) DeleteReleaseIfPresent(ns string, releaseName string,
 		log.Logger().Warnf("Not deleting %s because the release is not installed", releaseName)
 	}
 	return errors
+}
+
+func (o *UninstallOptions) setPVCFinalizerToNull(ns string) error {
+	client, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "getting the kube client")
+	}
+
+	list, err := client.CoreV1().PersistentVolumeClaims(ns).List(meta_v1.ListOptions{})
+
+	if err != nil {
+		return errors.Wrap(err, "getting PVC list")
+	}
+
+	for _, pvc := range list.Items {
+		currentPVC := pvc
+		currentPVC.Finalizers = nil
+		log.Logger().Debugf("Setting finalizer for PVC '%s' to nil", currentPVC.Name)
+		_, err = client.CoreV1().PersistentVolumeClaims(ns).Update(&currentPVC)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update pvc '%s'", pvc.GetName())
+		}
+	}
+
+	return nil
 }
