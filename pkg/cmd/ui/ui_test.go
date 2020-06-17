@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,15 +17,17 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/tests"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func TestShowErrorMessageIfIngressFound(t *testing.T) {
+func TestIngressURL(t *testing.T) {
 	_, kubeClient, co, ns := getFakeClientsAndNs(t)
 
+	ingressHostname := "jxui.example.org"
 	ingress := &v1beta1.Ingress{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "jxui-ingress",
@@ -32,12 +35,18 @@ func TestShowErrorMessageIfIngressFound(t *testing.T) {
 				"jenkins.io/ui-resource": "true",
 			},
 		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{
+				{Host: ingressHostname},
+			},
+		},
 	}
 	_, err := kubeClient.ExtensionsV1beta1().Ingresses(ns).Create(ingress)
-	assert.NoError(t, err, "there shouldn't be an error when creating the ingress")
+	require.NoError(t, err, "there shouldn't be an error when creating the ingress")
 
 	o := UIOptions{
 		CommonOptions: &co,
+		OnlyViewURL:   true,
 	}
 
 	logOutput := log.CaptureOutput(func() {
@@ -45,8 +54,8 @@ func TestShowErrorMessageIfIngressFound(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	assert.Equal(t, "WARNING: Only single-user mode is available for the UI at this time\n", logOutput,
-		"we should show a warning message informing that the UI is not ready to be launched in SSO / TLS mode")
+	expectLog := fmt.Sprintf("Jenkins X UI: https://%s\n", ingressHostname)
+	assert.Equal(t, expectLog, logOutput, "Ingress URL should be logged")
 }
 
 func TestGetLocalURL(t *testing.T) {

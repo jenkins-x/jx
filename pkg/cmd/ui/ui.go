@@ -108,7 +108,6 @@ func (o *UIOptions) Run() error {
 			return err
 		}
 
-		log.Logger().Info("Opening the UI in the browser...")
 		err = o.openURL(localURL, "Jenkins X UI")
 		if err != nil {
 			return errors.Wrapf(err, "there was a problem opening the UI in the browser from address %s", util.ColorInfo(localURL))
@@ -123,8 +122,14 @@ func (o *UIOptions) Run() error {
 		log.Logger().Info("\nStopping port forwarding")
 		os.Exit(1)
 
+	} else if len(ingressList.Items[0].Spec.Rules) > 0 {
+		ingressURL := "https://" + ingressList.Items[0].Spec.Rules[0].Host
+		err = o.openURL(ingressURL, "Jenkins X UI")
+		if err != nil {
+			return errors.Wrapf(err, "there was a problem opening the UI in the browser at address %s", util.ColorInfo(ingressURL))
+		}
 	} else {
-		log.Logger().Warn("Only single-user mode is available for the UI at this time")
+		return fmt.Errorf("Ingress does not specify a hostname")
 	}
 
 	return nil
@@ -216,17 +221,12 @@ func (o *UIOptions) decideLocalForwardPort() error {
 func (o *UIOptions) openURL(url string, label string) error {
 	// TODO Logger
 	if o.HideURLLabel {
-		_, err := fmt.Fprintf(o.Out, "%s\n", util.ColorInfo(url))
-		if err != nil {
-			return err
-		}
+		log.Logger().Infof("%s", util.ColorInfo(url))
 	} else {
-		_, err := fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
-		if err != nil {
-			return err
-		}
+		log.Logger().Infof("%s: %s", label, util.ColorInfo(url))
 	}
 	if !o.OnlyViewURL {
+		log.Logger().Info("Opening the UI in the browser...")
 		err := browser.OpenURL(url)
 		if err != nil {
 			return err
