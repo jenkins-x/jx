@@ -24,9 +24,9 @@ func TestNewExternalVault(t *testing.T) {
 		errorMessage           string
 	}{
 		{"", "", "", "", "", false, 1, "URL cannot be empty for an external Vault configuration"},
-		{"foo", "", "", "", "", false, 3, "['foo' not a valid URL, service account name cannot be empty, namespace cannot be empty]"},
-		{"http://my.vault.com", "", "", "", "", false, 2, "[service account name cannot be empty, namespace cannot be empty]"},
-		{"http://my.vault.com", "vault-sa", "", "", "", false, 1, "namespace cannot be empty"},
+		{"foo", "", "", "", "", false, 3, "['foo' not a valid URL, external vault service account name cannot be empty, external vault namespace cannot be empty]"},
+		{"http://my.vault.com", "", "", "", "", false, 2, "[external vault service account name cannot be empty, external vault namespace cannot be empty]"},
+		{"http://my.vault.com", "vault-sa", "", "", "", false, 1, "external vault namespace cannot be empty"},
 		{"http://my.vault.com", "vault-sa", "jx", "", "", true, 0, ""},
 	}
 
@@ -60,7 +60,7 @@ func TestNewInternalVault(t *testing.T) {
 		errorMessage       string
 	}{
 		{"", "", "", false, 1, "name cannot be empty for an internal Vault configuration"},
-		{"foo", "", "", false, 1, "namespace cannot be empty"},
+		{"foo", "", "", false, 1, "internal vault namespace cannot be empty"},
 		{"foo", "vault-sa", "jx", true, 0, ""},
 	}
 
@@ -92,11 +92,11 @@ func TestFromMap(t *testing.T) {
 		errorCount   int
 		errorMessage string
 	}{
-		{map[string]string{}, false, false, 2, "[name cannot be empty, service account name cannot be empty]"},
+		{map[string]string{}, false, false, 2, "[internal vault name cannot be empty, internal vault service account name cannot be empty]"},
 
 		{map[string]string{
 			vault.SystemVaultName: "foo",
-		}, false, false, 1, "service account name cannot be empty"},
+		}, false, false, 1, "internal vault service account name cannot be empty"},
 
 		{map[string]string{
 			vault.SystemVaultName: "foo",
