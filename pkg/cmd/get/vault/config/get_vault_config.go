@@ -2,14 +2,10 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 
-	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
-
 	"github.com/jenkins-x/jx/v2/pkg/vault"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
@@ -104,40 +100,12 @@ func (o *GetVaultConfigOptions) Run() error {
 }
 
 func (o *GetVaultConfigOptions) systemVaultClient() (vault.Client, error) {
-	kubeClient, devNamespace, err := o.KubeClientAndDevNamespace()
+	_, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create Kube client")
 	}
 
-	installValues, err := kube.ReadInstallValues(kubeClient, devNamespace)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to retrieve ConfigMap %s", kube.ConfigMapNameJXInstallConfig)
-	}
-
-	vaultConfig, err := vault.FromMap(installValues, devNamespace)
-	if err != nil {
-		if !vaultConfig.IsExternal() {
-			fmt.Fprintf(os.Stderr, "WARNING: unable to validate internal vault configuration - attempting to default to original configuration\n")
-		} else {
-			return nil, errors.Wrapf(err, "unable to parse Vault configuration from ConfigMap %s", kube.ConfigMapNameJXInstallConfig)
-		}
-	}
-
-	if vaultConfig.IsExternal() {
-		return o.externalVaultClient(vaultConfig, kubeClient)
-	}
-
-	return o.vaultClient(vaultConfig.Name, devNamespace)
-}
-
-func (o *GetVaultConfigOptions) externalVaultClient(vaultConfig vault.Vault, kubeClient kubernetes.Interface) (vault.Client, error) {
-	factory := o.GetFactory()
-	client, err := factory.CreateExternalVaultClient(vaultConfig, kubeClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create Vault client for Jenkins X managed Vault instance")
-	}
-
-	return client, nil
+	return o.SystemVaultClient(devNamespace)
 }
 
 func (o *GetVaultConfigOptions) vaultClient(name string, namespace string) (vault.Client, error) {
