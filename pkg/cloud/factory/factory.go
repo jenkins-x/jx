@@ -53,10 +53,12 @@ func NewBucketProviderFromTeamSettingsConfigurationOrDefault(factory clients.Fac
 	provider, err1 := NewBucketProviderFromTeamSettingsConfiguration(factory)
 	if err1 != nil {
 		log.Logger().Warn("Could not obtain a valid provider, falling back to DefaultProvider")
-		legacyProvider := buckets.NewLegacyBucketProvider()
-		// LegacyBucketProvider is just here to keep backwards compatibility with non boot clusters, that's why we need to pass
-		// some configuration in a different way, it shouldn't be the norm for providers
-		err := legacyProvider.(*buckets.LegacyBucketProvider).Initialize(storageLocation.BucketURL, storageLocation.Classifier)
+		provider = buckets.NewLegacyBucketProvider()
+	}
+	// LegacyBucketProvider is just here to keep backwards compatibility with non boot clusters, that's why we need to pass
+	// some configuration in a different way, it shouldn't be the norm for providers
+	if legacyProvider, ok := provider.(*buckets.LegacyBucketProvider); ok {
+		err := legacyProvider.Initialize(storageLocation.BucketURL, storageLocation.Classifier)
 		if err != nil {
 			return nil, errorutil.CombineErrors(err1, errors.Wrap(err, "there was a problem initializing the legacy bucket provider"))
 		}
