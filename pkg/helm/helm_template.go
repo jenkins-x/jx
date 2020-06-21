@@ -237,7 +237,7 @@ func (h *HelmTemplate) Template(chart string, releaseName string, ns string, out
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueStrings []string, valueFiles []string, repo string, username string, password string) error {
-
+	//ToDo: timeout is an unused argument here, but not in the helmCli file
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
 		return err

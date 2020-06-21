@@ -48,7 +48,7 @@ var (
 		jx get pipeline
 
 		# List all URLs for services in the current namespace
-		jx get url
+		jx get urls
 	`)
 )
 

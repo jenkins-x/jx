@@ -28,7 +28,7 @@ var (
 
 	get_url_example = templates.Examples(`
 		# List all URLs in this namespace
-		jx get url
+		jx get urls
 	`)
 )
 

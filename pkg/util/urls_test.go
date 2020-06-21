@@ -3,11 +3,14 @@
 package util_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
+
+const testSvcURL = "https://jx-test.com"
 
 func TestUrlJoin(t *testing.T) {
 	t.Parallel()
@@ -70,5 +73,23 @@ func TestIsURL(t *testing.T) {
 			actual := util.IsValidUrl(test)
 			assert.Equal(t, expected, actual, "%s", test)
 		})
+	}
+}
+
+func TestURLToHostName(t *testing.T) {
+	cases := []struct {
+		desc string
+		in   string
+		out  string
+	}{
+		{"service url is empty", "", ""},
+		{"service url is empty", "testing urls", ""},
+		{"service url is malformed", "cache_object:foo/bar", "parse cache_object:foo/bar: first path segment in URL cannot contain colon"},
+		{"service url is valid", testSvcURL, strings.Replace(testSvcURL, "https://", "", -1)},
+	}
+
+	for _, v := range cases {
+		url := util.URLToHostName(v.in)
+		assert.Equal(t, url, v.out)
 	}
 }
