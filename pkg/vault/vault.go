@@ -59,7 +59,7 @@ type Vault struct {
 	KubernetesAuthPath string
 }
 
-// NewExternalVault creates a external Vault instance configuration from the provided parameters.
+// NewExternalVault creates an external Vault instance configuration from the provided parameters.
 func NewExternalVault(url string, serviceAccountName string, namespace string, secretEngineMountPoint string, kubernetesAuthPath string) (Vault, error) {
 	if url == "" {
 		return Vault{}, errors.New("URL cannot be empty for an external Vault configuration")
@@ -77,7 +77,7 @@ func NewExternalVault(url string, serviceAccountName string, namespace string, s
 	return FromMap(data, namespace)
 }
 
-// NewInternalVault creates a external Vault instance configuration from the provided parameters.
+// NewInternalVault creates an internal Vault instance configuration from the provided parameters.
 func NewInternalVault(name string, serviceAccountName string, namespace string) (Vault, error) {
 	if name == "" {
 		return Vault{}, errors.New("name cannot be empty for an internal Vault configuration")
