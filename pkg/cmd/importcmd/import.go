@@ -387,7 +387,6 @@ func (options *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
-
 	}
 	err = options.fixDockerIgnoreFile()
 	if err != nil {
@@ -1403,7 +1402,19 @@ func (options *ImportOptions) renameChartToMatchAppName() error {
 		if exists && oldChartsDir != newChartsDir {
 			err = util.RenameDir(oldChartsDir, newChartsDir, false)
 			if err != nil {
-				return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
+				if os.IsExist(errors.Cause(err)) {
+					isChartDir, e := util.FileExists(filepath.Join(newChartsDir, "Chart.yaml"))
+					if e != nil {
+						return fmt.Errorf("error checking %s chart dir: %w", options.AppName, e)
+					}
+					if !isChartDir {
+						return fmt.Errorf("directory %s already exists but is not a helm chart", newChartsDir)
+					}
+					os.RemoveAll(oldChartsDir)
+					log.Logger().Warnf("Failed to apply the build pack in %s: %s", dir, err)
+				} else {
+					return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
+				}
 			}
 			_, err = os.Stat(newChartsDir)
 			if err != nil {

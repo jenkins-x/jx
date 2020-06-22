@@ -1,0 +1,69 @@
+pipelineConfig:
+  agent:
+    image: go
+    label: jenkins-go
+  pipelines:
+    pullRequest:
+      pipeline:
+        agent:
+          image: go
+        stages:
+        - name: run-make
+          steps:
+          - command: make linux
+            name: build-make-linux
+        - name: everything-else
+          steps:
+          - args:
+            - --cache=true
+            - --cache-dir=/workspace
+            - --context=/workspace/source
+            - --dockerfile=/workspace/source/Dockerfile
+            - --destination=gcr.io/apps-dev-229310/jx-quickstartxy:${inputs.params.version}
+            - --cache-repo=gcr.io/apps-dev-229310/cache
+            command: /kaniko/executor
+            dir: /workspace/source
+            image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+            name: build-container-build
+          - command: jx step post build --image gcr.io/apps-dev-229310/jx-quickstartxy:$PREVIEW_VERSION
+            name: postbuild-post-build
+          - command: make preview
+            dir: /workspace/source/charts/preview
+            name: promote-make-preview
+          - command: jx preview --app $APP_NAME --dir ../..
+            dir: /workspace/source/charts/preview
+            name: promote-jx-preview
+    release:
+      pipeline:
+        agent:
+          image: go
+        stages:
+        - name: run-make
+          steps:
+          - command: jx step git credentials
+            name: setup-jx-git-credentials
+          - command: make build
+            name: build-make-build
+        - name: everything-else
+          steps:
+          - args:
+            - --cache=true
+            - --cache-dir=/workspace
+            - --context=/workspace/source
+            - --dockerfile=/workspace/source/Dockerfile
+            - --destination=gcr.io/apps-dev-229310/jx-quickstartxy:${inputs.params.version}
+            - --cache-repo=gcr.io/apps-dev-229310/cache
+            command: /kaniko/executor
+            dir: /workspace/source
+            image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+            name: build-container-build
+          - command: jx step post build --image gcr.io/apps-dev-229310/jx-quickstartxy:${VERSION}
+            name: build-post-build
+          - command: jx step changelog --version v${VERSION}
+            name: promote-changelog
+          - command: jx step helm release
+            dir: /workspace/source/charts/jx-quickstartxy
+            name: promote-helm-release
+          - command: jx promote -b --all-auto --timeout 1h --version ${VERSION}
+            dir: /workspace/source/charts/jx-quickstartxy
+            name: promote-jx-promote
