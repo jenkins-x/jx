@@ -383,11 +383,21 @@ func (options *ImportOptions) Run() error {
 	options.AppName = naming.ToValidName(strings.ToLower(options.AppName))
 
 	if !options.DisableDraft {
+		// Disable draft if jenkins-x.yaml is already present
+		jenkinsxFile := filepath.Join(options.Dir, "jenkins-x.yml")
+		_, err = os.Stat(jenkinsxFile)
+		if err == nil {
+			options.DisableDraft = true
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if !options.DisableDraft {
 		err = options.DraftCreate()
 		if err != nil {
 			return err
 		}
-
 	}
 	err = options.fixDockerIgnoreFile()
 	if err != nil {
