@@ -121,11 +121,11 @@ func CreateUniqueDirectory(dir string, name string, maximumAttempts int) (string
 func RenameDir(src string, dst string, force bool) (err error) {
 	err = CopyDir(src, dst, force)
 	if err != nil {
-		return fmt.Errorf("failed to copy source dir %s to %s: %s", src, dst, err)
+		return errors.Wrapf(err, "failed to copy source dir %s to %s", src, dst)
 	}
 	err = os.RemoveAll(src)
 	if err != nil {
-		return fmt.Errorf("failed to cleanup source dir %s: %s", src, err)
+		return errors.Wrapf(err, "failed to cleanup source dir %s", src)
 	}
 	return nil
 }
@@ -178,7 +178,7 @@ func CopyDir(src string, dst string, force bool) (err error) {
 		if force {
 			os.RemoveAll(dst)
 		} else {
-			return fmt.Errorf("destination already exists")
+			return os.ErrExist
 		}
 	}
 
