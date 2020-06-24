@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -171,6 +171,6 @@ func Confirm(message string, defaultValue bool, help string, handles IOFileHandl
 	if err != nil {
 		return false, err
 	}
-	log.Blank()
+	log.Logger().Info("")
 	return answer, nil
 }

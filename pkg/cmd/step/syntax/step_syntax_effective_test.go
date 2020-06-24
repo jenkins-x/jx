@@ -25,7 +25,7 @@ import (
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	jxsyntax "github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
 	sht "github.com/jenkins-x/jx/v2/pkg/tekton/syntax/syntax_helpers_test"
 	"github.com/jenkins-x/jx/v2/pkg/tests"

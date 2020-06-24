@@ -21,7 +21,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/v2/pkg/features"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -227,7 +227,7 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	if err != nil {
 		return err
 	}
-	log.Blank()
+	log.Logger().Info("")
 
 	if flags.ClusterName == "" {
 		flags.ClusterName, _, err = session.GetCurrentlyConnectedRegionAndClusterName()

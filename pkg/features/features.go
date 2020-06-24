@@ -6,7 +6,7 @@ import (
 
 	"reflect"
 
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/rollout/rox-go/core/context"
 	"github.com/rollout/rox-go/server"
 	"github.com/spf13/cobra"
