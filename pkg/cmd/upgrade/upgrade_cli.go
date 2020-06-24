@@ -4,7 +4,10 @@ import (
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/extensions"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -88,7 +91,7 @@ func (o *UpgradeCLIOptions) Run() error {
 		}
 	}
 
-	return nil
+	return o.UpgradeBinaryPlugins()
 }
 
 func (o *UpgradeCLIOptions) candidateInstallVersion() (semver.Version, error) {
@@ -138,4 +141,32 @@ func (o *UpgradeCLIOptions) ShouldUpdate(newVersion semver.Version) (bool, error
 		return true, nil
 	}
 	return false, nil
+}
+
+// UpgradeBinaryPlugins eagerly installs/upgrades any binary plugins which have Plugin CRDs defined
+// in the current development namespace
+func (o *UpgradeCLIOptions) UpgradeBinaryPlugins() error {
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrapf(err, "failed to create jx client")
+	}
+	pluginList, err := jxClient.JenkinsV1().Plugins(ns).List(metav1.ListOptions{})
+	if err != nil && apierrors.IsNotFound(err) {
+		err = nil
+	}
+	if err != nil {
+		return errors.Wrapf(err, "failed to query Jenkins X plugins in namespace %s", ns)
+	}
+	if pluginList != nil {
+		for _, plugin := range pluginList.Items {
+			if plugin.Labels != nil && plugin.Labels[extensions.PluginCommandLabel] != "" {
+				log.Logger().Infof("checking binary jx plugin %s version %s is installed", util.ColorInfo(plugin.Name), util.ColorInfo(plugin.Spec.Version))
+				_, err = extensions.EnsurePluginInstalled(plugin)
+				if err != nil {
+					return errors.Wrapf(err, "failed to ensure plugin is installed %s", plugin.Name)
+				}
+			}
+		}
+	}
+	return nil
 }
