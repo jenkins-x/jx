@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

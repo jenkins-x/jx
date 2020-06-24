@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/apps"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

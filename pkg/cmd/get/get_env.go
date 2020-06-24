@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,7 +97,7 @@ func (o *GetEnvOptions) Run() error {
 		table.AddRow("NAME", "LABEL", "KIND", "NAMESPACE", "SOURCE", "REF", "PR")
 		table.AddRow(e, spec.Label, spec.Namespace, kindString(spec), spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		table.Render()
-		log.Blank()
+		log.Logger().Info("")
 
 		ens := env.Spec.Namespace
 		if ens != "" {

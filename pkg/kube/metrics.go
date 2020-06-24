@@ -3,7 +3,7 @@ package kube
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"k8s.io/client-go/kubernetes"
 

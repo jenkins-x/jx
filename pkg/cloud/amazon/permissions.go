@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"

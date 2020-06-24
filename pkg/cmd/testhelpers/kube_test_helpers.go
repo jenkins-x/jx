@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/pkg/errors"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

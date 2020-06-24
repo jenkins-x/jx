@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	versionstream_test "github.com/jenkins-x/jx/v2/pkg/versionstream/mocks"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"

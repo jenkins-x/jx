@@ -22,7 +22,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/gits/releases"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 

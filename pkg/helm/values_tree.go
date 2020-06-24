@@ -18,7 +18,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 )
 
 //DefaultValuesTreeIgnores is the default set of ignored files for collapsing the values tree which are used if

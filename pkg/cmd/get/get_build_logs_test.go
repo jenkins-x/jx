@@ -21,7 +21,7 @@ import (
 
 	jxfake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
 	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"

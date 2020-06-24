@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"

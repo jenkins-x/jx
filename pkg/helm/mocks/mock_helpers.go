@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/v2/pkg/helm"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/petergtz/pegomock"
 	"k8s.io/helm/pkg/proto/hapi/chart"

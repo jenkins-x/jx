@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"

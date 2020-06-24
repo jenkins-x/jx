@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/controller"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 

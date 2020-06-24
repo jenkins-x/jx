@@ -40,7 +40,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible
-	github.com/fatih/color v1.7.0
+	github.com/fatih/color v1.9.0
 	github.com/fatih/structs v1.1.0
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20200320173742-022f4bab9090
 	github.com/ghodss/yaml v1.0.0
@@ -48,7 +48,6 @@ require (
 	github.com/go-openapi/jsonreference v0.19.3
 	github.com/go-openapi/spec v0.19.7
 	github.com/go-openapi/swag v0.19.9 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2
@@ -68,6 +67,7 @@ require (
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c // indirect
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
+	github.com/jenkins-x/jx-logging v0.0.10
 	github.com/jenkins-x/lighthouse-config v0.0.3
 	github.com/jetstack/cert-manager v0.5.2
 	github.com/json-iterator/go v1.1.9 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/rickar/props v0.0.0-20170718221555-0b06aeb2f037
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/rollout/rox-go v0.0.0-20181220111955-29ddae74a8c4
@@ -121,7 +121,7 @@ require (
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
+	golang.org/x/sys v0.0.0-20200511232937-7e40ca221e25
 	golang.org/x/tools v0.0.0-20200415034506-5d8e1897c761
 	gopkg.in/AlecAivazis/survey.v1 v1.8.3
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect

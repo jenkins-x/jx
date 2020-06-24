@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -270,7 +270,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 			nodeTable.AddRow(n.Type, n.Location)
 		}
 		nodeTable.Render()
-		log.Blank()
+		log.Logger().Info("")
 
 		serviceTable := o.CreateTable()
 		serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
@@ -281,7 +281,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 			serviceTable.AddRow(s.Service, s.Location, s.Description)
 		}
 		serviceTable.Render()
-		log.Blank()
+		log.Logger().Info("")
 
 		vulnTable := o.CreateTable()
 		vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
@@ -294,7 +294,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 			vulnTable.AddRow(vuln.Vulnerability, vuln.Location, vuln.Category, vuln.Description, vuln.Evidence)
 		}
 		vulnTable.Render()
-		log.Blank()
+		log.Logger().Info("")
 	}
 	return nil
 }

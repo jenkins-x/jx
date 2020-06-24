@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/quickstarts"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"

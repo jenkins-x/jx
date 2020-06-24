@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/builds"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/v2/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/spf13/cobra"
 )
 
