@@ -20,11 +20,11 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
+	"github.com/jenkins-x/lighthouse-config/pkg/plugins"
 	uuid "github.com/satori/go.uuid"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/test-infra/prow/plugins"
 
 	cmd_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
@@ -214,7 +214,7 @@ func verifyProwConfigMap(err error, kubeClient kubernetes.Interface, devEnv *v1.
 	assert.NotNil(t, pluginsConfigMap.Data)
 	expectedPluginConfig, err := testOptions.loadExpectedConfig(testOptions.TestType, "plugins.yaml", testOptions.DevEnvRepo.Owner, testOptions.DevRepoName)
 	assert.NoError(t, err)
-	assert.Equal(t, pluginsConfigMap.Data["plugins.yaml"], expectedPluginConfig)
+	assert.Equal(t, expectedPluginConfig, pluginsConfigMap.Data["plugins.yaml"])
 }
 
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`

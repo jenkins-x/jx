@@ -1,14 +1,11 @@
 blunderbuss: {}
 cat: {}
 cherry_pick_unapproved: {}
-config_updater:
-  gzip: false
-golint: {}
+config_updater: {}
 heart: {}
 label:
   additional_labels: null
 owners: {}
-project_config: {}
 requiresig: {}
 sigmention: {}
 size:
