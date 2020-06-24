@@ -3,5 +3,5 @@ dependencies:
   owner: jenkins-x
   repo: lighthouse-config
   url: https://github.com/jenkins-x/lighthouse-config
-  version: 0.0.5
+  version: 0.0.6
   versionURL: ""

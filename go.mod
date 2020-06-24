@@ -65,7 +65,7 @@ require (
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jenkins-x/jx-logging v0.0.10
-	github.com/jenkins-x/lighthouse-config v0.0.5
+	github.com/jenkins-x/lighthouse-config v0.0.6
 	github.com/jetstack/cert-manager v0.9.1
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
