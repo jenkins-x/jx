@@ -132,6 +132,10 @@ func TestStepVerifyPod(t *testing.T) {
 func TestStepVerifyPodDebug(t *testing.T) {
 	t.Parallel()
 
+	filename := "verify-pod.log"
+
+	defer os.Remove(filename)
+
 	options := StepVerifyPodReadyOptions{Debug: true}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
@@ -151,7 +155,6 @@ func TestStepVerifyPodDebug(t *testing.T) {
 	assert.Contains(t, string(outBytes), "POD STATUS")
 
 	//check DEBUG file created
-	filename := "verify-pod.log"
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		t.Error("Debug log does not exist")
 	}
