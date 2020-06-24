@@ -15,9 +15,9 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	jxconfig "github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/errorutil"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	"github.com/pkg/errors"

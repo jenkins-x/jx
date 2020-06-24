@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	jenkauth "github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	jenkauth "github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 

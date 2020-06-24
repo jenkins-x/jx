@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/v2/cmd/codegen/util"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/cmd/codegen/util"
 )
 
 func HomeDir() string {

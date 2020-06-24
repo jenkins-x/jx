@@ -29,13 +29,13 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"

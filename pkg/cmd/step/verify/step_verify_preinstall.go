@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	"sigs.k8s.io/yaml"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/boot"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
@@ -31,7 +32,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/packages"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"

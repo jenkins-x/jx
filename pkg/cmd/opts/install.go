@@ -21,6 +21,7 @@ import (
 
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
@@ -31,7 +32,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/packages"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	"github.com/jenkins-x/jx/v2/pkg/util"

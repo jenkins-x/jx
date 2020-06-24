@@ -18,10 +18,10 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

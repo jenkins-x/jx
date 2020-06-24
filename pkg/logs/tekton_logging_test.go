@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/acarl005/stripansi"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	jxfake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
@@ -19,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"

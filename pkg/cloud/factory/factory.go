@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	amazonStorage "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/storage"
@@ -10,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/errorutil"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/pkg/errors"
 )
 

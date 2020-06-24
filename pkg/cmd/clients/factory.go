@@ -26,10 +26,10 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/vault"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 	kubevault "github.com/jenkins-x/jx/v2/pkg/kube/vault"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"

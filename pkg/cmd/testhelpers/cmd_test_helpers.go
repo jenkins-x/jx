@@ -13,6 +13,7 @@ import (
 	//"github.com/jenkins-x/jx/v2/pkg/cmd/controller"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	v1fake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
@@ -26,7 +27,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/resources"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
 	"github.com/petergtz/pegomock"

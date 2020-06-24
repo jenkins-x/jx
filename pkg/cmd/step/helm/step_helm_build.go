@@ -5,12 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/jenkins-x/jx/v2/pkg/io/secrets"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/iks"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/surveyutils"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"

@@ -17,8 +17,8 @@ import (
 
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/v2/pkg/environments"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/environments"
 	"github.com/pkg/errors"
 )
 

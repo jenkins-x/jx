@@ -28,6 +28,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	v12 "k8s.io/client-go/kubernetes/typed/core/v1"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
@@ -36,7 +37,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

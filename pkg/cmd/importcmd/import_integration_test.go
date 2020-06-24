@@ -17,11 +17,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	fake_clients "github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"

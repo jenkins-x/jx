@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/config"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
