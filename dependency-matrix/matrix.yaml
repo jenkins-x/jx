@@ -1,0 +1,7 @@
+dependencies:
+- host: github.com
+  owner: jenkins-x
+  repo: lighthouse-config
+  url: https://github.com/jenkins-x/lighthouse-config
+  version: 0.0.5
+  versionURL: ""
