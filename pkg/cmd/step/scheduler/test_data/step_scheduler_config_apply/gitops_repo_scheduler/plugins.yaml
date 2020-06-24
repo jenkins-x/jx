@@ -2,13 +2,11 @@ blunderbuss: {}
 cat: {}
 cherry_pick_unapproved: {}
 config_updater:
-  gzip: false
   maps:
     env/prow/config.yaml:
       name: config
     env/prow/plugins.yaml:
       name: plugins
-golint: {}
 heart: {}
 label:
   additional_labels: null
@@ -16,7 +14,6 @@ owners: {}
 plugins:
   @@DEV_ENV_ORG@@/environment-@@DEV_ENV_ORG@@-@@DEV_ENV_REPO@@-dev:
   - config-updater
-project_config: {}
 requiresig: {}
 sigmention: {}
 size:
