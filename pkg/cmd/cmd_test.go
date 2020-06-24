@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
@@ -83,4 +84,14 @@ func TestLoggingSetup(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestFindPluginBinary(t *testing.T) {
+	pluginsDir := filepath.Join("test_data", "binary_plugins_dir")
+
+	path := FindPluginBinary(pluginsDir, "jx-dummy-plugin")
+	assert.Equal(t, filepath.Join(pluginsDir, "jx-dummy-plugin-1.2.3"), path, "should have found binary plugin")
+
+	path = FindPluginBinary(pluginsDir, "jx-does-not-exist")
+	assert.Equal(t, "", path, "should have not have found binary plugin")
 }

@@ -426,33 +426,20 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) err
 
 	foundBinaryPath := ""
 
+	pluginDir, err := util.PluginBinDir("jx")
+	if err != nil {
+		log.Logger().Debugf("failed to find plugin dir %s", err.Error())
+	}
+
 	// attempt to find binary, starting at longest possible name with given cmdArgs
 	for len(remainingArgs) > 0 {
 		commandName := fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-"))
 		path, err := pluginHandler.Lookup(commandName)
 		if err != nil || len(path) == 0 {
-			// lets check if there's a command in the ~/.jx/plugins/jx/bin dir
-			found := false
-			pluginDir, err := util.PluginBinDir("jx")
-			if err != nil {
-				log.Logger().Debugf("failed to find plugin dir %s", err.Error())
-			} else {
-				files, err := ioutil.ReadDir(pluginDir)
-				if err != nil {
-					log.Logger().Debugf("failed to read plugin dir %s", err.Error())
-				} else {
-					prefix := commandName + "-"
-					for _, f := range files {
-						name := f.Name()
-						if strings.HasPrefix(name, prefix) {
-							foundBinaryPath = filepath.Join(pluginDir, name)
-							found = true
-							log.Logger().Debugf("found plugin %s at %s", commandName, foundBinaryPath)
-						}
-					}
-				}
-			}
-			if found {
+			// lets see if we have previously downloaded this binary plugin
+			path = FindPluginBinary(pluginDir, commandName)
+			if path != "" {
+				foundBinaryPath = path
 				break
 			}
 
@@ -481,4 +468,25 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) err
 	}
 
 	return nil
+}
+
+// FindPluginBinary tries to find the jx-foo binary plugin in the plugins dir `~/.jx/plugins/jx/bin` dir `
+func FindPluginBinary(pluginDir string, commandName string) string {
+	if pluginDir != "" {
+		files, err := ioutil.ReadDir(pluginDir)
+		if err != nil {
+			log.Logger().Debugf("failed to read plugin dir %s", err.Error())
+		} else {
+			prefix := commandName + "-"
+			for _, f := range files {
+				name := f.Name()
+				if strings.HasPrefix(name, prefix) {
+					path := filepath.Join(pluginDir, name)
+					log.Logger().Debugf("found plugin %s at %s", commandName, path)
+					return path
+				}
+			}
+		}
+	}
+	return ""
 }
