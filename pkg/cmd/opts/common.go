@@ -26,6 +26,7 @@ import (
 	prowjobclient "k8s.io/test-infra/prow/client/clientset/versioned"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
@@ -40,7 +41,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube/resources"
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 	"github.com/jenkins-x/jx/v2/pkg/kustomize"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 	"github.com/jenkins-x/jx/v2/pkg/table"
@@ -236,7 +236,7 @@ func (o *CommonOptions) AddBaseFlags(cmd *cobra.Command) {
 		defaultBatchMode = true
 	}
 	cmd.PersistentFlags().BoolVarP(&o.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
-	levels := strings.Join([]string{"panic","fatal","error","warn","info", "debug", "trace"}, ", ")
+	levels := strings.Join([]string{"panic", "fatal", "error", "warn", "info", "debug", "trace"}, ", ")
 	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, fmt.Sprintf("Enables verbose output. The environment variable JX_LOG_LEVEL has precedence over this flag and allows setting the logging level to any value of: %s", levels))
 
 	o.Cmd = cmd

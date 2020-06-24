@@ -13,8 +13,8 @@ import (
 
 	"github.com/acarl005/stripansi"
 	"github.com/google/uuid"
-	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	log2 "github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	reportingtools_test "github.com/jenkins-x/jx/v2/pkg/reportingtools/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/petergtz/pegomock"

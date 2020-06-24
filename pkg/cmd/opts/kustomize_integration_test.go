@@ -11,9 +11,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 )
 
 // TestInstallKustomize tests that Kustomize gets properly installed into JX_HOME

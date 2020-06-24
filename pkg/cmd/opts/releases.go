@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/dependencymatrix"
 	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/v2/pkg/gits/releases"

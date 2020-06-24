@@ -8,6 +8,7 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
 	awsvault "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/vault"
@@ -16,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 	"github.com/jenkins-x/jx/v2/pkg/kube/vault"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"

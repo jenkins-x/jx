@@ -3,10 +3,10 @@ package pipelinescheduler
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/lighthouse-config/pkg/config"
 

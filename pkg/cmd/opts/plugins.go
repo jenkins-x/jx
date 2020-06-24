@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/v2/pkg/extensions"
 

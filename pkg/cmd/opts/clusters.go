@@ -3,9 +3,9 @@ package opts
 import (
 	"sort"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	gcp "github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/v2/pkg/cluster/fake"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 
 	"github.com/jenkins-x/jx/v2/pkg/cluster"
 	"github.com/jenkins-x/jx/v2/pkg/cluster/gke"

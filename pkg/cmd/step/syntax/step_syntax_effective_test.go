@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
@@ -25,7 +26,6 @@ import (
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	jxsyntax "github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
 	sht "github.com/jenkins-x/jx/v2/pkg/tekton/syntax/syntax_helpers_test"
 	"github.com/jenkins-x/jx/v2/pkg/tests"

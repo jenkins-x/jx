@@ -7,6 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	awsvault "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/v2/pkg/cloud/gke/vault"
@@ -16,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/jenkins-x/jx/v2/pkg/kube/serviceaccount"
 	kubevault "github.com/jenkins-x/jx/v2/pkg/kube/vault"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

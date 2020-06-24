@@ -10,8 +10,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/v2/pkg/environments"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/environments"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
 	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"

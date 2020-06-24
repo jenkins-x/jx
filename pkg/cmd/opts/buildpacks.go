@@ -12,11 +12,11 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/v2/pkg/draft"
 	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/v2/pkg/jenkinsfile/gitresolver"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
