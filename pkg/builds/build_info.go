@@ -77,7 +77,8 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 
 	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
 
-	for _, container := range containers {
+	for _, c := range containers {
+		container := c
 		if strings.HasPrefix(container.Name, "build-step-git-source") || strings.HasPrefix(container.Name, "step-git-source") {
 			_, args := kube.GetCommandAndArgs(&container, isInit)
 			for i := 0; i <= len(args)-2; i += 2 {

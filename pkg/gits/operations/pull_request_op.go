@@ -192,7 +192,8 @@ func (o *PullRequestOperation) updateAndGenerateMessagesAndDependencyMatrix(dir 
 
 	var upstreamDependencyAsset *gits.GitReleaseAsset
 
-	for _, asset := range assets {
+	for _, a := range assets {
+		asset := a
 		if asset.Name == dependencymatrix.DependencyUpdatesAssetName {
 			upstreamDependencyAsset = &asset
 			break
@@ -310,7 +311,8 @@ func AddDependencyMatrixUpdatePaths(upstreamDependencyAsset *gits.GitReleaseAsse
 				}, e...)
 			}
 		}
-		updates = append(updates, &d)
+		update := d
+		updates = append(updates, &update)
 	}
 	return updates, nil
 }

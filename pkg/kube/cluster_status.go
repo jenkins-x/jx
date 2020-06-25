@@ -76,7 +76,6 @@ func GetClusterStatus(client kubernetes.Interface, namespace string, verbose boo
 	}
 	for _, node := range nodes.Items {
 		if verbose {
-
 			log.Logger().Infof("\n-------------------------")
 			log.Logger().Infof("Node:\n%s\n", node.Name)
 		}
@@ -203,7 +202,8 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 		log.Logger().Infof("Pods:")
 	}
 
-	for _, pod := range podList.Items {
+	for _, p := range podList.Items {
+		pod := p
 		podReqs, podLimits := PodRequestsAndLimits(&pod)
 
 		if verbose {

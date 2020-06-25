@@ -136,7 +136,8 @@ func (o *StepVerifyPodReadyOptions) waitForReadyPods(kubeClient kubernetes.Inter
 
 	notReadyPhases := map[string][]string{}
 
-	for _, pod := range pods.Items {
+	for _, p := range pods.Items {
+		pod := p
 		podName := pod.ObjectMeta.Name
 		phase := pod.Status.Phase
 

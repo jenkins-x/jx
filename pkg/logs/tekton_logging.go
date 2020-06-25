@@ -204,16 +204,17 @@ func getPipelineRunsForActivity(pa *v1.PipelineActivity, tektonClient tektonclie
 
 	runs := make(map[string]tektonapis.PipelineRun)
 	for _, pr := range tektonPRs.Items {
-		buildNumber := pr.Labels[tekton.LabelBuild]
+		pipelineRun := pr
+		buildNumber := pipelineRun.Labels[tekton.LabelBuild]
 		if buildNumber == "" {
-			buildNumber = findLegacyPipelineRunBuildNumber(&pr)
+			buildNumber = findLegacyPipelineRunBuildNumber(&pipelineRun)
 		}
-		pipelineType := pr.Labels[tekton.LabelType]
+		pipelineType := pipelineRun.Labels[tekton.LabelType]
 		if pipelineType == "" {
 			pipelineType = tekton.BuildPipeline.String()
 		}
 		if buildNumber == pa.Spec.Build {
-			runs[pipelineType] = pr
+			runs[pipelineType] = pipelineRun
 		}
 	}
 
@@ -324,7 +325,8 @@ func (t *TektonLogger) getContainerLogsFromPod(pod *corev1.Pod, pa *v1.PipelineA
 	errorColor.EnableColor()
 	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
 	t.initializeLoggingRoutine()
-	for i, ic := range containers {
+	for i, initContainer := range containers {
+		ic := initContainer
 		pod, err := t.waitForContainerToStart(pa.Namespace, pod, i, stageName)
 		err = t.LogWriter.WriteLog(LogLine{
 			Line: fmt.Sprintf("\nShowing logs for build %v stage %s and container %s",

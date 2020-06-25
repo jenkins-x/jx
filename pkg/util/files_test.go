@@ -140,7 +140,7 @@ func Test_FileExists_for_existing_file_returns_true(t *testing.T) {
 
 	data := []byte("hello\nworld\n")
 	testFile := filepath.Join(tmpDir, "hello.txt")
-	err = ioutil.WriteFile(testFile, data, 0644)
+	err = ioutil.WriteFile(testFile, data, 0600)
 	require.NoError(t, err, "failed to create test file %s", testFile)
 
 	exists, err := util.FileExists(testFile)

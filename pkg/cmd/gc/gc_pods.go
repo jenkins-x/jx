@@ -86,7 +86,8 @@ func (o *GCPodsOptions) Run() error {
 
 	deleteOptions := &metav1.DeleteOptions{}
 	errors := []error{}
-	for _, pod := range podList.Items {
+	for _, p := range podList.Items {
+		pod := p
 		matches, age := o.MatchesPod(&pod)
 		if matches {
 			err := podInterface.Delete(pod.Name, deleteOptions)

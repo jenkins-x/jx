@@ -172,22 +172,24 @@ func (o *GCActivitiesOptions) Run() error {
 
 	//
 	for _, a := range completedActivities {
+		activity := a
 		branchName := a.BranchName()
 		isPR, isBatch := o.isPullRequestOrBatchBranch(branchName)
 		maxAge, revisionHistory := o.ageAndHistoryLimits(isPR, isBatch)
 		// lets remove activities that are too old
-		if a.Spec.CompletedTimestamp != nil && a.Spec.CompletedTimestamp.Add(maxAge).Before(now) {
-			err = o.deleteActivity(activityInterface, &a)
+		if activity.Spec.CompletedTimestamp != nil && activity.Spec.CompletedTimestamp.Add(maxAge).Before(now) {
+
+			err = o.deleteActivity(activityInterface, &activity)
 			if err != nil {
 				return err
 			}
 			continue
 		}
 
-		repoBranchAndContext := a.RepositoryOwner() + "/" + a.RepositoryName() + "/" + a.BranchName() + "/" + a.Spec.Context
+		repoBranchAndContext := activity.RepositoryOwner() + "/" + activity.RepositoryName() + "/" + activity.BranchName() + "/" + activity.Spec.Context
 		c := counters.AddBuild(repoBranchAndContext, isPR)
 		if c > revisionHistory && a.Spec.CompletedTimestamp != nil {
-			err = o.deleteActivity(activityInterface, &a)
+			err = o.deleteActivity(activityInterface, &activity)
 			if err != nil {
 				return err
 			}
@@ -204,7 +206,7 @@ func (o *GCActivitiesOptions) Run() error {
 				}
 			}
 			if !matched {
-				err = o.deleteActivity(activityInterface, &a)
+				err = o.deleteActivity(activityInterface, &activity)
 				if err != nil {
 					return err
 				}
@@ -254,9 +256,10 @@ func (o *GCActivitiesOptions) gcPipelineRuns(ns string) error {
 	now := time.Now()
 
 	for _, pr := range runList.Items {
-		completionTime := pr.Status.CompletionTime
+		pipelineRun := pr
+		completionTime := pipelineRun.Status.CompletionTime
 		if completionTime != nil && completionTime.Add(o.PipelineRunAgeLimit).Before(now) {
-			err = o.deletePipelineRun(pipelineRunInterface, &pr)
+			err = o.deletePipelineRun(pipelineRunInterface, &pipelineRun)
 			if err != nil {
 				return err
 			}
@@ -293,11 +296,12 @@ func (o *GCActivitiesOptions) gcProwJobs(ns string) error {
 	now := time.Now()
 
 	for _, pj := range pjList.Items {
-		completionTime := pj.Status.CompletionTime
+		prowJob := pj
+		completionTime := prowJob.Status.CompletionTime
 		if completionTime != nil && completionTime.Add(o.ProwJobAgeLimit).Before(now) {
-			err = o.deleteProwJob(pjInterface, &pj)
+			err = o.deleteProwJob(pjInterface, &prowJob)
 			if err != nil {
-				return errors.Wrapf(err, "error deleting ProwJob %s", pj.Name)
+				return errors.Wrapf(err, "error deleting ProwJob %s", prowJob.Name)
 			}
 		}
 	}

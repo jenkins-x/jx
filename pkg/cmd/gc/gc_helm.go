@@ -129,7 +129,7 @@ func (o *GCHelmOptions) Run() error {
 							var b bytes.Buffer
 							b.WriteString("apiVersion: v1\nkind: ConfigMap\n")
 							b.Write(y)
-							err4 := ioutil.WriteFile(filename, b.Bytes(), 0644)
+							err4 := ioutil.WriteFile(filename, b.Bytes(), 0600)
 							if err4 == nil {
 								log.Logger().Info("Success. ")
 							} else {

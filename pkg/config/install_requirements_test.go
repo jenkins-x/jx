@@ -441,7 +441,7 @@ func Test_LoadRequirementsConfig(t *testing.T) {
 			if testCase.createRequirements {
 				expectedRequirementsFile = filepath.Join(testPath, config.RequirementsConfigFileName)
 				dummyRequirementsData := []byte("webhook: prow\n")
-				err := ioutil.WriteFile(expectedRequirementsFile, dummyRequirementsData, 0644)
+				err := ioutil.WriteFile(expectedRequirementsFile, dummyRequirementsData, 0600)
 				require.NoError(t, err, "unable to write requirements file %s", expectedRequirementsFile)
 			}
 

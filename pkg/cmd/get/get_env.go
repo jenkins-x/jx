@@ -165,9 +165,10 @@ func kindString(spec *v1.EnvironmentSpec) string {
 func (o *GetEnvOptions) filterEnvironments(envs []v1.Environment) []v1.Environment {
 	answer := []v1.Environment{}
 	for _, e := range envs {
-		preview := e.Spec.Kind == v1.EnvironmentKindTypePreview
-		if o.matchesFilter(&e) && preview == o.PreviewOnly {
-			answer = append(answer, e)
+		env := e
+		preview := env.Spec.Kind == v1.EnvironmentKindTypePreview
+		if o.matchesFilter(&env) && preview == o.PreviewOnly {
+			answer = append(answer, env)
 		}
 	}
 	return answer

@@ -258,7 +258,7 @@ func TestNoForkAndNewDir(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0755)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -315,7 +315,7 @@ func TestNewForkAndNewDir(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0755)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -388,7 +388,7 @@ func TestNoFormAndExistingDir(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0755)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -446,7 +446,7 @@ func TestNewForkAndExistingDir(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0755)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -514,7 +514,7 @@ func TestExistingForkAndNewDir(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -529,7 +529,7 @@ func TestExistingForkAndNewDir(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.Clone(fork.CloneURL, dir)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 				assert.NoError(t, err)
 				err = args.gitter.Add(dir, "CONTRIBUTING")
 				assert.NoError(t, err)
@@ -613,7 +613,7 @@ func TestExistingForkAndExistingDir(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -628,7 +628,7 @@ func TestExistingForkAndExistingDir(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.Clone(fork.CloneURL, dir)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 				assert.NoError(t, err)
 				err = args.gitter.Add(dir, "CONTRIBUTING")
 				assert.NoError(t, err)
@@ -711,7 +711,7 @@ func TestExistingForkAndExistingCheckout(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -726,7 +726,7 @@ func TestExistingForkAndExistingCheckout(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.Clone(fork.CloneURL, dir)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 				assert.NoError(t, err)
 				err = args.gitter.Add(dir, "CONTRIBUTING")
 				assert.NoError(t, err)
@@ -814,7 +814,7 @@ func TestExistingForkAndExistingCheckoutWithDifferentBaseRef(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -829,7 +829,7 @@ func TestExistingForkAndExistingCheckoutWithDifferentBaseRef(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, dir)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 				assert.NoError(t, err)
 				err = args.gitter.Add(dir, "CONTRIBUTING")
 				assert.NoError(t, err)
@@ -917,7 +917,7 @@ func TestExistingForkAndExistingCheckoutWithLocalModifications(t *testing.T) {
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -932,7 +932,7 @@ func TestExistingForkAndExistingCheckoutWithLocalModifications(t *testing.T) {
 				assert.NoError(t, err)
 				err = args.gitter.Clone(fork.CloneURL, dir)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 				assert.NoError(t, err)
 				err = args.gitter.Add(dir, "CONTRIBUTING")
 				assert.NoError(t, err)
@@ -950,7 +950,7 @@ func TestExistingForkAndExistingCheckoutWithLocalModifications(t *testing.T) {
 				err = args.gitter.Clone(fork.CloneURL, args.dir)
 				assert.NoError(t, err)
 				// Let's add some local modifications that don't conflict
-				err = ioutil.WriteFile(filepath.Join(args.dir, "LICENSE"), []byte("TODO ;-)"), 0655)
+				err = ioutil.WriteFile(filepath.Join(args.dir, "LICENSE"), []byte("TODO ;-)"), 0600)
 				assert.NoError(t, err)
 
 				return nil
@@ -1024,7 +1024,7 @@ func TestExistingForkAndExistingCheckoutWithNonConflictingLocalModifications(t *
 			gitter: gits.NewGitCLI(),
 			initFn: func(args *forkAndPullTestArgs) error {
 				acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+					err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 					if err != nil {
 						return errors.WithStack(err)
 					}
@@ -1039,7 +1039,7 @@ func TestExistingForkAndExistingCheckoutWithNonConflictingLocalModifications(t *
 				assert.NoError(t, err)
 				err = args.gitter.Clone(fork.CloneURL, dir)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+				err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 				assert.NoError(t, err)
 				err = args.gitter.Add(dir, "CONTRIBUTING")
 				assert.NoError(t, err)
@@ -1057,7 +1057,7 @@ func TestExistingForkAndExistingCheckoutWithNonConflictingLocalModifications(t *
 				err = args.gitter.Clone(fork.CloneURL, args.dir)
 				assert.NoError(t, err)
 				// Let's add some local modifications that don't conflict
-				err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("TODO ;-)"), 0655)
+				err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("TODO ;-)"), 0600)
 				assert.NoError(t, err)
 
 				return nil
@@ -1160,7 +1160,7 @@ func runForkAndPullTestCase(t *testing.T, tt forkAndPullTest) {
 func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	gitter := gits.NewGitCLI()
 	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0600)
 		if err != nil {
 			return errors.Wrapf(err, "writing README")
 		}
@@ -1168,7 +1168,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	}, gitter)
 	assert.NoError(t, err)
 	otherProviderRepo, err := gits.NewFakeRepository("foo", "bar", func(dir string) error {
-		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Goodbye!"), 0655)
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Goodbye!"), 0600)
 		if err != nil {
 			return errors.Wrapf(err, "writing README")
 		}
@@ -1187,7 +1187,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	err = gitter.Checkout(dir, "other")
 	assert.NoError(t, err)
 
-	err = ioutil.WriteFile(filepath.Join(dir, "LICENSE"), []byte("TODO"), 0655)
+	err = ioutil.WriteFile(filepath.Join(dir, "LICENSE"), []byte("TODO"), 0600)
 	assert.NoError(t, err)
 
 	err = gitter.Add(dir, "LICENSE")
@@ -1205,7 +1205,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 	err = gitter.Checkout(dir, "release")
 	assert.NoError(t, err)
 
-	err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+	err = ioutil.WriteFile(filepath.Join(dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 	assert.NoError(t, err)
 
 	err = gitter.Add(dir, "CONTRIBUTING")
@@ -1458,7 +1458,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 			provider := gits.NewFakeProvider(originalRepo)
 			provider.Gitter = gitter
 			provider.CreateRepositoryAddFiles = func(dir string) error {
-				err := ioutil.WriteFile(filepath.Join(dir, ".gitkeep"), []byte(""), 0655)
+				err := ioutil.WriteFile(filepath.Join(dir, ".gitkeep"), []byte(""), 0600)
 				assert.NoError(t, err)
 				err = gitter.Add(dir, filepath.Join(dir, ".gitkeep"))
 				assert.NoError(t, err)
@@ -1517,7 +1517,7 @@ func TestDuplicateGitRepoFromCommitish(t *testing.T) {
 func Test_DuplicateGitRepoFromCommitish_returns_error_if_target_repo_exists(t *testing.T) {
 	gitter := gits.NewGitCLI()
 	originalRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0600)
 		if err != nil {
 			return errors.Wrapf(err, "writing README")
 		}
@@ -1526,7 +1526,7 @@ func Test_DuplicateGitRepoFromCommitish_returns_error_if_target_repo_exists(t *t
 	assert.NoError(t, err)
 
 	targetRepo, err := gits.NewFakeRepository("acme", "coyote", func(dir string) error {
-		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("World!"), 0655)
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("World!"), 0600)
 		if err != nil {
 			return errors.Wrapf(err, "writing README")
 		}
@@ -1576,7 +1576,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1591,7 +1591,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					return nil
 				},
@@ -1624,7 +1624,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1639,7 +1639,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					err = args.gitter.Add(args.dir, "CONTRIBUTING")
 					assert.NoError(t, err)
@@ -1676,7 +1676,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1695,7 +1695,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Checkout(args.dir, "other")
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					err = args.gitter.Add(args.dir, "CONTRIBUTING")
 					assert.NoError(t, err)
@@ -1735,7 +1735,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1752,7 +1752,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					return nil
 				},
@@ -1785,7 +1785,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1800,7 +1800,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					err = args.gitter.Add(args.dir, "CONTRIBUTING")
 					assert.NoError(t, err)
@@ -1837,7 +1837,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1856,7 +1856,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Checkout(args.dir, "other")
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					err = args.gitter.Add(args.dir, "CONTRIBUTING")
 					assert.NoError(t, err)
@@ -1895,7 +1895,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				gitter: gits.NewGitCLI(),
 				initFn: func(args *args) error {
 					acmeRepo, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0655)
+						err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello there!"), 0600)
 						if err != nil {
 							return errors.WithStack(err)
 						}
@@ -1918,7 +1918,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Checkout(tmpDir, "other")
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(tmpDir, "CONTRIBUTING"), []byte("Welcome!!!!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(tmpDir, "CONTRIBUTING"), []byte("Welcome!!!!"), 0600)
 					assert.NoError(t, err)
 					err = args.gitter.Add(tmpDir, "CONTRIBUTING")
 					assert.NoError(t, err)
@@ -1937,7 +1937,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 					assert.NoError(t, err)
 					err = args.gitter.Clone(acmeRepo.GitRepo.CloneURL, args.dir)
 					assert.NoError(t, err)
-					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0655)
+					err = ioutil.WriteFile(filepath.Join(args.dir, "CONTRIBUTING"), []byte("Welcome!"), 0600)
 					assert.NoError(t, err)
 					return nil
 				},
@@ -2088,7 +2088,7 @@ func TestGetGitInfoFromDirectory(t *testing.T) {
 	owner := "fakeowner"
 	repo := "fakerepo"
 	originalRepo, err := gits.NewFakeRepository(owner, repo, func(dir string) error {
-		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+		err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0600)
 		if err != nil {
 			return errors.Wrapf(err, "writing README")
 		}

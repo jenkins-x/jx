@@ -1259,7 +1259,8 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 
 	labels := []GitLabel{}
 	for _, label := range i.Labels {
-		labels = append(labels, toGitHubLabel(&label))
+		l := label
+		labels = append(labels, toGitHubLabel(&l))
 	}
 	assignees := []GitUser{}
 	for _, assignee := range i.Assignees {

@@ -328,9 +328,10 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
-				if o.isIngressForServices(&i) {
-					existingIngressNames[i.Name] = i.Namespace
+			item := i
+			if item.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
+				if o.isIngressForServices(&item) {
+					existingIngressNames[item.Name] = item.Namespace
 				}
 			}
 		}
@@ -349,9 +350,10 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
 			for _, i := range ings.Items {
+				item := i
 				if i.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
-					if o.isIngressForServices(&i) {
-						existingIngressNames[i.Name] = i.Namespace
+					if o.isIngressForServices(&item) {
+						existingIngressNames[item.Name] = item.Namespace
 					}
 				}
 			}
@@ -367,9 +369,10 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
+			item := i
 			if i.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
-				if o.isIngressForServices(&i) {
-					existingIngressNames[i.Name] = i.Namespace
+				if o.isIngressForServices(&item) {
+					existingIngressNames[item.Name] = item.Namespace
 				}
 			}
 		}

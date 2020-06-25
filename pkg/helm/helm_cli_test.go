@@ -177,7 +177,7 @@ func TestRemoveRequirementsLock(t *testing.T) {
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, "requirements.lock")
-	ioutil.WriteFile(path, []byte("test"), 0644)
+	ioutil.WriteFile(path, []byte("test"), 0600)
 
 	helm, _ := createHelmWithCwdAndHelmVersion(t, helm.V2, dir, nil, "")
 
@@ -373,7 +373,7 @@ func TestFindChart(t *testing.T) {
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, helm.ChartFileName)
-	ioutil.WriteFile(path, []byte("test"), 0644)
+	ioutil.WriteFile(path, []byte("test"), 0600)
 	helm, _ := createHelmWithCwdAndHelmVersion(t, helm.V2, dir, nil, "")
 
 	chartFile, err := helm.FindChart()

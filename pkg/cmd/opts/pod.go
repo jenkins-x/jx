@@ -54,7 +54,8 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 		loggedContainerIdx := -1
 		var latestPod *corev1.Pod
 		lastTime := time.Time{}
-		for _, pod := range pods.Items {
+		for _, p := range pods.Items {
+			pod := p
 			phase := pod.Status.Phase
 			if phase == corev1.PodRunning || phase == corev1.PodPending {
 				if !readyOnly {

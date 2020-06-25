@@ -117,7 +117,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 		return err
 	}
 	prometheusIngressConfig := path.Join("/tmp", "prometheusIngressConfig_"+uuid.New())
-	err = ioutil.WriteFile(prometheusIngressConfig, valuesBytes, 0644)
+	err = ioutil.WriteFile(prometheusIngressConfig, valuesBytes, 0600)
 	if err != nil {
 		return err
 	}

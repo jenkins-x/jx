@@ -700,7 +700,7 @@ func TestTags(t *testing.T) {
 	assert.NoError(t, err)
 	err = gitter.Init(dir)
 	assert.NoError(t, err)
-	err = ioutil.WriteFile(filepath.Join(dir, "README.md"), []byte("Hello"), 0655)
+	err = ioutil.WriteFile(filepath.Join(dir, "README.md"), []byte("Hello"), 0600)
 	assert.NoError(t, err)
 	err = gitter.Add(dir, "README.md")
 	assert.NoError(t, err)
@@ -708,7 +708,7 @@ func TestTags(t *testing.T) {
 	assert.NoError(t, err)
 	err = gitter.CreateTag(dir, "v0.0.1", "version 0.0.1")
 	assert.NoError(t, err)
-	err = ioutil.WriteFile(filepath.Join(dir, "README.md"), []byte("Hello again"), 0655)
+	err = ioutil.WriteFile(filepath.Join(dir, "README.md"), []byte("Hello again"), 0600)
 	assert.NoError(t, err)
 	err = gitter.Add(dir, "README.md")
 	assert.NoError(t, err)
@@ -736,7 +736,7 @@ func TestGitCLI_Stash(t *testing.T) {
 		{
 			name: "README",
 			initFn: func(dir string, gitter gits.Gitter) error {
-				err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0655)
+				err := ioutil.WriteFile(filepath.Join(dir, "README"), []byte("Hello!"), 0600)
 				if err != nil {
 					return errors.WithStack(err)
 				}

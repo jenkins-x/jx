@@ -120,11 +120,12 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 	}
 
 	for _, cs := range releaseSpec.Commits {
-		message := cs.Message
+		commits := cs
+		message := commits.Message
 		if message != "" {
 			ci := ParseCommit(message)
 
-			description := "* " + describeCommit(gitInfo, &cs, ci, issueMap) + "\n"
+			description := "* " + describeCommit(gitInfo, &commits, ci, issueMap) + "\n"
 			group := ci.Group()
 			if group != nil {
 				gac := groupAndCommits[group.Order]
@@ -182,7 +183,8 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 
 		previous := ""
 		for _, issue := range issues {
-			msg := describeIssue(gitInfo, &issue)
+			i := issue
+			msg := describeIssue(gitInfo, &i)
 			if msg != previous {
 				buffer.WriteString("* " + msg + "\n")
 				previous = msg
@@ -194,7 +196,8 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepository) (stri
 
 		previous := ""
 		for _, pr := range prs {
-			msg := describeIssue(gitInfo, &pr)
+			pullRequest := pr
+			msg := describeIssue(gitInfo, &pullRequest)
 			if msg != previous {
 				buffer.WriteString("* " + msg + "\n")
 				previous = msg

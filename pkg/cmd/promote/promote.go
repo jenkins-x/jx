@@ -378,7 +378,8 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	}
 	kube.SortEnvironments(environments)
 
-	for _, env := range environments {
+	for _, e := range environments {
+		env := e
 		kind := env.Spec.Kind
 		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && kind.IsPermanent() {
 			ns := env.Spec.Namespace

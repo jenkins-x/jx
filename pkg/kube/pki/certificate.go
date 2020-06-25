@@ -173,7 +173,8 @@ func GetIssuedReadyCertificates(client certclient.Interface, ns string) ([]Certi
 	if err != nil {
 		return certs, errors.Wrapf(err, "listing certificates in namespace %q", ns)
 	}
-	for _, cert := range certsList.Items {
+	for _, c := range certsList.Items {
+		cert := c
 		if isCertReady(&cert) {
 			certs = append(certs, Certificate{
 				Name:      cert.GetName(),

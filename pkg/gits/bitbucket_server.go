@@ -699,7 +699,8 @@ func (b *BitbucketServerProvider) GetPullRequestCommits(owner string, repository
 		}
 
 		for _, commit := range commitsPage.Values {
-			commits = append(commits, convertBitBucketCommitToGitCommit(&commit, repository))
+			c := commit
+			commits = append(commits, convertBitBucketCommitToGitCommit(&c, repository))
 		}
 
 		if commitsPage.IsLastPage {
@@ -768,7 +769,8 @@ func (b *BitbucketServerProvider) ListCommitStatus(org, repo, sha string) ([]*Gi
 		}
 
 		for _, buildStatus := range buildStatusesPage.Values {
-			statuses = append(statuses, convertBitBucketBuildStatusToGitStatus(&buildStatus))
+			b := buildStatus
+			statuses = append(statuses, convertBitBucketBuildStatusToGitStatus(&b))
 		}
 
 		if buildStatusesPage.IsLastPage {
@@ -1269,7 +1271,8 @@ func (b *BitbucketServerProvider) ListCommits(owner, repoName string, opt *ListC
 	}
 
 	for _, commit := range commitsPage.Values {
-		commits = append(commits, convertBitBucketCommitToGitCommit(&commit, repo))
+		c := commit
+		commits = append(commits, convertBitBucketCommitToGitCommit(&c, repo))
 	}
 
 	return commits, nil

@@ -76,7 +76,8 @@ func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
 		return answer, err
 	}
 	for _, issue := range issues {
-		answer = append(answer, i.jiraToGitIssue(&issue))
+		iss := issue
+		answer = append(answer, i.jiraToGitIssue(&iss))
 	}
 	return answer, nil
 }

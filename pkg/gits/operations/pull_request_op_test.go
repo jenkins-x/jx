@@ -482,7 +482,7 @@ func TestCreatePullRequestGitReleasesFn(t *testing.T) {
 		commonOpts := &opts.CommonOptions{}
 		gitter := gits.NewGitCLI()
 		roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-			return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+			return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0600)
 		}, gitter)
 		assert.NoError(t, err)
 		gitProvider := gits.NewFakeProvider(roadRunnerOrg)
@@ -528,7 +528,7 @@ func TestCreatePullRequestGitReleasesFn(t *testing.T) {
 		commonOpts := &opts.CommonOptions{}
 		gitter := gits.NewGitCLI()
 		roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-			return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+			return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0600)
 		}, gitter)
 		assert.NoError(t, err)
 		gitProvider := gits.NewFakeProvider(roadRunnerOrg)
@@ -742,11 +742,11 @@ func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
 	commonOpts := &opts.CommonOptions{}
 	gitter := gits.NewGitCLI()
 	roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0600)
 	}, gitter)
 	assert.NoError(t, err)
 	wileOrg, err := gits.NewFakeRepository("acme", "wile", func(dir string) error {
-		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0600)
 	}, gitter)
 	assert.NoError(t, err)
 	gitProvider := gits.NewFakeProvider(roadRunnerOrg, wileOrg)
@@ -764,7 +764,7 @@ func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
 	)
 
 	wrapped := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-		return []string{"1.2.2"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.3"), 0655)
+		return []string{"1.2.2"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.3"), 0600)
 	}
 	pro := operations.PullRequestOperation{
 		CommonOptions: commonOpts,
@@ -780,7 +780,7 @@ func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
 	assert.NoError(t, err)
 	err = gitter.Init(dir)
 	assert.NoError(t, err)
-	err = ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("1.2.2"), 0655)
+	err = ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("1.2.2"), 0600)
 	assert.NoError(t, err)
 	err = gitter.Add(dir, "*")
 	assert.NoError(t, err)
@@ -803,7 +803,7 @@ func TestPullRequestOperation_WrapChangeFilesWithCommitFn(t *testing.T) {
 
 	// Wrap another commit, but this time with AuthorName and AuthorEmail set.
 	wrappedWithAuthor := func(dir string, gitInfo *gits.GitRepository) ([]string, error) {
-		return []string{"1.2.3"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.4"), 0655)
+		return []string{"1.2.3"}, ioutil.WriteFile(filepath.Join(dir, "test.yml"), []byte("version: 1.2.4"), 0600)
 	}
 	pro.AuthorEmail = "someone@example.com"
 	pro.AuthorName = "Some Author"

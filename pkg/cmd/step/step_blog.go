@@ -495,13 +495,15 @@ Welcome to our new ` + role + `!
 
 func (o *StepBlogOptions) addCommitters(users []v1.UserDetails) {
 	for _, u := range users {
-		o.addCommitter(&u)
+		user := u
+		o.addCommitter(&user)
 	}
 }
 
 func (o *StepBlogOptions) addContributors(users []v1.UserDetails) {
 	for _, u := range users {
-		o.addContributor(&u)
+		user := u
+		o.addContributor(&user)
 	}
 }
 

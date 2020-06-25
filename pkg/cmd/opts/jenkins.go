@@ -202,19 +202,20 @@ func (o *CommonOptions) GetJenkinsJobs(jenkinsSelector *JenkinsSelectorOptions, 
 // AddJenkinsJobs add the given jobs to Jenkins
 func (o *CommonOptions) AddJenkinsJobs(jenkins gojenkins.JenkinsClient, jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
 	for _, j := range jobs {
-		name := jxjenkins.JobName(prefix, &j)
-		if jxjenkins.IsPipeline(&j) {
+		job := j
+		name := jxjenkins.JobName(prefix, &job)
+		if jxjenkins.IsPipeline(&job) {
 			if filter == "" || strings.Contains(name, filter) {
-				(*jobMap)[name] = j
+				(*jobMap)[name] = job
 				continue
 			}
 		}
-		if j.Jobs != nil {
-			o.AddJenkinsJobs(jenkins, jobMap, filter, name, j.Jobs)
+		if job.Jobs != nil {
+			o.AddJenkinsJobs(jenkins, jobMap, filter, name, job.Jobs)
 		} else {
-			job, err := jenkins.GetJob(name)
-			if err == nil && job.Jobs != nil {
-				o.AddJenkinsJobs(jenkins, jobMap, filter, name, job.Jobs)
+			job2, err := jenkins.GetJob(name)
+			if err == nil && job2.Jobs != nil {
+				o.AddJenkinsJobs(jenkins, jobMap, filter, name, job2.Jobs)
 			}
 		}
 	}

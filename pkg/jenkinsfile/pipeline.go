@@ -726,7 +726,8 @@ func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, 
 				if override.Name != "" {
 					for _, s := range lifecycle.Steps {
 						for _, o := range syntax.OverrideStep(*s, override) {
-							overriddenSteps = append(overriddenSteps, &o)
+							overriddenStep := o
+							overriddenSteps = append(overriddenSteps, &overriddenStep)
 						}
 					}
 				} else {

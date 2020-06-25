@@ -219,7 +219,7 @@ func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, res
 	}
 
 	envFile := path.Join(nsDir, fmt.Sprintf("%s.yaml", key))
-	err = ioutil.WriteFile(envFile, out, 0644)
+	err = ioutil.WriteFile(envFile, out, 0600)
 	if err != nil {
 		log.Logger().Errorf("Unable to write file %s", err)
 		return
