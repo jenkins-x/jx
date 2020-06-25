@@ -120,8 +120,8 @@ func GetApplications(factory clients.Factory) (List, error) {
 
 	// copy repositories that aren't environments to our applications list
 	for _, sr := range srList.Items {
-		if !kube.IsIncludedInTheGivenEnvs(permanentEnvsMap, &sr) {
-			srCopy := sr
+		srCopy := sr
+		if !kube.IsIncludedInTheGivenEnvs(permanentEnvsMap, &srCopy) {
 			list.Items = append(list.Items, Application{&srCopy, make(map[string]Environment)})
 		}
 	}

@@ -103,7 +103,8 @@ func GetNewVersion(dir string, endSha string, gitter gits.Gitter, latestTag stri
 	}
 	commits := make([]*conventionalCommit, 0)
 	for _, c := range rawCommits {
-		commits = append(commits, parseCommit(&c))
+		commit := c
+		commits = append(commits, parseCommit(&commit))
 	}
 
 	return applyChange(release.Version, calculateChange(commits, &release)), nil

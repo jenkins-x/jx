@@ -573,7 +573,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		return err
 	}
 	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(file, []byte(output), 0644)
+	err = ioutil.WriteFile(file, []byte(output), 0600)
 	if err != nil {
 		return err
 	}
@@ -595,7 +595,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 			return err
 		}
 		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(file, []byte(output), 0644)
+		err = ioutil.WriteFile(file, []byte(output), 0600)
 		if err != nil {
 			return err
 		}
@@ -789,7 +789,8 @@ func GetFilteredEnvironmentNames(jxClient versioned.Interface, ns string, fn fun
 		return envNames, err
 	}
 	SortEnvironments(envs.Items)
-	for _, env := range envs.Items {
+	for _, e := range envs.Items {
+		env := e
 		n := env.Name
 		if n != "" && fn(&env) {
 			envNames = append(envNames, n)

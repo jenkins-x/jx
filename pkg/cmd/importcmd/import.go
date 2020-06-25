@@ -1279,7 +1279,7 @@ func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 	lines := string(input)
 	if strings.Contains(lines, util.PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
 		output := replacer.Replace(lines)
-		err = ioutil.WriteFile(file, []byte(output), 0644)
+		err = ioutil.WriteFile(file, []byte(output), 0600)
 		if err != nil {
 			log.Logger().Errorf("failed to write file %s: %v", file, err)
 			return err
@@ -1326,7 +1326,7 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 		}
 	}
 	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(file, []byte(output), 0644)
+	err = ioutil.WriteFile(file, []byte(output), 0600)
 	if err != nil {
 		return err
 	}
@@ -1473,7 +1473,7 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filename, yaml, 0644)
+		err = ioutil.WriteFile(filename, yaml, 0600)
 		if err != nil {
 			return err
 		}
@@ -1506,7 +1506,7 @@ func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 		if err != nil {
 			return err
 		}
-		return ioutil.WriteFile(filename, yaml, 0644)
+		return ioutil.WriteFile(filename, yaml, 0600)
 	}
 	return errors.New("GitUserAuth.Username not set")
 }

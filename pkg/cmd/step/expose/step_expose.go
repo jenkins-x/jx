@@ -144,7 +144,8 @@ func (o *StepExposeOptions) Run() error {
 		return errors.Wrapf(err, "failed to query services in namespace %s", ns)
 	}
 
-	for _, svc := range serviceList.Items {
+	for _, s := range serviceList.Items {
+		svc := s
 		if !IsExposedService(&svc) {
 			continue
 		}

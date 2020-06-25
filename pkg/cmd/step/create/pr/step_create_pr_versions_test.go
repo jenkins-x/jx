@@ -37,11 +37,11 @@ func TestCreatePullRequestUpdateVersionFilesFn(t *testing.T) {
 
 	gitter := gits.NewGitCLI()
 	roadRunnerOrg, err := gits.NewFakeRepository("acme", "roadrunner", func(dir string) error {
-		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0600)
 	}, gitter)
 	assert.NoError(t, err)
 	wileOrg, err := gits.NewFakeRepository("acme", "wile", func(dir string) error {
-		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0655)
+		return ioutil.WriteFile(filepath.Join(dir, "README"), []byte("TODO"), 0600)
 	}, gitter)
 	assert.NoError(t, err)
 	gitProvider := gits.NewFakeProvider(roadRunnerOrg, wileOrg)

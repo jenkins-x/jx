@@ -108,7 +108,7 @@ func createFiles(files map[string]string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		err = ioutil.WriteFile(filepath.Join(dir, path), []byte(value), 0755)
+		err = ioutil.WriteFile(filepath.Join(dir, path), []byte(value), 0600)
 		if err != nil {
 			return "", err
 		}

@@ -188,7 +188,8 @@ func untarResults(src io.Reader) (io.Reader, <-chan error) {
 			go func(writer *io.PipeWriter, ec chan error) {
 				defer writer.Close() //nolint:errcheck
 				defer close(ec)
-				_, err := io.Copy(writer, tarReader)
+				limited := io.LimitReader(tarReader, 100*1024*1024)
+				_, err = io.Copy(writer, limited)
 				if err != nil {
 					ec <- err
 				}

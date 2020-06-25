@@ -346,7 +346,7 @@ func WriteSchemaToDisk(outputDir string, title string, version string, definitio
 		return errors.Wrapf(err, "marshaling openapi definitions to json for %s", names)
 	}
 	outFile := filepath.Join(outputDir, OpenApiV2JSON)
-	err = ioutil.WriteFile(outFile, bytes, 0644)
+	err = ioutil.WriteFile(outFile, bytes, 0600)
 	if err != nil {
 		return errors.Wrapf(err, "writing openapi definitions for %s to %s", names, outFile)
 	}
@@ -421,7 +421,7 @@ func GenerateSchema(outputDir string, inputPackage string, inputBase string, tit
 	if err != nil {
 		return errors.Wrapf(err, "converting %s to yaml", fileJSON)
 	}
-	err = ioutil.WriteFile(fileYAML, yamlBytes, 0644)
+	err = ioutil.WriteFile(fileYAML, yamlBytes, 0600)
 	if err != nil {
 		return errors.Wrapf(err, "writing %s", fileYAML)
 	}
@@ -584,7 +584,7 @@ func generate(d string, outputPackage string, relativePackage string, outputBase
 			}
 		}
 
-		err = ioutil.WriteFile(generatedFile, buf.Bytes(), 0644)
+		err = ioutil.WriteFile(generatedFile, buf.Bytes(), 0600)
 		if err != nil {
 			return "", errors.Wrapf(err, "writing %s", generatedFile)
 		}

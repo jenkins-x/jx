@@ -82,7 +82,7 @@ func StubFetchChart(name string, version string, repo string, chartToCreate *cha
 				}
 			}
 			for _, t := range chartToCreate.Templates {
-				err = ioutil.WriteFile(filepath.Join(dir, "templates", t.Name), t.Data, 0755)
+				err = ioutil.WriteFile(filepath.Join(dir, "templates", t.Name), t.Data, 0600)
 				if err != nil {
 					return pegomock.ReturnValues{
 						err,
@@ -90,7 +90,7 @@ func StubFetchChart(name string, version string, repo string, chartToCreate *cha
 				}
 			}
 			for _, f := range chartToCreate.Files {
-				err = ioutil.WriteFile(filepath.Join(dir, f.TypeUrl), f.Value, 0755)
+				err = ioutil.WriteFile(filepath.Join(dir, f.TypeUrl), f.Value, 0600)
 				if err != nil {
 					return pegomock.ReturnValues{
 						err,

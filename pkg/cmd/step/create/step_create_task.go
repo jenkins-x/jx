@@ -1504,7 +1504,8 @@ func (o *StepCreateTaskOptions) interpretPipeline(ns string, projectConfig *conf
 	}
 
 	for _, step := range steps {
-		err := o.interpretStep(ns, &step)
+		s := step
+		err := o.interpretStep(ns, &s)
 		if err != nil {
 			return err
 		}

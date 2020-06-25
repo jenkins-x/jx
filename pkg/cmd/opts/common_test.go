@@ -77,7 +77,7 @@ func Test_FlagExplicitlySet_returns_false_if_flag_is_unknown(t *testing.T) {
 func Test_NotifyProgress(t *testing.T) {
 	setupTestCommand()
 
-	commonOptsUnderTest.NotifyProgress(LogInfo, "hello %s", "world\n")
+	commonOptsUnderTest.NotifyProgressf(LogInfo, "hello %s", "world\n")
 
 	actual := ""
 	expectedText := "hello again\n"
@@ -86,7 +86,7 @@ func Test_NotifyProgress(t *testing.T) {
 		actual = text
 	}
 
-	commonOptsUnderTest.NotifyProgress(LogInfo, expectedText)
+	commonOptsUnderTest.NotifyProgressf(LogInfo, expectedText)
 
 	assert.Equal(t, expectedText, actual, "callback receives the log message")
 }
@@ -205,7 +205,7 @@ func setupTestConfig(t *testing.T, config string) (string, func(string)) {
 	tmpDir, err := ioutil.TempDir("", "")
 	require.Nil(t, err, "Failed creating tmp dir")
 	configFile := path.Join(tmpDir, "config.yaml")
-	err = ioutil.WriteFile(configFile, []byte(config), 0640)
+	err = ioutil.WriteFile(configFile, []byte(config), 0600)
 	require.Nil(t, err, "Failed writing config yaml file")
 
 	commonOptsUnderTest.ConfigFile = configFile

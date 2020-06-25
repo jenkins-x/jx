@@ -24,7 +24,7 @@ func SwitchAWSHome() (string, error) {
 	if err := ioutil.WriteFile(awsConfigPath, []byte(`[profile foo]
 region = bar
 [profile baz]
-region = qux`), 0644); err != nil {
+region = qux`), 0600); err != nil {
 		panic(err)
 	}
 

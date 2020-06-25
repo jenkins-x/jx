@@ -124,7 +124,8 @@ func (o *UpdateWebhooksOptions) Run() error {
 	envMap, _, err := kube.GetEnvironments(jxClient, ns)
 
 	for _, sr := range srList.Items {
-		_, err2 := o.UpdateWebhookForSourceRepository(&sr, envMap, err, webhookURL, hmacToken)
+		sourceRepo := sr
+		_, err2 := o.UpdateWebhookForSourceRepository(&sourceRepo, envMap, err, webhookURL, hmacToken)
 		if err2 != nil {
 			return err2
 		}

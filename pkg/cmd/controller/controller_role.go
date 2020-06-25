@@ -124,7 +124,8 @@ func (o *ControllerRoleOptions) Run() error {
 		return err
 	}
 	for _, role := range roles.Items {
-		err = o.UpsertRole(&role)
+		r := role
+		err = o.UpsertRole(&r)
 		if err != nil {
 			return errors.Wrap(err, "upserting role")
 		}
@@ -144,7 +145,8 @@ func (o *ControllerRoleOptions) Run() error {
 		return err
 	}
 	for _, env := range envList.Items {
-		err = o.upsertEnvironment(kubeClient, ns, &env)
+		environment := env
+		err = o.upsertEnvironment(kubeClient, ns, &environment)
 		if err != nil {
 			return err
 		}
@@ -419,7 +421,8 @@ func (o *ControllerRoleOptions) UpsertEnvironmentRoleBinding(newEnv *v1.Environm
 
 	errors := []error{}
 	for _, env := range envList.Items {
-		err = o.upsertEnvironmentRoleBindingRolesInEnvironments(&env, newEnv, ns, env.Spec.Namespace, kubeClient)
+		environment := env
+		err = o.upsertEnvironmentRoleBindingRolesInEnvironments(&environment, newEnv, ns, environment.Spec.Namespace, kubeClient)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -476,7 +479,8 @@ func (o *ControllerRoleOptions) UpsertRole(newRole *rbacv1.Role) error {
 
 	errors := []error{}
 	for _, env := range envList.Items {
-		err = o.upsertRoleInEnvironments(&env, newRole, ns, env.Spec.Namespace, kubeClient)
+		environment := env
+		err = o.upsertRoleInEnvironments(&environment, newRole, ns, environment.Spec.Namespace, kubeClient)
 		if err != nil {
 			errors = append(errors, err)
 		}

@@ -20,7 +20,8 @@ func NewLogMasker(kubeClient kubernetes.Interface, ns string) (*LogMasker, error
 	if err != nil {
 		return masker, err
 	}
-	for _, secret := range resourceList.Items {
+	for _, s := range resourceList.Items {
+		secret := s
 		masker.LoadSecret(&secret)
 	}
 	return masker, nil
@@ -41,7 +42,8 @@ func (m *LogMasker) LoadSecrets(kubeClient kubernetes.Interface, ns string) erro
 	if err != nil {
 		return err
 	}
-	for _, secret := range resourceList.Items {
+	for _, s := range resourceList.Items {
+		secret := s
 		m.LoadSecret(&secret)
 	}
 	return nil

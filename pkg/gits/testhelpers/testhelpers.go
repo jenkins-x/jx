@@ -22,7 +22,7 @@ func WriteFile(fail func(string, ...int), repoDir string, name string, contents 
 	}
 
 	b := []byte(contents)
-	err = ioutil.WriteFile(path, b, 0644)
+	err = ioutil.WriteFile(path, b, 0600)
 	if err != nil {
 		log.Logger().Error(err.Error())
 		fail("unable to write file content")

@@ -87,8 +87,9 @@ func (p *GerritProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	repos := []*GitRepository{}
 
 	for name, project := range *gerritProjects {
-		project.Name = name
-		repo := p.projectInfoToGitRepository(&project)
+		proj := project
+		proj.Name = name
+		repo := p.projectInfoToGitRepository(&proj)
 
 		repos = append(repos, repo)
 	}

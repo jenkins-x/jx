@@ -268,7 +268,8 @@ func (k *PipelineActivityKey) reconcileBatchBuildIndividualPR(activitiesClient t
 				if previousBuildNumber == buildNumber {
 					log.Logger().Infof("Found an earlier PipelineActivity for %s and equal lastCommitSha with batch information", currentActivity.Labels[v1.LabelBranch])
 					currentActivity.Spec.BatchPipelineActivity.BatchBuildNumber = v.Spec.BatchPipelineActivity.BatchBuildNumber
-					return updateBatchBuildComprisingPRs(activitiesClient, currentActivity, v.Spec.BatchPipelineActivity.BatchBuildNumber, &v)
+					value := v
+					return updateBatchBuildComprisingPRs(activitiesClient, currentActivity, v.Spec.BatchPipelineActivity.BatchBuildNumber, &value)
 				}
 			}
 		}
@@ -514,7 +515,8 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface
 		return nil, nil, nil, false, err
 	}
 	spec := &a.Spec
-	for _, step := range spec.Steps {
+	for _, s := range spec.Steps {
+		step := s
 		if k.matchesPreview(&step) {
 			return a, &step, step.Preview, false, nil
 		}
@@ -603,7 +605,8 @@ func (k *PromoteStepActivityKey) GetOrCreatePromote(jxClient versioned.Interface
 		return nil, nil, nil, false, err
 	}
 	spec := &a.Spec
-	for _, step := range spec.Steps {
+	for _, s := range spec.Steps {
+		step := s
 		if k.matchesPromote(&step) {
 			return a, &step, step.Promote, false, nil
 		}

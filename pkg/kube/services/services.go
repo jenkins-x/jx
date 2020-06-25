@@ -276,7 +276,8 @@ func FindServiceURLs(client kubernetes.Interface, namespace string) ([]ServiceUR
 	if err != nil {
 		return urls, err
 	}
-	for _, svc := range svcs.Items {
+	for _, s := range svcs.Items {
+		svc := s
 		url := GetServiceURL(&svc)
 		if url == "" {
 			url, _ = FindServiceURL(client, namespace, svc.Name)

@@ -339,7 +339,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 			gitRepo = release.Spec.GitHTTPURL
 			releaseNotesURL = release.Spec.ReleaseNotesURL
 			releaseYamlOutPath := filepath.Join(appDir, "release.yaml")
-			err = ioutil.WriteFile(releaseYamlOutPath, bytes, 0755)
+			err = ioutil.WriteFile(releaseYamlOutPath, bytes, 0600)
 			if err != nil {
 				return errors.Wrapf(err, "write file %s", releaseYamlOutPath)
 			}
@@ -452,7 +452,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 	}
 	readme := helm.GenerateReadmeForChart(requirementName, requirementVersion, description, requirementRepository, gitRepo, releaseNotesURL, appReadme)
 	readmeOutPath := filepath.Join(appDir, "README.MD")
-	err = ioutil.WriteFile(readmeOutPath, []byte(readme), 0755)
+	err = ioutil.WriteFile(readmeOutPath, []byte(readme), 0600)
 	if err != nil {
 		return errors.Wrapf(err, "write README.md to %s", appDir)
 

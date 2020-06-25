@@ -150,7 +150,7 @@ func RememberInstalledPackage(packageName string, version string) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(installedPackagesFile, binariesBytes, 0644)
+	err = ioutil.WriteFile(installedPackagesFile, binariesBytes, 0600)
 	if err != nil {
 		return err
 	}

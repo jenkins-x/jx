@@ -713,7 +713,7 @@ func (o *StepVerifyPreInstallOptions) writeOwnersFile(requirements *config.Requi
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filename, ownersYaml, 0644)
+		err = ioutil.WriteFile(filename, ownersYaml, 0600)
 		if err != nil {
 			return err
 		}

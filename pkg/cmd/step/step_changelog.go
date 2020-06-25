@@ -380,9 +380,9 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	if commits != nil && gitProvider != nil {
 		for _, commit := range *commits {
-
+			c := commit
 			if o.IncludeMergeCommits || len(commit.ParentHashes) <= 1 {
-				o.addCommit(&release.Spec, &commit, &resolver)
+				o.addCommit(&release.Spec, &c, &resolver)
 			}
 		}
 	}

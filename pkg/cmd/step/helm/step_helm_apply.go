@@ -283,7 +283,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	chartValuesFile := filepath.Join(dir, helm.ValuesFileName)
-	err = ioutil.WriteFile(chartValuesFile, chartValues, 0755)
+	err = ioutil.WriteFile(chartValuesFile, chartValues, 0600)
 	if err != nil {
 		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
 	}

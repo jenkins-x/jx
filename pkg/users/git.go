@@ -44,7 +44,8 @@ func (r *GitUserResolver) GitSignatureAsUser(signature *object.Signature) (*jenk
 func (r *GitUserResolver) GitUserSliceAsUserDetailsSlice(users []gits.GitUser) ([]jenkinsv1.UserDetails, error) {
 	answer := []jenkinsv1.UserDetails{}
 	for _, user := range users {
-		u, err := r.Resolve(&user)
+		us := user
+		u, err := r.Resolve(&us)
 		if err != nil {
 			return nil, err
 		}

@@ -143,20 +143,21 @@ func (o *StepE2EGCOptions) gcpGarbageCollection() error {
 	}
 
 	for _, cluster := range clusters {
-		if cluster.Status == "RUNNING" {
+		c := cluster
+		if c.Status == "RUNNING" {
 			// Marked for deletion
-			if !o.ShouldDeleteMarkedCluster(&cluster) {
+			if !o.ShouldDeleteMarkedCluster(&c) {
 				// Older than duration in hours
-				if !o.ShouldDeleteOlderThanDuration(&cluster) {
+				if !o.ShouldDeleteOlderThanDuration(&c) {
 					// Delete build that has been replaced by a newer version
-					if o.ShouldDeleteDueToNewerRun(&cluster, clusters) {
-						o.deleteGkeCluster(&cluster)
+					if o.ShouldDeleteDueToNewerRun(&c, clusters) {
+						o.deleteGkeCluster(&c)
 					}
 				} else {
-					o.deleteGkeCluster(&cluster)
+					o.deleteGkeCluster(&c)
 				}
 			} else {
-				o.deleteGkeCluster(&cluster)
+				o.deleteGkeCluster(&c)
 			}
 		}
 	}
@@ -290,7 +291,8 @@ func (o *StepE2EGCOptions) ShouldDeleteDueToNewerRun(cluster *gke.Cluster, clust
 			currentBuildNumber, err := o.GetBuildNumberFromCluster(cluster)
 			if err == nil {
 				if clusterType, ok := cluster.ResourceLabels["cluster"]; ok {
-					for _, existingCluster := range clusters {
+					for _, ec := range clusters {
+						existingCluster := ec
 						// Check for same PR & Cluster type
 						if existingClusterType, ok := existingCluster.ResourceLabels["cluster"]; ok {
 							if strings.Contains(existingCluster.Name, branchLabel) && existingClusterType == clusterType {

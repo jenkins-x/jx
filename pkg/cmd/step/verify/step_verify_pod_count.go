@@ -106,7 +106,8 @@ func (o *StepVerifyPodCountOptions) Run() error {
 
 	var foundPods int32
 	appNames := []string{app, ns + "-preview", ns + "-" + app}
-	for _, pod := range pods.Items {
+	for _, p := range pods.Items {
+		pod := p
 		appLabelValue, ok := pod.Labels[appLabel]
 		if !ok {
 			continue

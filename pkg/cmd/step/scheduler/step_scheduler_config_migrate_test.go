@@ -194,7 +194,7 @@ func (o *StepSchedulerMigrateTestOptions) createSchedulerMigrateTestOptions(test
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filepath.Join(dir, "templates", "dev-env.yaml"), data, 0755)
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "dev-env.yaml"), data, 0600)
 		if err != nil {
 			return err
 		}

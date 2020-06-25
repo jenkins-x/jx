@@ -260,7 +260,7 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filepath.Join(dir, "templates", "dev-env.yaml"), data, 0755)
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "dev-env.yaml"), data, 0600)
 		if err != nil {
 			return err
 		}
@@ -288,7 +288,7 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 			if err != nil {
 				return err
 			}
-			err = ioutil.WriteFile(filepath.Join(dir, appName, "templates", "app.yaml"), data, 0755)
+			err = ioutil.WriteFile(filepath.Join(dir, appName, "templates", "app.yaml"), data, 0600)
 			if err != nil {
 				return err
 			}

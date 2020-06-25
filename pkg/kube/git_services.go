@@ -31,7 +31,8 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 	if err != nil {
 		return errors.Wrap(err, "failed to list git services")
 	}
-	for _, gs := range list.Items {
+	for _, g := range list.Items {
+		gs := g
 		if gitUrlsEqual(gs.Spec.URL, gitUrl) {
 			oldKind := gs.Spec.GitKind
 			if oldKind != kind {

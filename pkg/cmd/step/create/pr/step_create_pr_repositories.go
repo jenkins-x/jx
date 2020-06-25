@@ -108,23 +108,24 @@ func (o *StepCreatePullRequestRepositoriesOptions) Run() error {
 			}
 
 			for _, sr := range srList.Items {
-				labels := sr.Labels
+				sourceRepository := sr
+				labels := sourceRepository.Labels
 				if labels != nil {
 					if strings.ToLower(labels[kube.LabelGitSync]) == "false" {
 						continue
 					}
 				}
-				sr.ObjectMeta = o.emptyObjectMeta(&sr.ObjectMeta)
+				sourceRepository.ObjectMeta = o.emptyObjectMeta(&sourceRepository.ObjectMeta)
 
-				data, err := yaml.Marshal(&sr)
+				data, err := yaml.Marshal(&sourceRepository)
 				if err != nil {
-					return nil, errors.Wrapf(err, "failed to marshal SourceRepository %s to YAML", sr.Name)
+					return nil, errors.Wrapf(err, "failed to marshal SourceRepository %s to YAML", sourceRepository.Name)
 				}
 
-				fileName := filepath.Join(outDir, sr.Name+".yaml")
+				fileName := filepath.Join(outDir, sourceRepository.Name+".yaml")
 				err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 				if err != nil {
-					return nil, errors.Wrapf(err, "failed to write file %s for SourceRepository %s to YAML", fileName, sr.Name)
+					return nil, errors.Wrapf(err, "failed to write file %s for SourceRepository %s to YAML", fileName, sourceRepository.Name)
 				}
 			}
 			return nil, nil

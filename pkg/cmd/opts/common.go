@@ -180,8 +180,8 @@ func (o *CommonOptions) CreateTable() table.Table {
 	return o.factory.CreateTable(o.Out)
 }
 
-// NotifyProgress by default logs info to the console but a custom callback can be added to send feedback to, say, a web UI
-func (o *CommonOptions) NotifyProgress(level LogLevel, format string, args ...interface{}) {
+// NotifyProgressf by default logs info to the console but a custom callback can be added to send feedback to, say, a web UI
+func (o *CommonOptions) NotifyProgressf(level LogLevel, format string, args ...interface{}) {
 	if o.NotifyCallback != nil {
 		text := fmt.Sprintf(format, args...)
 		o.NotifyCallback(level, text)

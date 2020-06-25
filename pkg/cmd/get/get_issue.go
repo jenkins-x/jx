@@ -97,7 +97,8 @@ func (o *GetIssueOptions) Run() error {
 	}
 
 	found := false
-	for _, env := range envList.Items {
+	for _, e := range envList.Items {
+		env := e
 		envNs, err := kube.GetEnvironmentNamespace(client, ns, env.Name)
 		if err != nil {
 			continue
