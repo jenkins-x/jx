@@ -26,7 +26,7 @@ const IamAuthenticatorAwsVersion = "1.12.7"
 const EksCtlVersion = "0.11.1"
 
 // KubectlVersion binary version to use
-const KubectlVersion = "1.13.2"
+const KubectlVersion = "1.16.5"
 
 // Helm2Version binary version to use
 const Helm2Version = "2.12.2"
