@@ -1,7 +1,7 @@
 package applications
 
 import (
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients"
 	"github.com/jenkins-x/jx/v2/pkg/flagger"
 	"github.com/jenkins-x/jx/v2/pkg/kube"

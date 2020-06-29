@@ -20,8 +20,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/git"
 
 	"github.com/ghodss/yaml"
+	jxclient "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	jxclient "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	syntaxstep "github.com/jenkins-x/jx/v2/pkg/cmd/step/syntax"

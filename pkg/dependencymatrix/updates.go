@@ -1,6 +1,6 @@
 package dependencymatrix
 
-import v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+import v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 
 // DependencyUpdates is the struct for the file containing dependency updates
 type DependencyUpdates struct {

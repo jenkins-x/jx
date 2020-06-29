@@ -16,8 +16,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/collector"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 
+	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 

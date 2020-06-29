@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	expect "github.com/Netflix/go-expect"
-	jenkinsio_v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	versiond_mocks "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
+	jenkinsio_v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	versiond_mocks "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	cmd_mocks "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"

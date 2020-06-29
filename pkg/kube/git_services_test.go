@@ -7,8 +7,8 @@ import (
 	"path"
 	"testing"
 
+	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
-	v1fake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/secreturl/fakevault"
 	"github.com/stretchr/testify/assert"

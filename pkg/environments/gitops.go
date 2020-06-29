@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
@@ -16,8 +16,8 @@ import (
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
+	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/jenkins-x/jx/v2/pkg/util"

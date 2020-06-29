@@ -1,7 +1,7 @@
 package syntax_helpers_test
 
 import (
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
