@@ -19,8 +19,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/logs"
 	v1 "k8s.io/api/core/v1"
 
+	jxfake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	jxfake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"

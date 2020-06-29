@@ -6,12 +6,12 @@ import (
 	"time"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/pkg/errors"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 
-	jv1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	jv1 "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"

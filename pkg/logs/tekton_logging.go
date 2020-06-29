@@ -19,10 +19,10 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/google/uuid"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/builds"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/factory"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step"

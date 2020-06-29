@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/environments"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -24,8 +24,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube/services"
 
 	"github.com/blang/semver"
+	typev1 "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	typev1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/v2/pkg/gits"

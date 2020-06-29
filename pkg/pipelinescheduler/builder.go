@@ -2,7 +2,7 @@ package pipelinescheduler
 
 import (
 	"github.com/davecgh/go-spew/spew"
-	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
 )

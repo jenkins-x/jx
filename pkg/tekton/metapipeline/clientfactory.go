@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
+	jxclient "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/apps"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
-	jxclient "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/jxfactory"

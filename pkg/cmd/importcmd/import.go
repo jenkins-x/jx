@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
-	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/create/pr"
 	"github.com/jenkins-x/jx/v2/pkg/maven"
 
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/edit"

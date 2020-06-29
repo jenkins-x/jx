@@ -10,8 +10,6 @@ echo "Running validation scripts..."
 
 scripts=(
     "make verify-generation-complete"
-    "make generate-docs"
-    "make generate-refdocs"
 )
 
 fail=0

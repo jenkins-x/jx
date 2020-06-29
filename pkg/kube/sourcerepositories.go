@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
-	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"

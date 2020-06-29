@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/apps"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 )
 

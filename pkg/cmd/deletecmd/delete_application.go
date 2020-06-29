@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/environments"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -22,9 +22,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/v2/pkg/helm"

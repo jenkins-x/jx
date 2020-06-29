@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
 	"github.com/spf13/cobra"
 
-	jxclient "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	jxclient "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 )
 
 const (

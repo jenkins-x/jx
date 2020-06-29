@@ -3,8 +3,8 @@ package opts
 import (
 	"fmt"
 
-	jxv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	v1fake "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
+	jxv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	v1fake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"

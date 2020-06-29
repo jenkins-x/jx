@@ -5,9 +5,9 @@ package kube_test
 import (
 	"testing"
 
-	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned/fake"
+	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/stretchr/testify/assert"

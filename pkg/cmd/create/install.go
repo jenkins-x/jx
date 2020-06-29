@@ -53,11 +53,11 @@ import (
 	kubevault "github.com/jenkins-x/jx/v2/pkg/kube/vault"
 	"github.com/jenkins-x/jx/v2/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
 
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/addon"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon"

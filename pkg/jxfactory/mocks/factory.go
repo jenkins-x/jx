@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	versioned "github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	versioned "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	jxfactory "github.com/jenkins-x/jx/v2/pkg/jxfactory"
 	kube "github.com/jenkins-x/jx/v2/pkg/kube"
 	pegomock "github.com/petergtz/pegomock"

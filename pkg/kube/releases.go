@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

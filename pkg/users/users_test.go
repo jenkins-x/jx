@@ -16,7 +16,7 @@ import (
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/stretchr/testify/assert"
 )

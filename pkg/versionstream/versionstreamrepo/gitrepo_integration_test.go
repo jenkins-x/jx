@@ -16,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/versionstream/versionstreamrepo"
 	"github.com/stretchr/testify/assert"
 
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 )
 
 const (

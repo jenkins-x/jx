@@ -7,8 +7,8 @@ import (
 
 	"fmt"
 
+	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
-	"github.com/jenkins-x/jx/v2/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/v2/pkg/table"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

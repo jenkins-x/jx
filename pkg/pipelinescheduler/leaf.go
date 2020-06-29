@@ -1,6 +1,6 @@
 package pipelinescheduler
 
-import jenkinsv1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+import jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 
 // SchedulerLeaf defines a pipeline scheduler leaf
 type SchedulerLeaf struct {

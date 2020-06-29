@@ -17,8 +17,8 @@ import (
 
 	releases2 "github.com/jenkins-x/jx/v2/pkg/gits/releases"
 
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/chats"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"

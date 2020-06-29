@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/lighthouse-config/pkg/config"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"

@@ -17,7 +17,7 @@ import (
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
 
-	v1 "github.com/jenkins-x/jx/v2/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
