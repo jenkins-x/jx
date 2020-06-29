@@ -10,9 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx-logging/pkg/log"
@@ -68,15 +67,10 @@ func TestRequirementsConfigMarshalExistingFile(t *testing.T) {
 	assert.Equal(t, expectedDomain, requirements.Ingress.Domain, "requirements.Domain")
 }
 
-func TestOverrideRequirementsFromEnvironment(t *testing.T) {
-	t.Parallel()
-
+func Test_OverrideRequirementsFromEnvironment_does_not_initialise_nil_structs(t *testing.T) {
 	requirements, fileName, err := config.LoadRequirementsConfig(testDataDir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", testDataDir)
 	assert.FileExists(t, fileName)
-
-	err = os.Setenv("JX_REQUIREMENT_VELERO_SCHEDULE", "*/5 * * * *")
-	assert.NoError(t, err, "could not Setenv JX_REQUIREMENT_VELERO_SCHEDULE")
 
 	requirements.OverrideRequirementsFromEnvironment(func() gke.GClouder {
 		return nil
@@ -84,15 +78,129 @@ func TestOverrideRequirementsFromEnvironment(t *testing.T) {
 
 	tempDir, err := ioutil.TempDir("", "test-requirements-config")
 	assert.NoError(t, err, "should create a temporary config dir")
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 
 	err = requirements.SaveConfig(filepath.Join(tempDir, config.RequirementsConfigFileName))
 	assert.NoError(t, err, "failed to save requirements file in dir %s", tempDir)
+
 	overrideRequirements, fileName, err := config.LoadRequirementsConfig(tempDir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", testDataDir)
 	assert.FileExists(t, fileName)
 
-	assert.Equal(t, "*/5 * * * *", overrideRequirements.Velero.Schedule)
+	assert.Nil(t, overrideRequirements.BuildPacks, "nil values should not be populated")
+}
 
+func Test_OverrideRequirementsFromEnvironment_populate_requirements_from_environment_variables(t *testing.T) {
+	var overrideTests = []struct {
+		envKey               string
+		envValue             string
+		expectedRequirements config.RequirementsConfig
+	}{
+		// RequirementsConfig
+		{config.RequirementSecretStorageType, "vault", config.RequirementsConfig{SecretStorage: "vault"}},
+		{config.RequirementKaniko, "true", config.RequirementsConfig{Kaniko: true}},
+		{config.RequirementKaniko, "false", config.RequirementsConfig{Kaniko: false}},
+		{config.RequirementKaniko, "", config.RequirementsConfig{Kaniko: false}},
+		{config.RequirementRepository, "bucketrepo", config.RequirementsConfig{Repository: "bucketrepo"}},
+		{config.RequirementWebhook, "prow", config.RequirementsConfig{Webhook: "prow"}},
+		{config.RequirementGitAppEnabled, "true", config.RequirementsConfig{GithubApp: &config.GithubAppConfig{Enabled: true}}},
+		{config.RequirementGitAppEnabled, "false", config.RequirementsConfig{GithubApp: &config.GithubAppConfig{Enabled: false}}},
+		{config.RequirementGitAppURL, "https://my-github-app", config.RequirementsConfig{GithubApp: &config.GithubAppConfig{URL: "https://my-github-app"}}},
+
+		// ClusterConfig
+		{config.RequirementClusterName, "my-cluster", config.RequirementsConfig{Cluster: config.ClusterConfig{ClusterName: "my-cluster"}}},
+		{config.RequirementProject, "my-project", config.RequirementsConfig{Cluster: config.ClusterConfig{ProjectID: "my-project"}}},
+		{config.RequirementZone, "my-zone", config.RequirementsConfig{Cluster: config.ClusterConfig{Zone: "my-zone"}}},
+		{config.RequirementChartRepository, "my-chart-museum", config.RequirementsConfig{Cluster: config.ClusterConfig{ChartRepository: "my-chart-museum"}}},
+		{config.RequirementRegistry, "my-registry", config.RequirementsConfig{Cluster: config.ClusterConfig{Registry: "my-registry"}}},
+		{config.RequirementEnvGitOwner, "john-doe", config.RequirementsConfig{Cluster: config.ClusterConfig{EnvironmentGitOwner: "john-doe"}}},
+		{config.RequirementKanikoServiceAccountName, "kaniko-sa", config.RequirementsConfig{Cluster: config.ClusterConfig{KanikoSAName: "kaniko-sa"}}},
+		{config.RequirementEnvGitPublic, "true", config.RequirementsConfig{Cluster: config.ClusterConfig{EnvironmentGitPublic: true}}},
+		{config.RequirementEnvGitPublic, "false", config.RequirementsConfig{Cluster: config.ClusterConfig{EnvironmentGitPublic: false}}},
+		{config.RequirementEnvGitPublic, "", config.RequirementsConfig{Cluster: config.ClusterConfig{EnvironmentGitPublic: false}}},
+		{config.RequirementGitPublic, "true", config.RequirementsConfig{Cluster: config.ClusterConfig{GitPublic: true}}},
+		{config.RequirementGitPublic, "false", config.RequirementsConfig{Cluster: config.ClusterConfig{GitPublic: false}}},
+		{config.RequirementGitPublic, "", config.RequirementsConfig{Cluster: config.ClusterConfig{GitPublic: false}}},
+		{config.RequirementExternalDNSServiceAccountName, "externaldns-sa", config.RequirementsConfig{Cluster: config.ClusterConfig{ExternalDNSSAName: "externaldns-sa"}}},
+
+		// VaultConfig
+		{config.RequirementVaultName, "my-vault", config.RequirementsConfig{Vault: config.VaultConfig{Name: "my-vault"}}},
+		{config.RequirementVaultServiceAccountName, "my-vault-sa", config.RequirementsConfig{Vault: config.VaultConfig{ServiceAccount: "my-vault-sa"}}},
+		{config.RequirementVaultKeyringName, "my-keyring", config.RequirementsConfig{Vault: config.VaultConfig{Keyring: "my-keyring"}}},
+		{config.RequirementVaultKeyName, "my-key", config.RequirementsConfig{Vault: config.VaultConfig{Key: "my-key"}}},
+		{config.RequirementVaultBucketName, "my-bucket", config.RequirementsConfig{Vault: config.VaultConfig{Bucket: "my-bucket"}}},
+		{config.RequirementVaultRecreateBucket, "true", config.RequirementsConfig{Vault: config.VaultConfig{RecreateBucket: true}}},
+		{config.RequirementVaultRecreateBucket, "false", config.RequirementsConfig{Vault: config.VaultConfig{RecreateBucket: false}}},
+		{config.RequirementVaultRecreateBucket, "", config.RequirementsConfig{Vault: config.VaultConfig{RecreateBucket: false}}},
+		{config.RequirementVaultDisableURLDiscovery, "true", config.RequirementsConfig{Vault: config.VaultConfig{DisableURLDiscovery: true}}},
+		{config.RequirementVaultDisableURLDiscovery, "false", config.RequirementsConfig{Vault: config.VaultConfig{DisableURLDiscovery: false}}},
+		{config.RequirementVaultDisableURLDiscovery, "", config.RequirementsConfig{Vault: config.VaultConfig{DisableURLDiscovery: false}}},
+
+		// VeleroConfig
+		{config.RequirementVeleroServiceAccountName, "my-velero-sa", config.RequirementsConfig{Velero: config.VeleroConfig{ServiceAccount: "my-velero-sa"}}},
+		{config.RequirementVeleroTTL, "60", config.RequirementsConfig{Velero: config.VeleroConfig{TimeToLive: "60"}}},
+		{config.RequirementVeleroSchedule, "0 * * * *", config.RequirementsConfig{Velero: config.VeleroConfig{Schedule: "0 * * * *"}}},
+
+		// IngressConfig
+		{config.RequirementDomainIssuerURL, "my-issuer-url", config.RequirementsConfig{Ingress: config.IngressConfig{DomainIssuerURL: "my-issuer-url"}}},
+
+		// Storage
+		{config.RequirementStorageBackupEnabled, "true", config.RequirementsConfig{Storage: config.StorageConfig{Backup: config.StorageEntryConfig{Enabled: true}}}},
+		{config.RequirementStorageBackupEnabled, "false", config.RequirementsConfig{Storage: config.StorageConfig{Backup: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageBackupEnabled, "", config.RequirementsConfig{Storage: config.StorageConfig{Backup: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageBackupURL, "gs://my-backup", config.RequirementsConfig{Storage: config.StorageConfig{Backup: config.StorageEntryConfig{URL: "gs://my-backup"}}}},
+
+		{config.RequirementStorageLogsEnabled, "true", config.RequirementsConfig{Storage: config.StorageConfig{Logs: config.StorageEntryConfig{Enabled: true}}}},
+		{config.RequirementStorageLogsEnabled, "false", config.RequirementsConfig{Storage: config.StorageConfig{Logs: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageLogsEnabled, "", config.RequirementsConfig{Storage: config.StorageConfig{Logs: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageLogsURL, "gs://my-logs", config.RequirementsConfig{Storage: config.StorageConfig{Logs: config.StorageEntryConfig{URL: "gs://my-logs"}}}},
+
+		{config.RequirementStorageReportsEnabled, "true", config.RequirementsConfig{Storage: config.StorageConfig{Reports: config.StorageEntryConfig{Enabled: true}}}},
+		{config.RequirementStorageReportsEnabled, "false", config.RequirementsConfig{Storage: config.StorageConfig{Reports: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageReportsEnabled, "", config.RequirementsConfig{Storage: config.StorageConfig{Reports: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageReportsURL, "gs://my-reports", config.RequirementsConfig{Storage: config.StorageConfig{Reports: config.StorageEntryConfig{URL: "gs://my-reports"}}}},
+
+		{config.RequirementStorageRepositoryEnabled, "true", config.RequirementsConfig{Storage: config.StorageConfig{Repository: config.StorageEntryConfig{Enabled: true}}}},
+		{config.RequirementStorageRepositoryEnabled, "false", config.RequirementsConfig{Storage: config.StorageConfig{Repository: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageRepositoryEnabled, "", config.RequirementsConfig{Storage: config.StorageConfig{Repository: config.StorageEntryConfig{Enabled: false}}}},
+		{config.RequirementStorageRepositoryURL, "gs://my-repo", config.RequirementsConfig{Storage: config.StorageConfig{Repository: config.StorageEntryConfig{URL: "gs://my-repo"}}}},
+
+		// GKEConfig
+		{config.RequirementGkeProjectNumber, "my-gke-project", config.RequirementsConfig{Cluster: config.ClusterConfig{GKEConfig: &config.GKEConfig{ProjectNumber: "my-gke-project"}}}},
+
+		// VersionStreamConfig
+		{config.RequirementVersionsGitRef, "v1.0.0", config.RequirementsConfig{VersionStream: config.VersionStreamConfig{Ref: "v1.0.0"}}},
+	}
+
+	for _, overrideTest := range overrideTests {
+		origEnvValue, origValueSet := os.LookupEnv(overrideTest.envKey)
+		err := os.Setenv(overrideTest.envKey, overrideTest.envValue)
+		assert.NoError(t, err)
+		resetEnvVariable := func() {
+			var err error
+			if origValueSet {
+				err = os.Setenv(overrideTest.envKey, origEnvValue)
+			} else {
+				err = os.Unsetenv(overrideTest.envKey)
+			}
+			if err != nil {
+				log.Logger().Warnf("error resetting environment after test: %v", err)
+			}
+		}
+
+		t.Run(overrideTest.envKey, func(t *testing.T) {
+			actualRequirements := config.RequirementsConfig{}
+			actualRequirements.OverrideRequirementsFromEnvironment(func() gke.GClouder {
+				return nil
+			})
+
+			assert.Equal(t, overrideTest.expectedRequirements, actualRequirements)
+		})
+
+		resetEnvVariable()
+	}
 }
 
 func TestRequirementsConfigMarshalExistingFileKanikoFalse(t *testing.T) {
@@ -107,7 +215,6 @@ func TestRequirementsConfigMarshalExistingFileKanikoFalse(t *testing.T) {
 
 	err = requirements.SaveConfig(file)
 	assert.NoError(t, err, "failed to save file %s", file)
-	t.Logf("saved file %s", file)
 
 	requirements, fileName, err := config.LoadRequirementsConfig(dir, config.DefaultFailOnValidationError)
 	assert.NoError(t, err, "failed to load requirements file in dir %s", dir)
