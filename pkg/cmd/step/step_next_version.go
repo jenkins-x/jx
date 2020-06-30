@@ -114,6 +114,7 @@ func (o *StepNextVersionOptions) Run() error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
+		log.Logger().Infof("latest tag %s and rev %s", util.ColorInfo(tag), util.ColorInfo(rev))
 		cur, err := o.Git().RevParse(o.Dir, "HEAD")
 		if err != nil {
 			return errors.WithStack(err)
