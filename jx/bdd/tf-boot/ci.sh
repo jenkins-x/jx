@@ -117,15 +117,22 @@ function authenticate() {
 function cluster_destroy()
 {
   echo "###############################################################################"
-	echo "Cleanup..."
-	pushd "$script_dir"/terraform
-	terraform destroy -auto-approve
-#	gcloud container clusters delete "$(yq r jx-requirements.yml 'cluster.clusterName')" --zone=europe-west1-c --quiet
-#	gsutil rm -r -f "$(yq r jx-requirements.yml 'storage.logs.url')"
-#	gsutil rm -r -f "$(yq r jx-requirements.yml 'storage.reports.url')"
-#	gsutil rm -r -f "$(yq r jx-requirements.yml 'storage.repository.url')"
-#	gsutil rm -r -f gs://"$(yq r jx-requirements.yml 'vault.bucket')"
-	popd
+  echo "Cleanup..."
+  pushd "$script_dir"/terraform
+
+  # stop at least the Vault instance to prevent Bank-Vault operator to interfere with deletion
+  kubectl delete vault "$(yq r jx-requirements.yml 'cluster.clusterName')"
+
+  # explicitly empty buckets (see https://github.com/jenkins-x/jx/issues/7406)
+  # see also https://github.com/GoogleCloudPlatform/gsutil/issues/417
+  gsutil -m -q rm -r -f "$(yq r jx-requirements.yml 'storage.logs.url')"/** || true
+  gsutil -m -q rm -r -f "$(yq r jx-requirements.yml 'storage.reports.url')"/**  || true
+  gsutil -m -q rm -r -f "$(yq r jx-requirements.yml 'storage.repository.url')"/**  || true
+  gsutil -m -q rm -r -f gs://"$(yq r jx-requirements.yml 'vault.bucket')"/**  || true
+
+  terraform destroy -auto-approve
+
+  popd
 }
 
 ###############################################################################
