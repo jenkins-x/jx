@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx-logging/pkg/log"
+
 	"github.com/pkg/errors"
 
 	"github.com/Masterminds/semver"
@@ -48,11 +50,13 @@ func calculateChange(commits []*conventionalCommit, latestRelease *release) chan
 }
 
 func applyChange(version *semver.Version, change change) *semver.Version {
+	log.Logger().Debugf("applying change %+v", change)
 	if version.Major() == 0 {
 		change.Major = true
 	}
 	if !change.Major && !change.Minor && !change.Patch {
-		return nil
+		log.Logger().Debugf("unable to determine change so defaulting to patch")
+		change.Patch = true
 	}
 	var newVersion semver.Version
 	preRel := version.Prerelease()
@@ -102,6 +106,7 @@ func GetNewVersion(dir string, endSha string, gitter gits.Gitter, latestTag stri
 		return nil, errors.Wrapf(err, "getting commits in range %s..%s", release.SHA, endSha)
 	}
 	commits := make([]*conventionalCommit, 0)
+	log.Logger().Debugf("got %d commits", len(rawCommits))
 	for _, c := range rawCommits {
 		commit := c
 		commits = append(commits, parseCommit(&commit))
@@ -114,6 +119,7 @@ func parseCommit(commit *gits.GitCommit) *conventionalCommit {
 	c := &conventionalCommit{
 		GitCommit: commit,
 	}
+	log.Logger().Debugf("parsing message '%s'", commit.Message)
 	c.MessageLines = strings.Split(commit.Message, "\n")
 	found := commitPattern.FindAllStringSubmatch(c.MessageLines[0], -1)
 	if len(found) < 1 {
