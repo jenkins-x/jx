@@ -11,7 +11,6 @@ func TestPlugins(t *testing.T) {
 	t.Parallel()
 
 	list := plugins.Plugins
-	assert.Len(t, list, 3, "plugins")
 
 	for _, p := range list {
 		if p.Name == "gitops" {
