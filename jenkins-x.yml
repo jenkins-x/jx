@@ -2,6 +2,18 @@ buildPack: go-cli
 dockerRegistryOwner: jenkinsxio-labs-private
 pipelineConfig:
   pipelines:
+    overrides:
+      - name: helm-template
+        step:
+          sh: echo disabled
+      - name: make-linux
+        step:
+          sh: make linux
+          image: golang:1.13
+      - name: make-test
+        step:
+          sh: make test
+          image: golang:1.13
     release:
       pipeline:
         stages:
@@ -12,9 +24,9 @@ pipelineConfig:
               - name: release-binary
                 command: make release
                 image: golang:1.13
-#              - name: build-and-push-image
-#                image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
-#                command: /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-cli:$VERSION --cache-repo=gcr.io/jx-labs-infra/cache
+              - name: build-and-push-image
+                image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+                command: /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-cli:$VERSION --cache-repo=gcr.io/jx-labs-infra/cache
               - name: changelog
                 command: jx step changelog --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
               - name: upload-binaries
