@@ -131,3 +131,39 @@ func TestDefaultChartValueRepositoryValidName(t *testing.T) {
 
 	assert.Equal(t, expectedImageName, o.defaultChartValueRepository())
 }
+
+func TestFindChartsDir(t *testing.T) {
+	testData := path.Join("test_data", "step_tag_find_chart")
+	dir, err := os.Getwd()
+	assert.NoError(t, err)
+	defer os.Chdir(dir)
+	assert.NoError(t, os.Chdir(testData))
+
+	if val, ok := os.LookupEnv("APP_NAME"); ok {
+		assert.NoError(t, os.Unsetenv("APP_NAME"))
+		defer os.Setenv("APP_NAME", val)
+	} else {
+		defer os.Unsetenv("APP_NAME")
+	}
+	if val, ok := os.LookupEnv("REPO_NAME"); ok {
+		assert.NoError(t, os.Unsetenv("REPO_NAME"))
+		defer os.Setenv("REPO_NAME", val)
+	} else {
+		defer os.Unsetenv("REPO_NAME")
+	}
+
+	chartsDir := filepath.Join("charts", "my-project") + "/"
+	o := StepTagOptions{}
+
+	assert.NoError(t, os.Setenv("APP_NAME", "My.Project"))
+	val, err := o.findChartsDir()
+	assert.NoError(t, err)
+	assert.Equal(t, chartsDir, val)
+	assert.NoError(t, os.Unsetenv("APP_NAME"))
+
+	assert.NoError(t, os.Setenv("REPO_NAME", "my-project"))
+	val, err = o.findChartsDir()
+	assert.NoError(t, err)
+	assert.Equal(t, chartsDir, val)
+	assert.NoError(t, os.Unsetenv("REPO_NAME"))
+}

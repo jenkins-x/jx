@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
@@ -275,13 +276,43 @@ func (o *StepTagOptions) findChartsDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to find Chart.yaml file: %s", err)
 	}
+	// get the app name as expeted in a file name
+	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		appName = os.Getenv("REPO_NAME")
+	}
+	if appName != "" {
+		appName = naming.ToValidName(appName)
+	}
+	// sort files by likehood
+	rank := func(file string) int {
+		paths := strings.Split(file, string(os.PathSeparator))
+		//not a candidate
+		if len(paths) < 3 || paths[len(paths)-2] == "preview" {
+			return 10
+		}
+		r := 3
+		// 2 points for being in charts/ directory
+		if paths[len(paths)-3] == "charts" {
+			r -= 2
+		}
+		// 1 point for being in <appName>/ directory
+		if appName != "" && paths[len(paths)-2] == appName {
+			r -= 1
+		}
+		return r
+	}
+	less := func(i, j int) bool {
+		return rank(files[i]) < rank(files[j]) || files[i] < files[j]
+	}
+	sort.Slice(files, less)
+	// check the most likely file
 	if len(files) > 0 {
-		for _, file := range files {
-			paths := strings.Split(file, string(os.PathSeparator))
-			if len(paths) > 2 && paths[len(paths)-2] != "preview" {
-				dir, _ := filepath.Split(file)
-				return dir, nil
-			}
+		file := files[0]
+		paths := strings.Split(file, string(os.PathSeparator))
+		if len(paths) >= 3 && paths[len(paths)-2] != "preview" {
+			dir, _ := filepath.Split(file)
+			return dir, nil
 		}
 	}
 	return "", nil
