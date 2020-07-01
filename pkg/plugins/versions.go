@@ -5,6 +5,9 @@ import (
 )
 
 const (
+	// AdminVersion the version of the jx admin plugin
+	AdminVersion = "0.0.17"
+
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.54"
 
@@ -21,6 +24,7 @@ const (
 var (
 	// Plugins default plugins
 	Plugins = []jenkinsv1.Plugin{
+		CreateJXPlugin("admin", AdminVersion),
 		CreateJXPlugin("gitops", GitOpsVersion),
 		CreateJXPlugin("project", ProjectVersion),
 		CreateJXPlugin("promote", PromoteVersion),
