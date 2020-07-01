@@ -1,21 +1,19 @@
 module github.com/jenkins-x/jx-cli
 
 require (
-	github.com/cli/cli v0.6.2 // indirect
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/jenkins-x/go-scm v1.5.143
 	github.com/jenkins-x/jx-api v0.0.13
-	github.com/jenkins-x/jx-helpers v1.0.15
-	github.com/jenkins-x/jx-kube-client v0.0.8
+	github.com/jenkins-x/jx-helpers v1.0.16
 	github.com/jenkins-x/jx-logging v0.0.10
 	github.com/jenkins-x/jx/v2 v2.1.93
+	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
+	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4 // indirect
 	k8s.io/apimachinery v0.17.2
-	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
-	sigs.k8s.io/yaml v1.2.0
+	sigs.k8s.io/yaml v1.2.0 // indirect
 
 )
 
@@ -46,7 +44,5 @@ replace github.com/TV4/logrus-stackdriver-formatter => github.com/jenkins-x/logr
 replace k8s.io/test-infra => github.com/jenkins-x/test-infra v0.0.0-20200611142252-211a92405c22
 
 replace gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
-
-replace github.com/jenkins-x/jx-helpers => /workspace/go/src/github.com/jenkins-x/jx-helpers
 
 go 1.13
