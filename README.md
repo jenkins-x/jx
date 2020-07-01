@@ -12,5 +12,12 @@
 
 See the [jx command reference](https://github.com/jenkins-x/jx-cli/blob/master/docs/cmd/jx.md)
 
+## Plugins
+
+* [jx admin](https://github.com/jenkins-x/jx-admin/blob/master/docs/cmd/jx-admin.md) for administration commands (creating a new environment, booting it up with the operator)
+* [jx gitops](https://github.com/jenkins-x/jx-gitops/blob/master/docs/cmd/jx-gitops.md) a set of commands for modifying helm charts, kpt files, using kustomise or modifying kubernetes resources for GitOps
+* [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/promote.md) a command for promoting a new version of an application to an Environment
+* [jx project](https://github.com/jenkins-x/jx-project/blob/master/docs/cmd/project.md) a set of commands for importing projects or creating new projects from quickstarts or wizards
+* [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
 
   
