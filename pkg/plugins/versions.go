@@ -11,6 +11,9 @@ const (
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.0.13"
 
+	// PromoteVersion the version of the jx promote plugin
+	PromoteVersion = "0.0.48"
+
 	// SecretVersion the version of the jx secret plugin
 	SecretVersion = "0.0.24"
 )
@@ -20,6 +23,7 @@ var (
 	Plugins = []jenkinsv1.Plugin{
 		CreateJXPlugin("gitops", GitOpsVersion),
 		CreateJXPlugin("project", ProjectVersion),
+		CreateJXPlugin("promote", PromoteVersion),
 		CreateJXPlugin("secret", SecretVersion),
 	}
 )
