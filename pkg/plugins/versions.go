@@ -6,7 +6,7 @@ import (
 
 const (
 	// AdminVersion the version of the jx admin plugin
-	AdminVersion = "0.0.23"
+	AdminVersion = "0.0.25"
 
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.54"
