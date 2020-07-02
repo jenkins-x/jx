@@ -12,7 +12,7 @@ const (
 	GitOpsVersion = "0.0.54"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.13"
+	ProjectVersion = "0.0.17"
 
 	// PromoteVersion the version of the jx promote plugin
 	PromoteVersion = "0.0.54"
