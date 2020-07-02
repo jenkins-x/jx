@@ -2,8 +2,8 @@ package version
 
 import (
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
-	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +48,7 @@ func NewCmdVersion() (*cobra.Command, *VersionOptions) {
 // Run implements the command
 func (o *VersionOptions) Run() error {
 	v := GetVersion()
-	log.Logger().Infof("version: %s", util.ColorInfo(v))
+	log.Logger().Infof("version: %s", termcolor.ColorInfo(v))
 	return nil
 }
 

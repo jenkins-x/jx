@@ -29,7 +29,7 @@ import (
 const descriptionSourcePath = "docs/reference/cmd/"
 
 func generateCliYaml(opts *options) error {
-	root := cmd.Main()
+	root := cmd.Main(nil)
 	disableFlagsInUseLine(root)
 	source := filepath.Join(opts.source, descriptionSourcePath)
 	if err := loadLongDescription(root, source); err != nil {
