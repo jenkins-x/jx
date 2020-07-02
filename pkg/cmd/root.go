@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/cobras"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/extensions"
+	"github.com/jenkins-x/jx-helpers/pkg/homedir"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/spf13/cobra"
@@ -73,7 +74,7 @@ func Main(args []string) *cobra.Command {
 	if len(args) > 1 {
 		cmdPathPieces := args[1:]
 
-		pluginDir, err := plugins.PluginBinDir()
+		pluginDir, err := homedir.DefaultPluginBinDir()
 		if err != nil {
 			log.Logger().Errorf("%v", err)
 			os.Exit(1)

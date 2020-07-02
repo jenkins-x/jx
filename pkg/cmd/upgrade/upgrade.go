@@ -2,9 +2,11 @@ package upgrade
 
 import (
 	"github.com/jenkins-x/jx-cli/pkg/plugins"
+	"github.com/jenkins-x/jx-helpers/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/extensions"
+	"github.com/jenkins-x/jx-helpers/pkg/homedir"
 	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/pkg/errors"
@@ -24,7 +26,7 @@ var (
 
 // UpgradeOptions the options for upgrading a cluster
 type UpgradeOptions struct {
-	GitCredentials bool
+	CommandRunner cmdrunner.CommandRunner
 }
 
 // NewCmdUpgrade creates a command object for the command
@@ -46,16 +48,34 @@ func NewCmdUpgrade() (*cobra.Command, *UpgradeOptions) {
 
 // Run implements the command
 func (o *UpgradeOptions) Run() error {
-	pluginBinDir, err := plugins.PluginBinDir()
+	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return errors.Wrap(err, "failed to find plugin bin directory")
 	}
 
+	if o.CommandRunner == nil {
+		o.CommandRunner = cmdrunner.DefaultCommandRunner
+	}
 	for _, p := range plugins.Plugins {
 		log.Logger().Infof("checking binary jx plugin %s version %s is installed", termcolor.ColorInfo(p.Name), termcolor.ColorInfo(p.Spec.Version))
-		_, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
+		fileName, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to ensure plugin is installed %s", p.Name)
+		}
+
+		// TODO we could use metadata on the plugin for this?
+		switch p.Name {
+		case "admin", "secret":
+			if p.Name == "secret" {
+				c := &cmdrunner.Command{
+					Name: fileName,
+					Args: []string{"plugins", "upgrade"},
+				}
+				_, err = o.CommandRunner(c)
+				if err != nil {
+					return errors.Wrapf(err, "failed to upgrade plugin %s", p.Name)
+				}
+			}
 		}
 	}
 	return nil
