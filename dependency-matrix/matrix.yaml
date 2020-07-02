@@ -1,0 +1,7 @@
+dependencies:
+- host: github.com
+  owner: jenkins-x
+  repo: jx-admin
+  url: https://github.com/jenkins-x/jx-admin
+  version: 0.0.23
+  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.23
