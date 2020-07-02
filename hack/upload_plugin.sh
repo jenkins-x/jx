@@ -26,7 +26,7 @@ ls -al *.gz
 echo "uploading the plugin distro to github"
 github-release upload \
     --user jenkins-x \
-    --repo helmboot \
+    --repo jx-cli \
     --tag v${VERSION} \
     --name "plugin.gz" \
     --file plugin.gz
