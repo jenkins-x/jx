@@ -2,19 +2,17 @@ package plugins
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-helpers/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/pkg/homedir"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetJXPlugin returns the path to the locally installed jx plugin
 func GetJXPlugin(name string, version string) (string, error) {
-	pluginBinDir, err := PluginBinDir()
+	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return "", err
 	}
@@ -41,13 +39,4 @@ func CreateJXPlugin(name, version string) jenkinsv1.Plugin {
 		},
 	}
 	return plugin
-}
-
-// PluginBinDir returns where the binary plugins are installed
-func PluginBinDir() (string, error) {
-	pluginBinDir, err := homedir.PluginBinDir(os.Getenv("JX_CLI_HOME"), ".jx-cli")
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to find plugin home dir")
-	}
-	return pluginBinDir, nil
 }
