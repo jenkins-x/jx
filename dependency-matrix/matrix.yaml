@@ -3,14 +3,14 @@ dependencies:
   owner: jenkins-x
   repo: jx-admin
   url: https://github.com/jenkins-x/jx-admin
-  version: 0.0.31
-  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.31
+  version: 0.0.39
+  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.39
 - host: github.com
   owner: jenkins-x
   repo: jx-secret
   url: https://github.com/jenkins-x/jx-secret
-  version: 0.0.34
-  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.34
+  version: 0.0.36
+  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.36
 - host: github.com
   owner: jenkins-x
   repo: jx-promote
@@ -23,3 +23,15 @@ dependencies:
   url: https://github.com/jenkins-x/jx-project
   version: 0.0.17
   versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.17
+- host: github.com
+  owner: jenkins-x
+  repo: jx-verify
+  url: https://github.com/jenkins-x/jx-verify
+  version: 0.0.6
+  versionURL: https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.6
+- host: github.com
+  owner: jenkins-x
+  repo: jx-pipeline
+  url: https://github.com/jenkins-x/jx-pipeline
+  version: 0.0.2
+  versionURL: https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.2
