@@ -3,15 +3,21 @@ module github.com/jenkins-x/jx-cli
 require (
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/jenkins-x/jx-api v0.0.13
-	github.com/jenkins-x/jx-helpers v1.0.22
+	github.com/jenkins-x/jx-helpers v1.0.25
+	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.10
+	github.com/jenkins-x/jx/v2 v2.1.96
 	github.com/mattn/go-colorable v0.1.6 // indirect
+	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4 // indirect
+	gopkg.in/AlecAivazis/survey.v1 v1.8.8
+	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
 
 )
