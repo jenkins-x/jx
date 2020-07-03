@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx-cli/pkg/cmd/version"
 	"github.com/jenkins-x/jx-cli/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras"
+	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/pkg/homedir"
@@ -33,23 +34,6 @@ func Main(args []string) *cobra.Command {
 		Run:   runHelp,
 	}
 
-	generalCommands := []*cobra.Command{
-		cobras.SplitCommand(namespace.NewCmdNamespace()),
-		cobras.SplitCommand(upgrade.NewCmdUpgrade()),
-		cobras.SplitCommand(version.NewCmdVersion()),
-	}
-	cmd.AddCommand(generalCommands...)
-
-	groups := templates.CommandGroups{
-		{
-			Message:  "General:",
-			Commands: generalCommands,
-		},
-	}
-
-	groups.Add(cmd)
-	filters := []string{"options"}
-
 	po := &templates.Options{}
 	getPluginCommandGroups := func() (templates.PluginCommandGroups, bool) {
 		verifier := &extensions.CommandOverrideVerifier{
@@ -62,8 +46,78 @@ func Main(args []string) *cobra.Command {
 		}
 		return pluginCommandGroups, po.ManagedPluginsEnabled
 	}
-	templates.ActsAsRootCommand(cmd, filters, getPluginCommandGroups, groups...)
+	doCmd := func(cmd *cobra.Command, args []string) {
+		handleCommand(po, cmd, args, getPluginCommandGroups)
+	}
 
+	generalCommands := []*cobra.Command{
+		cobras.SplitCommand(namespace.NewCmdNamespace()),
+		cobras.SplitCommand(upgrade.NewCmdUpgrade()),
+		cobras.SplitCommand(version.NewCmdVersion()),
+	}
+
+	// aliases to classic jx commands...
+	getCmd := &cobra.Command{
+		Use:   "get TYPE [flags]",
+		Short: "Display one or more resources",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cmd.Help()
+			helper.CheckErr(err)
+		},
+		SuggestFor: []string{"list", "ps"},
+	}
+	getBuildCmd := &cobra.Command{
+		Use:     "build TYPE [flags]",
+		Short:   "Display one or more resources relating to a pipeline build",
+		Aliases: []string{"builds"},
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cmd.Help()
+			helper.CheckErr(err)
+		},
+	}
+	createCmd := &cobra.Command{
+		Use:   "create TYPE [flags]",
+		Short: "Create one or more resources",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cmd.Help()
+			helper.CheckErr(err)
+		},
+		SuggestFor: []string{"new", "make"},
+	}
+	getCmd.AddCommand(
+		getBuildCmd,
+		aliasCommand(cmd, doCmd, "application", []string{"application"}, "app", "apps", "applications"),
+		aliasCommand(cmd, doCmd, "activities", []string{"pipeline", "activities"}, "act", "activity"),
+		aliasCommand(cmd, doCmd, "pipelines", []string{"pipeline", "get"}, "pipeline"),
+	)
+	getBuildCmd.AddCommand(
+		aliasCommand(cmd, doCmd, "logs", []string{"pipeline", "logs"}, "log"),
+		aliasCommand(cmd, doCmd, "pods", []string{"pipeline", "pods"}, "pod"),
+	)
+	createCmd.AddCommand(
+		aliasCommand(cmd, doCmd, "quickstart", []string{"project", "quickstart"}, "qs"),
+		aliasCommand(cmd, doCmd, "project", []string{"project"}),
+	)
+	generalCommands = append(generalCommands, getCmd, createCmd,
+		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}, "log"),
+	)
+
+	cmd.AddCommand(generalCommands...)
+	groups := templates.CommandGroups{
+		{
+			Message:  "General:",
+			Commands: generalCommands,
+		},
+	}
+	groups.Add(cmd)
+	filters := []string{"options"}
+
+	templates.ActsAsRootCommand(cmd, filters, getPluginCommandGroups, groups...)
+	handleCommand(po, cmd, args, getPluginCommandGroups)
+	return cmd
+}
+
+func handleCommand(po *templates.Options, cmd *cobra.Command, args []string, getPluginCommandGroups func() (templates.PluginCommandGroups, bool)) {
 	managedPlugins := &managedPluginHandler{
 		JXClient:  po.JXClient,
 		Namespace: po.Namespace,
@@ -97,6 +151,22 @@ func Main(args []string) *cobra.Command {
 				}
 			}
 		}
+	}
+}
+
+func aliasCommand(rootCmd *cobra.Command, fn func(cmd *cobra.Command, args []string), name string, args []string, aliases ...string) *cobra.Command {
+	realArgs := append([]string{"jx"}, args...)
+	cmd := &cobra.Command{
+		Use:     name,
+		Short:   "alias for: jx " + name,
+		Aliases: aliases,
+		Run: func(cmd *cobra.Command, args []string) {
+			realArgs = append(realArgs, args...)
+			log.Logger().Debugf("about to invoke alias: %s", strings.Join(realArgs, " "))
+			fn(rootCmd, realArgs)
+		},
+		SuggestFor:         []string{"jx " + name},
+		DisableFlagParsing: true,
 	}
 	return cmd
 }

@@ -15,6 +15,7 @@ See the [jx command reference](https://github.com/jenkins-x/jx-cli/blob/master/d
 ## Plugins
 
 * [jx admin](https://github.com/jenkins-x/jx-admin/blob/master/docs/cmd/jx-admin.md) for administration commands (creating a new environment, booting it up with the operator)
+* [jx application](https://github.com/jenkins-x/jx-application/blob/master/docs/cmd/jx-application.md) for viewing applications in your environments
 * [jx gitops](https://github.com/jenkins-x/jx-gitops/blob/master/docs/cmd/jx-gitops.md) a set of commands used inside pipelines for modifying helm charts, kpt files, using kustomise or modifying kubernetes resources for GitOps
 * [jx pipeline](https://github.com/jenkins-x/jx-pipeline/blob/master/docs/cmd/jx-pipeline.md#jx-pipeline) a command for working with Jenkins X and Tekton Pipelines
 * [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-promote.md#jx-promote) a command for promoting a new version of an application to an Environment
