@@ -21,7 +21,7 @@ const (
 	SecretVersion = "0.0.34"
 
 	// VerifyVersion the version of the jx verify plugin
-	VerifyVersion = "0.0.1"
+	VerifyVersion = "0.0.4"
 )
 
 var (
@@ -32,5 +32,6 @@ var (
 		CreateJXPlugin("project", ProjectVersion),
 		CreateJXPlugin("promote", PromoteVersion),
 		CreateJXPlugin("secret", SecretVersion),
+		CreateJXPlugin("verify", VerifyVersion),
 	}
 )
