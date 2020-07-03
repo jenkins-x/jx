@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-cli/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/version"
 	"github.com/jenkins-x/jx-cli/pkg/plugins"
@@ -33,6 +34,7 @@ func Main(args []string) *cobra.Command {
 	}
 
 	generalCommands := []*cobra.Command{
+		cobras.SplitCommand(namespace.NewCmdNamespace()),
 		cobras.SplitCommand(upgrade.NewCmdUpgrade()),
 		cobras.SplitCommand(version.NewCmdVersion()),
 	}
