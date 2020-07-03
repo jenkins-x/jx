@@ -23,3 +23,9 @@ dependencies:
   url: https://github.com/jenkins-x/jx-project
   version: 0.0.17
   versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.17
+- host: github.com
+  owner: jenkins-x
+  repo: jx-verify
+  url: https://github.com/jenkins-x/jx-verify
+  version: 0.0.2
+  versionURL: https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.2
