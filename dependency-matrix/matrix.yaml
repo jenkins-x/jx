@@ -39,5 +39,5 @@ dependencies:
   owner: jenkins-x
   repo: jx-application
   url: https://github.com/jenkins-x/jx-application
-  version: 0.0.4
-  versionURL: https://github.com/jenkins-x/jx-application/releases/tag/v0.0.4
+  version: 0.0.6
+  versionURL: https://github.com/jenkins-x/jx-application/releases/tag/v0.0.6
