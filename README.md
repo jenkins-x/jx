@@ -19,6 +19,7 @@ See the [jx command reference](https://github.com/jenkins-x/jx-cli/blob/master/d
 * [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-promote.md#jx-promote) a command for promoting a new version of an application to an Environment
 * [jx project](https://github.com/jenkins-x/jx-project/blob/master/docs/cmd/project.md) a set of commands for importing projects or creating new projects from quickstarts or wizards
 * [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
+* [jx verify](https://github.com/jenkins-x/jx-verify/blob/master/docs/cmd/jx-verify.md) a set of commands for verifying Jenkins X installations
 
   
                                                             
