@@ -8,6 +8,9 @@ const (
 	// AdminVersion the version of the jx admin plugin
 	AdminVersion = "0.0.31"
 
+	// ApplicationVersion the version of the jx application plugin
+	ApplicationVersion = "0.0.1"
+
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.54"
 
@@ -31,6 +34,7 @@ var (
 	// Plugins default plugins
 	Plugins = []jenkinsv1.Plugin{
 		CreateJXPlugin("admin", AdminVersion),
+		CreateJXPlugin("application", ApplicationVersion),
 		CreateJXPlugin("gitops", GitOpsVersion),
 		CreateJXPlugin("pipeline", PipelineVersion),
 		CreateJXPlugin("project", ProjectVersion),
