@@ -3,14 +3,14 @@ dependencies:
   owner: jenkins-x
   repo: jx-admin
   url: https://github.com/jenkins-x/jx-admin
-  version: 0.0.31
-  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.31
+  version: 0.0.33
+  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.33
 - host: github.com
   owner: jenkins-x
   repo: jx-secret
   url: https://github.com/jenkins-x/jx-secret
-  version: 0.0.34
-  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.34
+  version: 0.0.36
+  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.36
 - host: github.com
   owner: jenkins-x
   repo: jx-promote
