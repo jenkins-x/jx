@@ -156,13 +156,10 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 
 	if o.TektonLogger == nil {
 		o.TektonLogger = &logs.TektonLogger{
-			KubeClient:   kubeClient,
-			TektonClient: tektonClient,
-			JXClient:     jxClient,
-			Namespace:    ns,
-			LogWriter: &CLILogWriter{
-				CommonOptions: o.CommonOptions,
-			},
+			KubeClient:     kubeClient,
+			TektonClient:   tektonClient,
+			JXClient:       jxClient,
+			Namespace:      ns,
 			FailIfPodFails: o.FailIfPodFails,
 		}
 	}
@@ -232,38 +229,16 @@ func (o *GetBuildLogsOptions) getTektonLogs(kubeClient kubernetes.Interface, tek
 		if err != nil {
 			return false, err
 		}
-		return false, o.TektonLogger.StreamPipelinePersistentLogs(pa.Spec.BuildLogsURL, jxClient, ns, authSvc)
+		for line := range o.TektonLogger.StreamPipelinePersistentLogs(pa.Spec.BuildLogsURL, authSvc) {
+			fmt.Fprintln(o.Out, line.Line)
+		}
+		return false, o.TektonLogger.Err()
 	}
 
 	log.Logger().Infof("Build logs for %s", util.ColorInfo(name))
 	name = strings.TrimSuffix(name, " ")
-	return false, o.TektonLogger.GetRunningBuildLogs(pa, name, false)
-}
-
-// StreamLog implementation of LogWriter.StreamLog for CLILogWriter, this implementation will tail logs for the provided pod /container through the defined logger
-func (o *CLILogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			fmt.Println(l.Line)
-		case err := <-ech:
-			return err
-		}
+	for line := range o.TektonLogger.GetRunningBuildLogs(pa, name, false) {
+		fmt.Fprintln(o.Out, line.Line)
 	}
-}
-
-// WriteLog implementation of LogWriter.WriteLog for CLILogWriter, this implementation will write the provided log line through the defined logger
-func (o *CLILogWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) error {
-	lch <- logLine
-	return nil
-}
-
-// BytesLimit defines the limit of bytes to be used to fetch the logs from the kube API
-// defaulted to 0 for this implementation
-func (o *CLILogWriter) BytesLimit() int {
-	//We are not limiting bytes with this writer
-	return 0
+	return false, o.TektonLogger.Err()
 }

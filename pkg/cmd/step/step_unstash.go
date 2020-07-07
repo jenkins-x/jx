@@ -106,7 +106,12 @@ func Unstash(u string, outDir string, timeout time.Duration, authSvc auth.Config
 		}
 	}
 
-	data, err := buckets.ReadURL(u, timeout, CreateBucketHTTPFn(authSvc))
+	reader, err := buckets.ReadURL(u, timeout, CreateBucketHTTPFn(authSvc))
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	data, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
 	}

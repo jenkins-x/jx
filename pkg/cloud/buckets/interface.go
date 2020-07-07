@@ -1,7 +1,6 @@
 package buckets
 
 import (
-	"bufio"
 	"io"
 )
 
@@ -12,5 +11,5 @@ type Provider interface {
 	CreateNewBucketForCluster(clusterName string, bucketKind string) (string, error)
 	EnsureBucketIsCreated(bucketURL string) error
 	UploadFileToBucket(r io.Reader, outputName string, bucketURL string) (string, error)
-	DownloadFileFromBucket(bucketURL string) (*bufio.Scanner, error)
+	DownloadFileFromBucket(bucketURL string) (io.ReadCloser, error)
 }

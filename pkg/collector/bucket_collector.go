@@ -1,8 +1,8 @@
 package collector
 
 import (
-	"bytes"
-	"io/ioutil"
+	"io"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -46,11 +46,12 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 			if outputPath != "" {
 				toName = filepath.Join(outputPath, toName)
 			}
-			data, err := ioutil.ReadFile(name)
+			f, err := os.Open(name)
 			if err != nil {
 				return errors.Wrapf(err, "failed to read file %s", name)
 			}
-			url, err := c.provider.UploadFileToBucket(bytes.NewReader(data), toName, c.bucketURL)
+			defer f.Close()
+			url, err := c.provider.UploadFileToBucket(f, toName, c.bucketURL)
 			if err != nil {
 				return err
 			}
@@ -67,8 +68,8 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 }
 
 // CollectData collects the data storing it at the given output path and returning the URL to access it
-func (c *BucketCollector) CollectData(data []byte, outputName string) (string, error) {
-	url, err := c.provider.UploadFileToBucket(bytes.NewReader(data), outputName, c.bucketURL)
+func (c *BucketCollector) CollectData(data io.Reader, outputName string) (string, error) {
+	url, err := c.provider.UploadFileToBucket(data, outputName, c.bucketURL)
 	if err != nil {
 		return "", err
 	}

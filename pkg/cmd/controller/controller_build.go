@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -70,48 +71,6 @@ type ControllerBuildOptions struct {
 
 	// private field to record whether the lighthouse-foghorn deployment is present - if so, we skip status reporting
 	foghornPresent bool
-}
-
-// LongTermStorageLogWriter is an implementation of logs.LogWriter that saves the obtained log lines
-// and sends them to a Collector when the channel is closed
-type LongTermStorageLogWriter struct {
-	data       []byte
-	kubeClient kubernetes.Interface
-	logMasker  *kube.LogMasker
-}
-
-// WriteLog will receive a logs.LogLine value and append its bytes to the LongTermStorageLogWriter stored bytes
-func (w *LongTermStorageLogWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) error {
-	lch <- logLine
-	return nil
-}
-
-// StreamLog will receive a logs channel and an errors channel which the logs producer will send
-// it will mask the lines marked as ShouldMask then it will append the line's bytes to the already stored ones
-func (w *LongTermStorageLogWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			if w.logMasker != nil && l.ShouldMask {
-				l.Line = w.logMasker.MaskLog(l.Line)
-			}
-			line := []byte(l.Line)
-			line = append(line, '\n')
-			w.data = append(w.data, line...)
-		case err := <-ech:
-			return err
-		}
-	}
-}
-
-// BytesLimit defines the limit of bytes to be used to fetch the logs from the kube API
-// defaulted to 0 for this implementation
-func (w *LongTermStorageLogWriter) BytesLimit() int {
-	//We are not limiting bytes with this writer
-	return 0
 }
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
@@ -1079,27 +1038,16 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 		return "", errors.Wrap(err, "there was a problem obtaining one of the clients")
 	}
 
-	var logWriter logs.LogWriter
-	w := LongTermStorageLogWriter{
-		data:       []byte{},
-		kubeClient: kubeClient,
-		logMasker:  logMasker,
-	}
-	logWriter = &w
-
 	tektonLogger := logs.TektonLogger{
 		JXClient:     jx,
 		KubeClient:   kubeClient,
 		TektonClient: tektonClient,
 		Namespace:    ns,
-		LogWriter:    logWriter,
 	}
 
 	log.Logger().Debugf("Capturing running build logs for %s", activity.Name)
-	err = tektonLogger.GetRunningBuildLogs(activity, buildName, false)
-	if err != nil {
-		return "", errors.Wrapf(err, "there was a problem getting logs for build %s", buildName)
-	}
+	reader := streamMaskedRunningBuildLogs(&tektonLogger, activity, buildName, logMasker)
+	defer reader.Close()
 
 	if initGitCredentials {
 		gc := &credentials.StepGitCredentialsOptions{}
@@ -1114,13 +1062,35 @@ func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.Po
 	}
 
 	log.Logger().Infof("storing logs for activity %s into storage at %s", activity.Name, fileName)
-	answer, err := coll.CollectData(w.data, fileName)
+	logURL, err := coll.CollectData(reader, fileName)
 	if err != nil {
 		log.Logger().Errorf("failed to store logs for activity %s into storage at %s: %s", activity.Name, fileName, err.Error())
-		return answer, err
+		return "", err
 	}
 	log.Logger().Infof("stored logs for activity %s into storage at %s", activity.Name, fileName)
-	return answer, nil
+
+	return logURL, nil
+}
+
+func streamMaskedRunningBuildLogs(tl *logs.TektonLogger, activity *v1.PipelineActivity, buildName string, logMasker *kube.LogMasker) io.ReadCloser {
+	reader, writer := io.Pipe()
+	go func() {
+		var err error
+		for l := range tl.GetRunningBuildLogs(activity, buildName, false) {
+			if err == nil {
+				line := l.Line
+				if logMasker != nil && l.ShouldMask {
+					line = logMasker.MaskLog(line)
+				}
+				_, err = writer.Write([]byte(line + "\n"))
+			}
+		}
+		if err == nil {
+			err = errors.Wrapf(tl.Err(), "getting logs for build %s", buildName)
+		}
+		writer.CloseWithError(err) //nolint
+	}()
+	return reader
 }
 
 // ensurePipelineActivityHasLabels older versions of controller build did not add labels properly

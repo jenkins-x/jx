@@ -4,7 +4,6 @@
 package buckets_test
 
 import (
-	bufio "bufio"
 	io "io"
 	"reflect"
 	"time"
@@ -46,17 +45,17 @@ func (mock *MockProvider) CreateNewBucketForCluster(_param0 string, _param1 stri
 	return ret0, ret1
 }
 
-func (mock *MockProvider) DownloadFileFromBucket(_param0 string) (*bufio.Scanner, error) {
+func (mock *MockProvider) DownloadFileFromBucket(_param0 string) (io.ReadCloser, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockProvider().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("DownloadFileFromBucket", params, []reflect.Type{reflect.TypeOf((**bufio.Scanner)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *bufio.Scanner
+	result := pegomock.GetGenericMockFrom(mock).Invoke("DownloadFileFromBucket", params, []reflect.Type{reflect.TypeOf((*io.ReadCloser)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 io.ReadCloser
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(*bufio.Scanner)
+			ret0 = result[0].(io.ReadCloser)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)

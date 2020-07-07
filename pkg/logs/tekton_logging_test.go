@@ -15,25 +15,20 @@ import (
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	jxfake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	tektonMocks "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
 )
-
-type TestWriter struct {
-	StreamLinesLogged []string
-	SingleLinesLogged []string
-}
 
 const (
 	LogsHeadersMultiplier = 2
@@ -46,11 +41,6 @@ func TestGetTektonPipelinesWithActivePipelineActivityNoData(t *testing.T) {
 		JXClient:     jxClient,
 		TektonClient: tektonClient,
 		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
 	}
 	names, paNames, err := tl.GetTektonPipelinesWithActivePipelineActivity([]string{})
 
@@ -67,14 +57,10 @@ func TestGetTektonPipelinesWithActivePipelineActivitySingleBuild(t *testing.T) {
 	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	_ = assertAndCreatePA1(t, jxClient, ns)
@@ -95,14 +81,10 @@ func TestGetTektonPipelinesWithActivePipelineActivityOnlyWaitingStep(t *testing.
 	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
 	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	_ = assertAndCreatePA1(t, jxClient, ns)
@@ -122,14 +104,10 @@ func TestGetTektonPipelinesWithActivePipelineActivityInvalidName(t *testing.T) {
 	pipelineRuns := tekton_helpers_test.AssertLoadPipelineRuns(t, testCaseDir)
 	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	activity := tekton_helpers_test.AssertLoadSinglePipelineActivity(t, testCaseDir)
@@ -150,22 +128,28 @@ func TestGetTektonPipelinesWithActivePipelineActivityInvalidName(t *testing.T) {
 func TestGetRunningBuildLogsNoBuildPods(t *testing.T) {
 	jxClient, tektonClient, kubeClient, _, ns := getFakeClientsAndNs(t)
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	lines := readLogChannel(ch)
+	err := tl.Err()
 	assert.Error(t, err)
+	assert.Empty(t, lines, "logged lines")
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
+}
+
+func readLogChannel(ch <-chan LogLine) (l []string) {
+	for line := range ch {
+		l = append(l, line.Line)
+	}
+	return
 }
 
 func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
@@ -178,20 +162,18 @@ func TestGetRunningBuildLogsWithPipelineRunButNoBuildPods(t *testing.T) {
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		KubeClient:   kubeClient,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		KubeClient:        kubeClient,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	readLogChannel(ch)
+	err := tl.Err()
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -204,20 +186,18 @@ func TestGetRunningBuildLogsNoMatchingBuildPods(t *testing.T) {
 	kubeClient := kubeMocks.NewSimpleClientset(podsList)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	readLogChannel(ch)
+	err := tl.Err()
 	assert.Error(t, err)
 	assert.Equal(t, "the build pods for this build have been garbage collected and the log was not found in the long term storage bucket", err.Error())
 }
@@ -235,26 +215,23 @@ func TestGetRunningBuildLogsWithMatchingBuildPods(t *testing.T) {
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	lines := readLogChannel(ch)
 
 	buildContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(buildContainers) * LogsHeadersMultiplier
 
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
+	assert.NoError(t, tl.Err())
+	assert.Equal(t, containersNumber, len(lines))
 }
 
 func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(t *testing.T) {
@@ -270,26 +247,23 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedContainerInTheMiddle(
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	lines := readLogChannel(ch)
 
 	stepsExecutedBeforeFailure := 4
 	containersNumber := stepsExecutedBeforeFailure*LogsHeadersMultiplier + FailureLineAddition
 
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged), "should stop logging after a step has failed")
+	assert.NoError(t, tl.Err())
+	assert.Equal(t, containersNumber, len(lines), "should stop logging after a step has failed")
 }
 
 func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedMetapipeline(t *testing.T) {
@@ -305,29 +279,25 @@ func TestGetRunningBuildLogsWithMatchingBuildPodsWithFailedMetapipeline(t *testi
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	lines := readLogChannel(ch)
 
 	stepsExecutedBeforeFailure := 6
 	containersNumber := stepsExecutedBeforeFailure*LogsHeadersMultiplier + FailureLineAddition
 
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged), "should stop logging after a step has failed")
-	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.NoError(t, tl.Err())
+	require.Equal(t, containersNumber, len(lines), "should stop logging after a step has failed")
 	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
-		stripansi.Strip(firstLine), "Metapipeline failed so 'app-extension' should be the first stage logged")
+		stripansi.Strip(lines[0]), "Metapipeline failed so 'app-extension' should be the first stage logged")
 }
 
 func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing.T) {
@@ -343,43 +313,36 @@ func TestGetRunningBuildLogsForLegacyPipelineRunWithMatchingBuildPods(t *testing
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", false)
+	lines := readLogChannel(ch)
 
 	buildContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(buildContainers) * LogsHeadersMultiplier
 
-	assert.NoError(t, err)
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
-	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.NoError(t, tl.Err())
+	require.Equal(t, containersNumber, len(lines))
 	assert.Regexp(t, "Showing logs for build (?s).* stage from-fakebranch and container (?s).*$",
-		stripansi.Strip(firstLine), "the metapipeline completed successfully so 'from-fakebranch' should be the first stage logged")
+		stripansi.Strip(lines[0]), "the metapipeline completed successfully so 'from-fakebranch' should be the first stage logged")
 }
 
 func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 	_, _, _, commonOptions, _ := getFakeClientsAndNs(t)
 	commonOptions.SkipAuthSecretsMerge = true
-
-	lch := make(chan LogLine)
-	writer := &TestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
+	jxClient, ns, err := commonOptions.JXClient()
+	require.NoError(t, err)
 	tl := TektonLogger{
-		LogWriter:   writer,
-		logsChannel: lch,
+		JXClient:          jxClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	exampleLogLine := "This is an example log line"
@@ -390,35 +353,33 @@ func TestStreamPipelinePersistentLogsNotInBucket(t *testing.T) {
 		assert.NoError(t, err)
 	}))
 
-	jxClient, ns, err := commonOptions.JXClient()
-	assert.NoError(t, err)
 	authSvc, err := commonOptions.GitAuthConfigService()
 	assert.NoError(t, err)
-	err = tl.StreamPipelinePersistentLogs(server.URL, jxClient, ns, authSvc)
-	assert.NoError(t, err)
-
-	assert.Contains(t, tl.LogWriter.(*TestWriter).StreamLinesLogged[0], "This is an example log line")
+	ch := tl.StreamPipelinePersistentLogs(server.URL, authSvc)
+	lines := readLogChannel(ch)
+	assert.NoError(t, tl.Err())
+	require.Equal(t, 1, len(lines), "len(logLines)")
+	assert.Contains(t, lines[0], exampleLogLine)
 }
 
 func TestStreamPipelinePersistentLogsInUnsupportedBucketProvider(t *testing.T) {
 	_, _, _, commonOptions, _ := getFakeClientsAndNs(t)
 	commonOptions.SkipAuthSecretsMerge = true
-	lch := make(chan LogLine)
+	jxClient, ns, err := commonOptions.JXClient()
+	require.NoError(t, err)
 	tl := TektonLogger{
-		logsChannel: lch,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
+		JXClient:          jxClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
-	jxClient, ns, err := commonOptions.JXClient()
-	assert.NoError(t, err)
 	authSvc, err := commonOptions.GitAuthConfigService()
 	assert.NoError(t, err)
-	err = tl.StreamPipelinePersistentLogs("azblob://nonSupportedBucket", jxClient, ns, authSvc)
+	ch := tl.StreamPipelinePersistentLogs("azblob://nonSupportedBucket", authSvc)
+	lines := readLogChannel(ch)
+	err = tl.Err()
 	assert.NoError(t, err)
-	assert.Contains(t, tl.LogWriter.(*TestWriter).StreamLinesLogged[0], "The provided logsURL scheme is not supported: azblob")
+	assert.Contains(t, lines[0], "The provided logsURL scheme is not supported: azblob")
 }
 
 func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
@@ -434,19 +395,15 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		KubeClient:   kubeClient,
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		KubeClient:        kubeClient,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := &v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "abayer-js-test-repo-master-1",
 			Namespace: ns,
 			Labels: map[string]string{
@@ -464,17 +421,17 @@ func TestGetRunningBuildLogsWithMultipleStages(t *testing.T) {
 		},
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1", false)
-	assert.NoError(t, err)
+	ch := tl.GetRunningBuildLogs(pa, "abayer/js-test-repo/master/1", false)
+	lines := readLogChannel(ch)
+	assert.NoError(t, tl.Err())
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
 	containers2, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := (len(containers1) + len(containers2)) * LogsHeadersMultiplier
 
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
-	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	require.Equal(t, containersNumber, len(lines))
 	assert.Regexp(t, "Showing logs for build (?s).* stage build and container (?s).*$",
-		stripansi.Strip(firstLine), "'build' should be the first stage logged")
+		stripansi.Strip(lines[0]), "'build' should be the first stage logged")
 }
 
 func TestGetRunningBuildLogsWithMultipleStagesWithFailureInFirstStage(t *testing.T) {
@@ -490,27 +447,23 @@ func TestGetRunningBuildLogsWithMultipleStagesWithFailureInFirstStage(t *testing
 	jxClient := jxfake.NewSimpleClientset(structures, pa)
 
 	tl := TektonLogger{
-		KubeClient:   kubeClient,
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		KubeClient:        kubeClient,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1", false)
-	assert.NoError(t, err)
+	ch := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1", false)
+	lines := readLogChannel(ch)
+	assert.NoError(t, tl.Err())
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(containers1)*LogsHeadersMultiplier + 1 // One additional line for the failure
 
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
-	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	require.Equal(t, containersNumber, len(lines))
 	assert.Regexp(t, "Showing logs for build (?s).* stage from-build-pack and container (?s).*$",
-		stripansi.Strip(firstLine), "'from-build-pack' should be the first stage logged")
+		stripansi.Strip(lines[0]), "'from-build-pack' should be the first stage logged")
 }
 
 func TestGetRunningBuildLogsWithMultipleStagesFailureActivityDoneRunNotDone(t *testing.T) {
@@ -526,27 +479,23 @@ func TestGetRunningBuildLogsWithMultipleStagesFailureActivityDoneRunNotDone(t *t
 	jxClient := jxfake.NewSimpleClientset(structures, pa)
 
 	tl := TektonLogger{
-		KubeClient:   kubeClient,
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		KubeClient:        kubeClient,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
-	err := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1", false)
-	assert.NoError(t, err)
+	ch := tl.GetRunningBuildLogs(pa, "cb-kubecd/bdd-spring-1568135191/master/1", false)
+	lines := readLogChannel(ch)
+	assert.NoError(t, tl.Err())
 
 	containers1, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[1])
 	containersNumber := len(containers1)*LogsHeadersMultiplier + 1 // One additional line for the failure
 
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
-	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	require.Equal(t, containersNumber, len(lines))
 	assert.Regexp(t, "Showing logs for build (?s).* stage from-build-pack and container (?s).*$",
-		stripansi.Strip(firstLine), "'from-build-pack' should be the first stage logged")
+		stripansi.Strip(lines[0]), "'from-build-pack' should be the first stage logged")
 }
 
 func TestGetRunningBuildLogsMetapipelineAndPendingGenerated(t *testing.T) {
@@ -561,29 +510,25 @@ func TestGetRunningBuildLogsMetapipelineAndPendingGenerated(t *testing.T) {
 	jxClient := jxfake.NewSimpleClientset(structures)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		KubeClient:   kubeClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		KubeClient:        kubeClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	pa := assertAndCreatePA1(t, jxClient, ns)
 
-	err := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", true)
-	assert.NoError(t, err)
+	ch := tl.GetRunningBuildLogs(pa, "fakeowner/fakerepo/fakebranch/1", true)
+	lines := readLogChannel(ch)
+	assert.NoError(t, tl.Err())
 
 	metapipelineContainers, _, _ := kube.GetContainersWithStatusAndIsInit(&podsList.Items[0])
 	containersNumber := len(metapipelineContainers) * LogsHeadersMultiplier
 
-	assert.Equal(t, containersNumber, len(tl.LogWriter.(*TestWriter).StreamLinesLogged))
-	firstLine := tl.LogWriter.(*TestWriter).StreamLinesLogged[0]
+	assert.Equal(t, containersNumber, len(lines))
 	assert.Regexp(t, "Showing logs for build (?s).* stage app-extension and container (?s).*$",
-		stripansi.Strip(firstLine), "'app-extension' should be the first stage logged")
+		stripansi.Strip(lines[0]), "'app-extension' should be the first stage logged")
 }
 
 func TestGetTektonPipelinesWithFailedAndRetriedPipeline(t *testing.T) {
@@ -594,20 +539,16 @@ func TestGetTektonPipelinesWithFailedAndRetriedPipeline(t *testing.T) {
 	tektonClient := tektonMocks.NewSimpleClientset(pipelineRuns)
 
 	tl := TektonLogger{
-		JXClient:     jxClient,
-		TektonClient: tektonClient,
-		Namespace:    ns,
-		LogWriter: &TestWriter{
-			StreamLinesLogged: make([]string, 0),
-			SingleLinesLogged: make([]string, 0),
-		},
-		LogsRetrieverFunc: LogsProvider,
+		JXClient:          jxClient,
+		TektonClient:      tektonClient,
+		Namespace:         ns,
+		LogsRetrieverFunc: fakeLogsRetriever,
 	}
 
 	_ = assertAndCreatePA1(t, jxClient, ns)
 
 	_, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "PA2",
 			Namespace: ns,
 			Labels: map[string]string{
@@ -654,38 +595,9 @@ func getFakeClientsAndNs(t *testing.T) (versioned.Interface, tektonclient.Interf
 	return jxClient, tektonClient, kubeClient, commonOpts, ns
 }
 
-func (w *TestWriter) WriteLog(logLine LogLine, lch chan<- LogLine) error {
-	w.SingleLinesLogged = append(w.SingleLinesLogged, logLine.Line)
-	lch <- logLine
-	return nil
-}
-
-func (w *TestWriter) StreamLog(lch <-chan LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			w.StreamLinesLogged = append(w.StreamLinesLogged, l.Line)
-			log.Logger().Info(l.Line)
-		}
-	}
-}
-
-func (w TestWriter) BytesLimit() int {
-	return 0
-}
-
-func LogsProvider(pod *corev1.Pod, container *corev1.Container) (io.Reader, func(), error) {
-	return bytes.NewReader([]byte(fmt.Sprintf("Writing pod log for pod %s and container %s", pod.Name, container.Name))), func() {
-		//nothing to clean
-	}, nil
-}
-
 func assertAndCreatePA1(t *testing.T, jxClient versioned.Interface, ns string) *v1.PipelineActivity {
 	pa, err := jxClient.JenkinsV1().PipelineActivities(ns).Create(&v1.PipelineActivity{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "PA1",
 			Namespace: ns,
 			Labels: map[string]string{
@@ -707,3 +619,14 @@ func assertAndCreatePA1(t *testing.T, jxClient versioned.Interface, ns string) *
 
 	return pa
 }
+
+func fakeLogsRetriever(pod *corev1.Pod, container *corev1.Container, limitBytes int64, c kubernetes.Interface) (io.ReadCloser, error) {
+	mockLog := []byte(fmt.Sprintf("Writing pod log for pod %s and container %s", pod.Name, container.Name))
+	return &fakeReadCloser{bytes.NewReader(mockLog)}, nil
+}
+
+type fakeReadCloser struct {
+	io.Reader
+}
+
+func (r *fakeReadCloser) Close() error { return nil }

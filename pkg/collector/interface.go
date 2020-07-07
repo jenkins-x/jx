@@ -1,5 +1,9 @@
 package collector
 
+import (
+	"io"
+)
+
 // Collector an interface to collect data for storage in git or cloud storage etc
 type Collector interface {
 
@@ -9,5 +13,5 @@ type Collector interface {
 
 	// CollectData collects the data storing it at the given output path and returning the URL
 	// to access it
-	CollectData(data []byte, outputPath string) (string, error)
+	CollectData(data io.Reader, outputPath string) (string, error)
 }
