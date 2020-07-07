@@ -2,6 +2,7 @@ package collector
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	neturl "net/url"
 	"os"
@@ -115,7 +116,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 
 // CollectData collects the data storing it at the given output path and returning the URL
 // to access it
-func (c *GitCollector) CollectData(data []byte, outputPath string) (string, error) {
+func (c *GitCollector) CollectData(data io.Reader, outputPath string) (string, error) {
 	u := ""
 	gitClient := c.gitter
 	storageGitInfo := c.gitInfo
@@ -135,9 +136,9 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 	if err != nil {
 		return u, errors.Wrapf(err, "failed to create directory file %s", toDir)
 	}
-	err = ioutil.WriteFile(toFile, data, util.DefaultWritePermissions)
+	err = writeFile(toFile, data)
 	if err != nil {
-		return u, errors.Wrapf(err, "failed to write file %s", toFile)
+		return u, errors.Wrapf(err, "write file %s", toFile)
 	}
 
 	u = c.generateURL(storageOrg, storageRepoName, outputPath)
@@ -159,6 +160,20 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 	}
 	err = gitClient.Push(ghPagesDir, "origin", false, "HEAD:"+c.gitBranch)
 	return u, err
+}
+
+func writeFile(filePath string, data io.Reader) (err error) {
+	dest, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, util.DefaultWritePermissions)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if e := dest.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
+	_, err = io.Copy(dest, data)
+	return
 }
 
 func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rPath string) (url string) {

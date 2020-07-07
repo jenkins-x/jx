@@ -17,7 +17,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/clients/fake"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/logs"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 
 	jxfake "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx-logging/pkg/log"
@@ -28,11 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeMocks "k8s.io/client-go/kubernetes/fake"
 )
-
-type BuildLogsTestWriter struct {
-	StreamLinesLogged []string
-	SingleLinesLogged []string
-}
 
 func TestGetTektonLogsForRunningBuild(t *testing.T) {
 	commonOpts := opts.NewCommonOptionsWithFactory(fake.NewFakeFactory())
@@ -51,11 +47,6 @@ func TestGetTektonLogsForRunningBuild(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
@@ -65,8 +56,7 @@ func TestGetTektonLogsForRunningBuild(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -104,11 +94,6 @@ func TestGetTektonLogsForRunningBuildWithPendingPod(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
@@ -118,8 +103,7 @@ func TestGetTektonLogsForRunningBuildWithPendingPod(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -145,11 +129,6 @@ func TestGetTektonLogsForRunningBuildWithLegacyRepoLabel(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
@@ -159,8 +138,7 @@ func TestGetTektonLogsForRunningBuildWithLegacyRepoLabel(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -202,11 +180,6 @@ func TestGetTektonLogsForRunningBuildWithWaitTime(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
@@ -216,8 +189,7 @@ func TestGetTektonLogsForRunningBuildWithWaitTime(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -264,11 +236,6 @@ func TestGetTektonLogsForStoredLogs(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
@@ -278,8 +245,7 @@ func TestGetTektonLogsForStoredLogs(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -315,11 +281,6 @@ func TestWithMetapipeline(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &opts.CommonOptions{
@@ -331,8 +292,7 @@ func TestWithMetapipeline(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -369,11 +329,6 @@ func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
 
 	ns := "jx"
 
-	writer := &BuildLogsTestWriter{
-		StreamLinesLogged: make([]string, 0),
-		SingleLinesLogged: make([]string, 0),
-	}
-
 	o := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: &commonOpts,
@@ -383,8 +338,7 @@ func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
 			JXClient:          jxClient,
 			TektonClient:      tektonClient,
 			Namespace:         ns,
-			LogWriter:         writer,
-			LogsRetrieverFunc: LogsProvider,
+			LogsRetrieverFunc: fakeLogsRetriever,
 		},
 	}
 
@@ -409,34 +363,12 @@ func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
 	}
 }
 
-func LogsProvider(pod *v1.Pod, container *v1.Container) (io.Reader, func(), error) {
-	return bytes.NewReader([]byte("Pod logs...")), func() {
-		//nothing to clean
-	}, nil
+func fakeLogsRetriever(pod *corev1.Pod, container *corev1.Container, limitBytes int64, c kubernetes.Interface) (io.ReadCloser, error) {
+	return &fakeReadCloser{bytes.NewReader([]byte("Pod logs..."))}, nil
 }
 
-func (w *BuildLogsTestWriter) WriteLog(logLine logs.LogLine, lch chan<- logs.LogLine) error {
-	w.SingleLinesLogged = append(w.SingleLinesLogged, logLine.Line)
-	lch <- logLine
-	return nil
+type fakeReadCloser struct {
+	io.Reader
 }
 
-func (w *BuildLogsTestWriter) StreamLog(lch <-chan logs.LogLine, ech <-chan error) error {
-	for {
-		select {
-		case l, ok := <-lch:
-			if !ok {
-				return nil
-			}
-			w.StreamLinesLogged = append(w.StreamLinesLogged, l.Line)
-			log.Logger().Info(l.Line)
-		case e := <-ech:
-			fmt.Println(e)
-			continue
-		}
-	}
-}
-
-func (w BuildLogsTestWriter) BytesLimit() int {
-	return 0
-}
+func (r *fakeReadCloser) Close() error { return nil }

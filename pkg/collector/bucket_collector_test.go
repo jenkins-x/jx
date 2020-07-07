@@ -30,7 +30,7 @@ func TestBucketCollector_CollectData(t *testing.T) {
 		provider:  mp,
 	}
 
-	finalURL, err := collector.CollectData(contents, outputName)
+	finalURL, err := collector.CollectData(bytes.NewReader(contents), outputName)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s/%s", collector.bucketURL, outputName), finalURL)
 }

@@ -1,10 +1,8 @@
 package storage
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"strings"
 	"time"
@@ -80,18 +78,13 @@ func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 
 // UploadFileToBucket uploads a file to the provided GCS bucket with the provided outputName
 func (b *GKEBucketProvider) UploadFileToBucket(reader io.Reader, key string, bucketURL string) (string, error) {
-	data, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return "", err
-	}
-
-	log.Logger().Debugf("Uploading %d bytes to bucket %s with key %s", len(data), bucketURL, key)
-	err = buckets.WriteBucket(bucketURL, key, data, defaultBucketWriteTimeout)
+	log.Logger().Debugf("Uploading to bucket %s with key %s", bucketURL, key)
+	err := buckets.WriteBucket(bucketURL, key, reader, defaultBucketWriteTimeout)
 	return bucketURL + "/" + key, err
 }
 
 // DownloadFileFromBucket downloads a file from GCS from the given bucketURL and server its contents with a bufio.Scanner
-func (b *GKEBucketProvider) DownloadFileFromBucket(bucketURL string) (*bufio.Scanner, error) {
+func (b *GKEBucketProvider) DownloadFileFromBucket(bucketURL string) (io.ReadCloser, error) {
 	return gke.StreamTransferFileFromBucket(bucketURL)
 }
 

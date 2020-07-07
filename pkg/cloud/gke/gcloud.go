@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-
 	"time"
 
 	osUser "os/user"
@@ -555,7 +555,7 @@ func (g *GCloud) DeleteAllObjectsInBucket(bucketName string) error {
 
 // StreamTransferFileFromBucket will perform a stream transfer from the GCS bucket to stdout and return a scanner
 // with the piped result
-func StreamTransferFileFromBucket(fullBucketURL string) (*bufio.Scanner, error) {
+func StreamTransferFileFromBucket(fullBucketURL string) (io.ReadCloser, error) {
 	bucketAccessible, err := isBucketAccessible(fullBucketURL)
 	if !bucketAccessible || err != nil {
 		return nil, errors.Wrap(err, "can't access bucket")
@@ -571,9 +571,7 @@ func StreamTransferFileFromBucket(fullBucketURL string) (*bufio.Scanner, error) 
 	if err != nil {
 		return nil, errors.Wrap(err, "error streaming the logs from bucket")
 	}
-	scanner := bufio.NewScanner(stdout)
-	scanner.Split(bufio.ScanLines)
-	return scanner, nil
+	return stdout, nil
 }
 
 func isBucketAccessible(bucketURL string) (bool, error) {

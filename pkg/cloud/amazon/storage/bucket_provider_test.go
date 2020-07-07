@@ -3,6 +3,7 @@
 package storage
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -181,13 +182,17 @@ func TestAmazonBucketProvider_DownloadFileFromBucket(t *testing.T) {
 		},
 		downloader: mockedDownloader{},
 	}
-	scanner, err := p.DownloadFileFromBucket("s3://bucket/key")
+	reader, err := p.DownloadFileFromBucket("s3://bucket/key")
 	assert.NoError(t, err)
 
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
 	var bucketContent string
 	for scanner.Scan() {
 		bucketContent += fmt.Sprintln(scanner.Text())
 	}
 
 	assert.Equal(t, expectedBucketContents, bucketContent, "the returned contents should be match")
+	err = reader.Close()
+	assert.NoError(t, err, "reader.Close()")
 }

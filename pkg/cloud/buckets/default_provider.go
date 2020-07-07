@@ -1,7 +1,6 @@
 package buckets
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -38,7 +37,7 @@ func (LegacyBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 }
 
 // DownloadFileFromBucket is not supported for LegacyBucketProvider
-func (LegacyBucketProvider) DownloadFileFromBucket(bucketURL string) (*bufio.Scanner, error) {
+func (LegacyBucketProvider) DownloadFileFromBucket(bucketURL string) (io.ReadCloser, error) {
 	return nil, fmt.Errorf("DownloadFileFromBucket not implemented for LegacyBucketProvider")
 }
 
