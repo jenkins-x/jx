@@ -505,7 +505,7 @@ func existingBootClone(dir string) (bool, error) {
 
 func (o *BootOptions) checkIfProvidedRequirementsArePossiblyStale() error {
 	_, devEnv := o.GetDevEnv()
-	if devEnv != nil {
+	if devEnv.Name != "" {
 		log.Logger().Warnf("It seems you're passing a requirements file to cluster which has already been provisioned.")
 		log.Logger().Warnf("We recommend you update the %s file at %s, using the updates provided within your local %s file.",
 			config.RequirementsConfigFileName, devEnv.Spec.Source, o.RequirementsFile)
