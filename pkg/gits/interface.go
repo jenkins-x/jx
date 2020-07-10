@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
