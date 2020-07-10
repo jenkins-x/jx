@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/auth"
 	"github.com/jenkins-x/jx/v2/pkg/util"
@@ -293,7 +293,7 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 	}
 }
 
-func toGitHubAsset(asset github.ReleaseAsset) GitReleaseAsset {
+func toGitHubAsset(asset *github.ReleaseAsset) GitReleaseAsset {
 	return GitReleaseAsset{
 		ID:                 util.DereferenceInt64(asset.ID),
 		Name:               asText(asset.Name),
@@ -483,12 +483,12 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		"url":          webhookUrl,
 		"content_type": "json",
 		"insecure_ssl": insecureSSL,
+		"name":         "web",
 	}
 	if data.Secret != "" {
 		config["secret"] = data.Secret
 	}
 	hook := &github.Hook{
-		Name:   github.String("web"),
 		Config: config,
 		Events: []string{"*"},
 	}
@@ -569,6 +569,7 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 		config := map[string]interface{}{
 			"url":          webhookUrl,
 			"content_type": "json",
+			"name":         "web",
 		}
 
 		if data.Secret != "" {
@@ -576,7 +577,6 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 		}
 
 		hook := &github.Hook{
-			Name:   github.String("web"),
 			Config: config,
 			Events: []string{"*"},
 		}
@@ -1259,8 +1259,7 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 
 	labels := []GitLabel{}
 	for _, label := range i.Labels {
-		l := label
-		labels = append(labels, toGitHubLabel(&l))
+		labels = append(labels, toGitHubLabel(label))
 	}
 	assignees := []GitUser{}
 	for _, assignee := range i.Assignees {
@@ -1393,7 +1392,7 @@ func (p *GitHubProvider) UserInfo(username string) *GitUser {
 
 func (p *GitHubProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Logger().Infof("Automatically adding the pipeline user: %v as a collaborator.", user)
-	_, err := p.Client.Repositories.AddCollaborator(p.Context, organisation, repo, user, &github.RepositoryAddCollaboratorOptions{})
+	_, _, err := p.Client.Repositories.AddCollaborator(p.Context, organisation, repo, user, &github.RepositoryAddCollaboratorOptions{})
 	if err != nil {
 		return err
 	}
@@ -1488,7 +1487,7 @@ func (p *GitHubProvider) UploadReleaseAsset(org string, repo string, id int64, n
 		return nil, errors.Wrapf(err, "uploading asset %s to release %d in %s/%s", asset.Name(), id, org, repo)
 	}
 	if answer != nil {
-		a := toGitHubAsset(*answer)
+		a := toGitHubAsset(answer)
 		return &a, nil
 	}
 	return nil, nil

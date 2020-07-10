@@ -13,7 +13,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/mitchellh/mapstructure"
 
 	bitbucket "github.com/gfleury/go-bitbucket-v1"

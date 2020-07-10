@@ -4,7 +4,7 @@ package matchers
 import (
 	"reflect"
 
-	github "github.com/google/go-github/github"
+	github "github.com/google/go-github/v32/github"
 	"github.com/petergtz/pegomock"
 )
 

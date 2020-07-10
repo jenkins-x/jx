@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	github "github.com/google/go-github/github"
+	github "github.com/google/go-github/v32/github"
 	auth "github.com/jenkins-x/jx/v2/pkg/auth"
 	gits "github.com/jenkins-x/jx/v2/pkg/gits"
 	pegomock "github.com/petergtz/pegomock"

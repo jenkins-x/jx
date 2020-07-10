@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 )
 
