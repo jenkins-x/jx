@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -15,7 +16,11 @@ const (
 	defaultErrorExitCode = 1
 )
 
-var fatalErrHandler = Fatal
+var (
+	// ErrDevEnvNotFound is an error representing when a dev environment can't be found.
+	ErrDevEnvNotFound = errors.New("the dev environment was not found")
+	fatalErrHandler   = Fatal
+)
 
 // BehaviorOnFatal allows you to override the default behavior when a fatal
 // error occurs, which is to call os.Exit(code). You can pass 'panic' as a function

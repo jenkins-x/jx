@@ -113,6 +113,9 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements the command
 func (o *UpgradeAppsOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
+	if o.DevEnv == nil {
+		return helper.ErrDevEnvNotFound
+	}
 	if o.Repo == "" {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}

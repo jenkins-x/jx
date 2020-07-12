@@ -77,6 +77,9 @@ func NewCmdStepSchedulerConfigMigrate(commonOpts *opts.CommonOptions) *cobra.Com
 // Run implements this command
 func (o *StepSchedulerConfigMigrateOptions) Run() error {
 	gitOps, devEnv := o.GetDevEnv()
+	if devEnv == nil {
+		return helper.ErrDevEnvNotFound
+	}
 	jxClient, ns, err := o.JXClient()
 	if err != nil {
 		return errors.WithStack(err)

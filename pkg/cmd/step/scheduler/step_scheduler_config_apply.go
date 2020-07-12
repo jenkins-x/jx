@@ -62,6 +62,9 @@ func NewCmdStepSchedulerConfigApply(commonOpts *opts.CommonOptions) *cobra.Comma
 // Run implements this command
 func (o *StepSchedulerConfigApplyOptions) Run() error {
 	gitOps, devEnv := o.GetDevEnv()
+	if devEnv == nil {
+		return helper.ErrDevEnvNotFound
+	}
 	switch o.Agent {
 	case "prow":
 		jxClient, ns, err := o.JXClientAndDevNamespace()

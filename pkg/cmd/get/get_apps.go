@@ -104,6 +104,9 @@ func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *GetAppsOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
+	if o.DevEnv == nil {
+		return helper.ErrDevEnvNotFound
+	}
 	kubeClient, err := o.Options.KubeClient()
 	if err != nil {
 		return err
