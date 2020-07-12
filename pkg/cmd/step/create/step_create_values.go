@@ -211,6 +211,9 @@ func (o *StepCreateValuesOptions) CreateValuesFile(secretURLClient secreturl.Cli
 	}
 	gitOpsURL := ""
 	gitOps, devEnv := o.GetDevEnv()
+	if devEnv == nil {
+		return helper.ErrDevEnvNotFound
+	}
 	if gitOps {
 		gitOpsURL = devEnv.Spec.Source.URL
 	}

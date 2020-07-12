@@ -25,12 +25,12 @@ func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment)
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		log.Logger().Warnf("when attempting to create jx client. %v", err)
-		return false, &jenkinsv1.Environment{}
+		return false, nil
 	} else {
 		devEnv, err := kube.GetDevEnvironment(jxClient, ns)
 		if err != nil {
 			log.Logger().Warnf("when attempting to load team settings. %v", err)
-			return false, &jenkinsv1.Environment{}
+			return false, nil
 		}
 		gitOps := false
 		if devEnv == nil {

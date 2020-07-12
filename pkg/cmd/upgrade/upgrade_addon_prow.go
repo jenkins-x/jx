@@ -127,8 +127,10 @@ func (o *UpgradeAddonProwOptions) Run() error {
 
 // Upgrade Prow
 func (o *UpgradeAddonProwOptions) Upgrade() error {
-
 	isGitOps, devEnv := o.GetDevEnv()
+	if devEnv == nil {
+		return helper.ErrDevEnvNotFound
+	}
 	if isGitOps {
 		return o.UpgradeViaGitOps(devEnv)
 	}
