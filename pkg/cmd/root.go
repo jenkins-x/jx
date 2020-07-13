@@ -84,6 +84,22 @@ func Main(args []string) *cobra.Command {
 		},
 		SuggestFor: []string{"new", "make"},
 	}
+	startCmd := &cobra.Command{
+		Use:   "start TYPE [flags]",
+		Short: "Starts a resource",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cmd.Help()
+			helper.CheckErr(err)
+		},
+	}
+	stopCmd := &cobra.Command{
+		Use:   "stop TYPE [flags]",
+		Short: "Stops a resource",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cmd.Help()
+			helper.CheckErr(err)
+		},
+	}
 	getCmd.AddCommand(
 		getBuildCmd,
 		aliasCommand(cmd, doCmd, "application", []string{"application"}, "app", "apps", "applications"),
@@ -98,7 +114,13 @@ func Main(args []string) *cobra.Command {
 		aliasCommand(cmd, doCmd, "quickstart", []string{"project", "quickstart"}, "qs"),
 		aliasCommand(cmd, doCmd, "project", []string{"project"}),
 	)
-	generalCommands = append(generalCommands, getCmd, createCmd,
+	startCmd.AddCommand(
+		aliasCommand(cmd, doCmd, "pipeline", []string{"pipeline", "start"}, "pipelines"),
+	)
+	stopCmd.AddCommand(
+		aliasCommand(cmd, doCmd, "pipeline", []string{"pipeline", "stop"}, "pipelines"),
+	)
+	generalCommands = append(generalCommands, getCmd, createCmd, startCmd, stopCmd,
 		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}, "log"),
 	)
 
