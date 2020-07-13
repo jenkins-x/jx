@@ -18,7 +18,7 @@ const (
 	PipelineVersion = "0.0.4"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.31"
+	ProjectVersion = "0.0.33"
 
 	// PromoteVersion the version of the jx promote plugin
 	PromoteVersion = "0.0.56"
