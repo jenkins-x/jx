@@ -869,6 +869,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			Value: o.DockerRegistry,
 		})
 	}
+	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY_ORG") == nil && o.DockerRegistryOrg != "" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "DOCKER_REGISTRY_ORG",
+			Value: o.DockerRegistryOrg,
+		})
+	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "BUILD_NUMBER",
@@ -1284,6 +1290,9 @@ func getVersionFromFile(dir string) (string, error) {
 }
 
 func (o *StepCreateTaskOptions) setBuildVersion(projectConfig *config.ProjectConfig) error {
+	if o.DockerRegistryOrg == "" {
+		o.DockerRegistryOrg = o.GetDockerRegistryOrg(projectConfig, o.GitInfo)
+	}
 	if o.NoReleasePrepare || o.ViewSteps || o.EffectivePipeline || projectConfig.NoReleasePrepare {
 		return nil
 	}

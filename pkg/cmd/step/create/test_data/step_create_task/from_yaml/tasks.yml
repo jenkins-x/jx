@@ -41,6 +41,8 @@ items:
       - name: GIT_AUTHOR_NAME
         value: somebodyelse
       - name: DOCKER_REGISTRY
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -91,6 +93,8 @@ items:
       - name: GIT_AUTHOR_NAME
         value: somebodyelse
       - name: DOCKER_REGISTRY
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -155,6 +159,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -223,6 +229,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -314,6 +322,8 @@ items:
       - name: GIT_AUTHOR_NAME
         value: somebodyelse
       - name: DOCKER_REGISTRY
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -381,6 +391,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND

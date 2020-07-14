@@ -54,6 +54,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -128,6 +130,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -200,6 +204,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -272,6 +278,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -344,6 +352,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -416,6 +426,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -488,6 +500,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -560,6 +574,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -632,6 +648,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -705,6 +723,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -777,6 +797,8 @@ items:
         value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: something else
+      - name: DOCKER_REGISTRY_ORG
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
