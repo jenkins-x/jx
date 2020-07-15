@@ -13,7 +13,7 @@
 See the [jx command reference](https://github.com/jenkins-x/jx-cli/blob/master/docs/cmd/jx.md)
 
 
-## Issues
+## Issues
 
 To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues) and all the related [Plugins](#plugins) use this link:
 
