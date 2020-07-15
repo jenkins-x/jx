@@ -26,7 +26,6 @@ linters-settings:
       - dupImport # https://github.com/go-critic/go-critic/issues/845
       - ifElseChain
       - octalLiteral
-      - whyNoLint
       - wrapperFunc
   gocyclo:
     min-complexity: 15
@@ -65,36 +64,34 @@ linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
-    - asciicheck
-#    - bodyclose
+    #    - bodyclose
     - deadcode
     - depguard
-#    - dogsled
-#    - dupl
+    #    - dogsled
+    #    - dupl
     - errcheck
-#    - funlen
-#    - goconst
+    #    - funlen
+    #    - goconst
     - gofmt
     - goimports
-    - goprintffuncname
     - gosec
-#    - gosimple
-#    - ineffassign
+    #    - gosimple
+    #    - ineffassign
     - interfacer
     - misspell
-#    - nakedret
-#    - rowserrcheck
-#    - staticcheck
+    #    - nakedret
+    #    - rowserrcheck
+    #    - staticcheck
     - structcheck
     - typecheck
     - unconvert
-#    - unparam
+    #    - unparam
     - unused
-#    - varcheck
-#    - golint
-#    - gocritic
-#    - gocyclo
-#    - nestif
+  #    - varcheck
+  #    - golint
+  #    - gocritic
+  #    - gocyclo
+  #    - nestif
   # don't enable:
   # - testpackage
   # - gochecknoinits
@@ -117,15 +114,15 @@ linters:
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
-#    - path: _test\.go
-#      linters:
-#        - gomnd
-#    https://github.com/go-critic/go-critic/issues/926
+    #    - path: _test\.go
+    #      linters:
+    #        - gomnd
+    #    https://github.com/go-critic/go-critic/issues/926
     - linters:
         - gocritic
       text: "unnecessaryDefer:"
   max-same-issues: 0
-  
+
 run:
   skip-dirs:
     - test/testdata_etc
