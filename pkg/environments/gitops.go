@@ -576,6 +576,9 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 	possibles := make([]string, 0)
 	app := &jenkinsv1.App{}
 	for _, template := range templates {
+		if template.IsDir() {
+			continue
+		}
 		appBytes, err := ioutil.ReadFile(filepath.Join(completedTemplatesDir, template.Name()))
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "reading file %s", filename)
