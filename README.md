@@ -30,5 +30,16 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 * [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
 * [jx verify](https://github.com/jenkins-x/jx-verify/blob/master/docs/cmd/jx-verify.md) a set of commands for verifying Jenkins X installations
 
-  
-                                                            
+
+## Libraries
+
+These are the modular libraries which have been refactored out of the main [jenkins-x/jx](https://github.com/jenkins-x/jx) repository as part of the [modularisation enhancement process](https://github.com/jenkins-x/enhancements/tree/master/proposals/5#1-overview)
+       
+* [go-scm](https://github.com/jenkins-x/go-scm) API for working with SCM providers
+* [jx-api](https://github.com/jenkins-x/jx-api) the core JX APIs
+* [jx-apps](https://github.com/jenkins-x/jx-apps) a library for loading/saving the `jx-apps.yml` file
+* [jx-helpers](https://github.com/jenkins-x/jx-helpers) a bunch of utilities (mostly from the `util` package) refactored + no longer dependent on [jenkins-x/jx](https://github.com/jenkins-x/jx/) 
+* [jx-kube-client](https://github.com/jenkins-x/jx-kube-client) the core library for working with kube/jx/tekton clients
+* [jx-logging](https://github.com/jenkins-x/jx-logging) logging APIs
+* [lighthouse-config](https://github.com/jenkins-x/lighthouse-config) for configuring lighthouses
+                                             
