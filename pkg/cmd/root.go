@@ -113,6 +113,7 @@ func Main(args []string) *cobra.Command {
 	createCmd.AddCommand(
 		aliasCommand(cmd, doCmd, "quickstart", []string{"project", "quickstart"}, "qs"),
 		aliasCommand(cmd, doCmd, "project", []string{"project"}),
+		aliasCommand(cmd, doCmd, "pullrequest", []string{"project", "pullrequest"}, "pr"),
 	)
 	startCmd.AddCommand(
 		aliasCommand(cmd, doCmd, "pipeline", []string{"pipeline", "start"}, "pipelines"),
@@ -123,6 +124,7 @@ func Main(args []string) *cobra.Command {
 	generalCommands = append(generalCommands, getCmd, createCmd, startCmd, stopCmd,
 		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}, "log"),
 	)
+
 
 	cmd.AddCommand(generalCommands...)
 	groups := templates.CommandGroups{
