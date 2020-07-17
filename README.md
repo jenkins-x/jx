@@ -30,6 +30,9 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 * [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
 * [jx verify](https://github.com/jenkins-x/jx-verify/blob/master/docs/cmd/jx-verify.md) a set of commands for verifying Jenkins X installations
 
+## Other Plugins
+
+* [octant-jx](https://github.com/jenkins-x/octant-jx) an open source Jenkins X UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octan)
 
 ## Libraries
 
