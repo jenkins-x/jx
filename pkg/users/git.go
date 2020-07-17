@@ -87,14 +87,18 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 			}
 		}
 		new := r.GitUserToUser(gitUser)
-		id = naming.ToValidName(gitUser.Login)
+		login := gitUser.Login
+		if login == "" {
+			login = gitUser.Name
+		}
+		id = naming.ToValidName(login)
 		// Check if the user id is available, if not append "-<n>" where <n> is some integer
 		for i := 0; true; i++ {
 			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				break
 			}
-			id = fmt.Sprintf("%s-%d", gitUser.Login, i)
+			id = fmt.Sprintf("%s-%d", login, i)
 		}
 		new.Name = naming.ToValidName(id)
 		return id, possibles, new, nil
