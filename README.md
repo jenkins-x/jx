@@ -35,7 +35,7 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 
 * [octant-jx](https://github.com/jenkins-x/octant-jx) an open source Jenkins X UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octan)
 
-## Libraries
+## Libraries
 
 These are the modular libraries which have been refactored out of the main [jenkins-x/jx](https://github.com/jenkins-x/jx) repository as part of the [modularisation enhancement process](https://github.com/jenkins-x/enhancements/tree/master/proposals/5#1-overview)
        
