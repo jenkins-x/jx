@@ -13,9 +13,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/io/secrets"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/secreturl"
 	"github.com/jenkins-x/jx/v2/pkg/secreturl/localvault"
-	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/v2/pkg/environments"
 
@@ -351,7 +351,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsEnvDir string,
 	}
 
 	//Needed for generated Apps - Otherwise the main repo's Chart.yml is used and the Apps metadata is left empty
-	chartUntarDir, _ := ioutil.TempDir("", chart+uuid.NewUUID().String())
+	chartUntarDir, _ := ioutil.TempDir("", chart+uuid.New().String())
 	err := o.Helm().FetchChart(chart, version, true, chartUntarDir, repo, "", "")
 	if err != nil {
 		log.Logger().Errorf("unable to fetch chart - %s", err)

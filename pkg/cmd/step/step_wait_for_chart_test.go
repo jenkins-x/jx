@@ -9,17 +9,17 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 
+	"github.com/google/uuid"
 	cmd_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
-	uuid "github.com/satori/go.uuid"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStepWaitForChart(t *testing.T) {
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 
 	name := nameUUID.String()

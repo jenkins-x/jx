@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
+	"github.com/google/uuid"
 	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
@@ -22,7 +23,6 @@ import (
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
-	uuid "github.com/satori/go.uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	cmd_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
@@ -173,11 +173,11 @@ func (o *StepSchedulerMigrateTestOptions) createSchedulerMigrateTestOptions(test
 
 	devEnvRepoName := ""
 	jxResources := []runtime.Object{}
-	testOrgNameUUID, err := uuid.NewV4()
+	testOrgNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	// Fix the order so the generated config is consistent
 	testOrgName := "Z" + testOrgNameUUID.String()
-	testRepoNameUUID, err := uuid.NewV4()
+	testRepoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	testRepoName := testRepoNameUUID.String()
 	devEnvRepoName = fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)

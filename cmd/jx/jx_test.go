@@ -6,8 +6,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
@@ -99,18 +97,4 @@ func TestSystem(t *testing.T) {
 	} else {
 		main()
 	}
-}
-
-func downloadFile(out *os.File, url string) error {
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
 }

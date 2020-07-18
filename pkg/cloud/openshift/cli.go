@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/packages"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-	"github.com/pborman/uuid"
 )
 
 // InstallOc installs oc cli
@@ -58,7 +58,7 @@ func InstallOc() error {
 	}
 
 	if extension == ".zip" {
-		zipDir := filepath.Join(binDir, "oc-tmp-"+uuid.NewUUID().String())
+		zipDir := filepath.Join(binDir, "oc-tmp-"+uuid.New().String())
 		err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
 		if err != nil {
 			return err

@@ -15,11 +15,11 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
 	"github.com/acarl005/stripansi"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -31,10 +31,10 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 		err := os.RemoveAll(testDir)
 		assert.NoError(t, err)
 	}()
-	repoOwnerUUID, err := uuid.NewV4()
+	repoOwnerUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoOwner := repoOwnerUUID.String()
-	repoNameUUID, err := uuid.NewV4()
+	repoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
 	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)
@@ -96,10 +96,10 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 		err := os.RemoveAll(testDir)
 		assert.NoError(t, err)
 	}()
-	repoOwnerUUID, err := uuid.NewV4()
+	repoOwnerUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoOwner := repoOwnerUUID.String()
-	repoNameUUID, err := uuid.NewV4()
+	repoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
 	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)

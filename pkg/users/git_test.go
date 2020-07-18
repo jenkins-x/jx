@@ -12,7 +12,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/users"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
@@ -30,7 +30,7 @@ func TestFindUserByLabel(t *testing.T) {
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 
-	gituserIDUUID, err := uuid.NewV4()
+	gituserIDUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID := gituserIDUUID.String()
 
@@ -63,7 +63,7 @@ func TestFindUserBySignature(t *testing.T) {
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 
-	gituserIDUUID, err := uuid.NewV4()
+	gituserIDUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID := gituserIDUUID.String()
 
@@ -90,11 +90,11 @@ func TestFindUserByAccountReference(t *testing.T) {
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 
-	gituserID1UUID, err := uuid.NewV4()
+	gituserID1UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID1 := gituserID1UUID.String()
 
-	gituserID2UUID, err := uuid.NewV4()
+	gituserID2UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID2 := gituserID2UUID.String()
 
@@ -131,18 +131,18 @@ func TestFindUserByFromGitProvider(t *testing.T) {
 	resolver, fakeProvider, err := prepare(t)
 	assert.NoError(t, err)
 
-	gituserID1UUID, err := uuid.NewV4()
+	gituserID1UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID1 := gituserID1UUID.String()
 
-	gituserID2UUID, err := uuid.NewV4()
+	gituserID2UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID2 := gituserID2UUID.String()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
-	emailUUID, err := uuid.NewV4()
+	emailUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	email := emailUUID.String()
 
@@ -184,18 +184,18 @@ func TestFindUserByFromGitProviderWithNoEmail(t *testing.T) {
 	resolver, fakeProvider, err := prepare(t)
 	assert.NoError(t, err)
 
-	gituserID1UUID, err := uuid.NewV4()
+	gituserID1UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID1 := gituserID1UUID.String()
 
-	gituserID2UUID, err := uuid.NewV4()
+	gituserID2UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	gituserID2 := gituserID2UUID.String()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
-	userID2UUID, err := uuid.NewV4()
+	userID2UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	userID2 := userID2UUID.String()
 	assert.NoError(t, err)
@@ -227,11 +227,11 @@ func TestFindUserWithDifferentEmailButSameGitLogin(t *testing.T) {
 	resolver, fakeProvider, err := prepare(t)
 	assert.NoError(t, err)
 
-	userID1UUID, err := uuid.NewV4()
+	userID1UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	userID := userID1UUID.String()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	gitUser1 := &gits.GitUser{
@@ -268,10 +268,10 @@ func TestFindUserWithNoEmailButSameGitLogin(t *testing.T) {
 	resolver, fakeProvider, err := prepare(t)
 	assert.NoError(t, err)
 
-	userID1UUID, err := uuid.NewV4()
+	userID1UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	userID := userID1UUID.String()
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	gitUser1 := &gits.GitUser{
@@ -396,7 +396,7 @@ func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gituser
 }
 
 func createUniqueDummyUser(resolver *users.GitUserResolver, createLabels bool, gituserID string) (string, error) {
-	idUUID, err := uuid.NewV4()
+	idUUID, err := uuid.NewUUID()
 	if err != nil {
 		return "", err
 	}

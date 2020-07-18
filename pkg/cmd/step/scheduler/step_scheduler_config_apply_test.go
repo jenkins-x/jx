@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
+	"github.com/google/uuid"
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/scheduler"
@@ -21,7 +22,6 @@ import (
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	"github.com/jenkins-x/lighthouse-config/pkg/plugins"
-	uuid "github.com/satori/go.uuid"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -250,11 +250,11 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 	if sourceRepoGroups != nil {
 		jxResources = append(jxResources, sourceRepoGroups)
 	}
-	testOrgNameUUID, err := uuid.NewV4()
+	testOrgNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	// Fix the order so the generated config is consistent
 	testOrgName := "Z" + testOrgNameUUID.String()
-	testRepoNameUUID, err := uuid.NewV4()
+	testRepoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	testRepoName := testRepoNameUUID.String()
 	devEnvRepoName = fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)

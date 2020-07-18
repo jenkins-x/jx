@@ -10,11 +10,11 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	core_v1 "k8s.io/api/core/v1"
@@ -116,7 +116,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	prometheusIngressConfig := path.Join("/tmp", "prometheusIngressConfig_"+uuid.New())
+	prometheusIngressConfig := path.Join("/tmp", "prometheusIngressConfig_"+uuid.New().String())
 	err = ioutil.WriteFile(prometheusIngressConfig, valuesBytes, 0600)
 	if err != nil {
 		return err

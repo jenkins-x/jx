@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 // EnableLongTermStorage will take the cluster install values and a provided bucket name and use it / create a new one for gs
@@ -51,7 +51,7 @@ func createUniqueBucketName(installValues map[string]string) (string, map[string
 }
 
 func createUniqueBucketNameForCluster(clusterName string) string {
-	uuid4, _ := uuid.NewV4()
+	uuid4 := uuid.New()
 	bucketName := fmt.Sprintf("%s-lts-%s", clusterName, uuid4.String())
 	if len(bucketName) > 60 {
 		bucketName = bucketName[:60]

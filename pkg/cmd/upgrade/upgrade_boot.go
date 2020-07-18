@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/boot"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -21,7 +22,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -242,7 +242,7 @@ func (o *UpgradeBootOptions) upgradeAvailable(versionStreamURL string, versionSt
 }
 
 func (o *UpgradeBootOptions) checkoutNewBranch() (string, error) {
-	localBranchUUID, err := uuid.NewV4()
+	localBranchUUID, err := uuid.NewUUID()
 	if err != nil {
 		return "", errors.Wrapf(err, "creating UUID for local branch")
 	}

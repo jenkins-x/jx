@@ -17,6 +17,7 @@ import (
 
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 
+	"github.com/google/uuid"
 	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	cmd_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -27,7 +28,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	vault_test "github.com/jenkins-x/jx/v2/pkg/vault/mocks"
 	"github.com/petergtz/pegomock"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -62,7 +62,7 @@ func (o *AppTestOptions) GetFullDevEnvDir(envDir string) (name string) {
 func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (string, string, string, error) {
 	// Can't run in parallel
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	if err != nil {
 		return "", "", "", errors.WithStack(err)
 	}
@@ -127,7 +127,7 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[strin
 	// Put some commits on a branch
 	name = appName
 	if name == "" {
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		if err != nil {
 			return "", "", "", err
 		}
@@ -228,10 +228,10 @@ func CreateAppTestOptions(gitOps bool, appName string, t assert.TestingT) *AppTe
 	o.OriginalKubeCfg = originalKubeCfg
 	o.TempKubeCfg = tempKubeCfg
 
-	testOrgNameUUID, err := uuid.NewV4()
+	testOrgNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	testOrgName := testOrgNameUUID.String()
-	testRepoNameUUID, err := uuid.NewV4()
+	testRepoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	testRepoName := testRepoNameUUID.String()
 	devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)

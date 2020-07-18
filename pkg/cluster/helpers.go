@@ -1,16 +1,16 @@
 package cluster
 
 import (
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 // NewLabelValue returns a cluster safe unique label we can use for locking
 func NewLabelValue() (string, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewUUID()
 	if err != nil {
 		return "", err
 	}

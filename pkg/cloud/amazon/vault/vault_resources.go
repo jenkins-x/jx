@@ -11,7 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/iam"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -71,7 +71,7 @@ func CreateVaultResources(vaultParams ResourceCreationOpts) (*string, *string, *
 		util.ColorInfo(vaultParams.Username),
 		util.ColorInfo(vaultParams.TableName))
 
-	valueUUID, err := uuid.NewV4()
+	valueUUID, err := uuid.NewUUID()
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "generating UUID failed")
 	}

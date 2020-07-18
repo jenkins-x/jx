@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
 

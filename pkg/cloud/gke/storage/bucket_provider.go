@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
+	uuid2 "github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -28,8 +28,8 @@ type GKEBucketProvider struct {
 
 // CreateNewBucketForCluster creates a new dynamic bucket
 func (b *GKEBucketProvider) CreateNewBucketForCluster(clusterName string, bucketKind string) (string, error) {
-	uuid4, _ := uuid.NewV4()
-	bucketURL := fmt.Sprintf("gs://%s-%s-%s", clusterName, bucketKind, uuid4.String())
+	uuid := uuid2.New()
+	bucketURL := fmt.Sprintf("gs://%s-%s-%s", clusterName, bucketKind, uuid.String())
 	if len(bucketURL) > 60 {
 		bucketURL = bucketURL[:60]
 	}
@@ -48,7 +48,7 @@ func (b *GKEBucketProvider) CreateNewBucketForCluster(clusterName string, bucket
 func (b *GKEBucketProvider) EnsureBucketIsCreated(bucketURL string) error {
 	project := b.Requirements.Cluster.ProjectID
 	if project == "" {
-		return fmt.Errorf("Requirements do not specify a project")
+		return fmt.Errorf("requirements do not specify a project")
 	}
 	u, err := url.Parse(bucketURL)
 	if err != nil {

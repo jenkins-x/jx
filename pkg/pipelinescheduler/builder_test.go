@@ -5,7 +5,7 @@ package pipelinescheduler_test
 import (
 	"testing"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 
@@ -343,7 +343,7 @@ func TestPreSubmitApplyToRepoContextPolicyWithAppendingChildRepoContextPolicy(t 
 				ContextPolicy: &v1.RepoContextPolicy{
 					Branches: &v1.ReplaceableMapOfStringContextPolicy{
 						Items: map[string]*v1.ContextPolicy{
-							uuid.New(): {},
+							uuid.New().String(): {},
 						},
 					},
 				},

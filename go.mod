@@ -81,7 +81,6 @@ require (
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0
-	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
@@ -89,7 +88,6 @@ require (
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/rollout/rox-go v0.0.0-20181220111955-29ddae74a8c4
 	github.com/russross/blackfriday v1.5.2
-	github.com/satori/go.uuid v1.2.1-0.20180103174451-36e9d2ebbde5
 	github.com/sethvargo/go-password v0.1.2
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
