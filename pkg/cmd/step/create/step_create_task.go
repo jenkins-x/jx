@@ -109,6 +109,8 @@ type StepCreateTaskOptions struct {
 	FromRepo            bool
 	NoKaniko            bool
 	SemanticRelease     bool
+	DisableGitClone     bool
+	NoOutput            bool
 	KanikoImage         string
 	KanikoSecretMount   string
 	KanikoSecret        string
@@ -120,15 +122,16 @@ type StepCreateTaskOptions struct {
 	PodTemplates        map[string]*corev1.Pod
 	UseBranchAsRevision bool
 
-	GitInfo              *gits.GitRepository
-	BuildNumber          string
-	labels               map[string]string
-	Results              tekton.CRDWrapper
-	pipelineParams       []pipelineapi.Param
-	version              string
-	previewVersionPrefix string
-	VersionResolver      *versionstream.VersionResolver
-	CloneDir             string
+	GitInfo                *gits.GitRepository
+	BuildNumber            string
+	labels                 map[string]string
+	Results                tekton.CRDWrapper
+	pipelineParams         []pipelineapi.Param
+	version                string
+	previewVersionPrefix   string
+	VersionResolver        *versionstream.VersionResolver
+	CloneDir               string
+	EffectiveProjectConfig *config.ProjectConfig
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -265,7 +268,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if !exists {
 		// TODO this branch all things depending on it can be removed once the meta pipeline is working
 		// TODO keeping this to keep existing behavior until then (HF)
-		if o.CloneGitURL != "" {
+		if o.CloneGitURL != "" && !o.DisableGitClone {
 			o.CloneDir = o.cloneGitRepositoryToTempDir(o.CloneGitURL, o.Branch, o.PullRequestNumber, o.Revision)
 			if o.DeleteTempDir {
 				defer func() {
@@ -319,6 +322,7 @@ func (o *StepCreateTaskOptions) Run() error {
 			return errors.Wrap(err, "failed to create effective project configuration")
 		}
 	}
+	o.EffectiveProjectConfig = effectiveProjectConfig
 
 	err = o.setBuildValues()
 	if err != nil {
@@ -352,10 +356,12 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if *o.NoApply || o.DryRun {
-		log.Logger().Infof("Writing output ")
-		err := tektonCRDs.WriteToDisk(o.OutDir, nil)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to output Tekton CRDs")
+		if !o.NoOutput {
+			log.Logger().Infof("Writing output ")
+			err := tektonCRDs.WriteToDisk(o.OutDir, nil)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to output Tekton CRDs")
+			}
 		}
 	} else {
 		activityKey := tekton.GeneratePipelineActivity(o.BuildNumber, o.Branch, o.GitInfo, o.Context, pr)
