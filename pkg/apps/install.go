@@ -17,7 +17,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -374,7 +374,8 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				return &chartDetails, errors.Wrapf(err, "locating app resource in %s", chartDir)
 			}
 			if appResource.Spec.SchemaPreprocessor != nil {
-				id := uuid.New()
+				// Generate a new UUID and get it's string form for use later
+				id := uuid.New().String()
 				cmName := toValidName(chartDetails.Name, "schema", id)
 				cm := corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{

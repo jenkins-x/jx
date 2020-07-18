@@ -13,8 +13,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/get"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/helm"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/v2/pkg/tests"
@@ -29,7 +29,7 @@ const (
 func TestGetAppsGitops(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	name1UUID, err := uuid.NewV4()
+	name1UUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name1 := name1UUID.String()
 	testOptions := testhelpers.CreateAppTestOptions(true, name1, t)

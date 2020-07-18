@@ -25,11 +25,11 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/tests"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -59,10 +59,10 @@ func TestCreateValuesFileWithVault(t *testing.T) {
 
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
-		testOrgNameUUID, err := uuid.NewV4()
+		testOrgNameUUID, err := uuid.NewUUID()
 		assert.NoError(t, err)
 		testOrgName := testOrgNameUUID.String()
-		testRepoNameUUID, err := uuid.NewV4()
+		testRepoNameUUID, err := uuid.NewUUID()
 		assert.NoError(t, err)
 		testRepoName := testRepoNameUUID.String()
 		devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
@@ -179,10 +179,10 @@ func TestCreateValuesFileWithLocalSecrets(t *testing.T) {
 
 	pegomock.RegisterMockTestingT(t)
 	tests.Retry(t, 1, time.Second*10, func(r *tests.R) {
-		testOrgNameUUID, err := uuid.NewV4()
+		testOrgNameUUID, err := uuid.NewUUID()
 		assert.NoError(t, err)
 		testOrgName := testOrgNameUUID.String()
-		testRepoNameUUID, err := uuid.NewV4()
+		testRepoNameUUID, err := uuid.NewUUID()
 		assert.NoError(t, err)
 		testRepoName := testRepoNameUUID.String()
 		devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)

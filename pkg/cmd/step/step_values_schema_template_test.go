@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts/step"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -21,7 +21,7 @@ import (
 )
 
 func TestStepValuesSchemaTemplate(t *testing.T) {
-	cmName := uuid.New()
+	cmName := uuid.New().String()
 	o := StepValuesSchemaTemplateOptions{
 		StepOptions: step.StepOptions{
 			CommonOptions: &opts.CommonOptions{},

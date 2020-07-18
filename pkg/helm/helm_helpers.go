@@ -18,7 +18,7 @@ import (
 
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/kube"
@@ -690,7 +690,7 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 			// Generate the name
 			uri, err := url.Parse(helmURL)
 			if err != nil {
-				repoName = uuid.New()
+				repoName = uuid.New().String()
 				log.Logger().Warnf("Unable to parse %s as URL so assigning random name %s", helmURL, repoName)
 			} else {
 				repoName = uri.Hostname()

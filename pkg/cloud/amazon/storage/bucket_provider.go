@@ -16,12 +16,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 // AmazonBucketProvider the bucket provider for AWS
@@ -83,7 +83,7 @@ func (b *AmazonBucketProvider) s3ManagerUploader() (s3manageriface.UploaderAPI, 
 
 // CreateNewBucketForCluster creates a new dynamic bucket
 func (b *AmazonBucketProvider) CreateNewBucketForCluster(clusterName string, bucketKind string) (string, error) {
-	uuid4, _ := uuid.NewV4()
+	uuid4 := uuid.New()
 	bucketName := fmt.Sprintf("%s-%s-%s", clusterName, bucketKind, uuid4.String())
 
 	// Max length is 63, https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html

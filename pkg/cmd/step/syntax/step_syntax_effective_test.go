@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/syntax"
@@ -29,7 +30,6 @@ import (
 	jxsyntax "github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
 	sht "github.com/jenkins-x/jx/v2/pkg/tekton/syntax/syntax_helpers_test"
 	"github.com/jenkins-x/jx/v2/pkg/tests"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	tb "github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
@@ -906,10 +906,10 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 		},
 	}
 	jxObjects := []runtime.Object{}
-	repoOwnerUUID, err := uuid.NewV4()
+	repoOwnerUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoOwner := repoOwnerUUID.String()
-	repoNameUUID, err := uuid.NewV4()
+	repoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
 	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)

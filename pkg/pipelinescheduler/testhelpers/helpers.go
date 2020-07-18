@@ -17,7 +17,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 )
 
 // CompleteScheduler returns a SchedulerSpec completely filled with dummy data
@@ -51,7 +51,7 @@ func CompleteScheduler() *v1.SchedulerSpec {
 						ContextPolicy: pointerToContextPolicy(),
 						Branches: &v1.ReplaceableMapOfStringContextPolicy{
 							Items: map[string]*v1.ContextPolicy{
-								uuid.New(): pointerToContextPolicy(),
+								uuid.New().String(): pointerToContextPolicy(),
 							},
 						},
 					},
@@ -68,7 +68,7 @@ func CompleteScheduler() *v1.SchedulerSpec {
 					Trigger:      pointerToUUID(),
 					Policy: &v1.ProtectionPolicies{
 						Items: map[string]*v1.ProtectionPolicy{
-							uuid.New(): pointerToProtectionPolicy(),
+							uuid.New().String(): pointerToProtectionPolicy(),
 						},
 					},
 					RegexpChangeMatcher: pointerToRegexpChangeMatcher(),
@@ -126,7 +126,7 @@ func pointerToTrue() *bool {
 }
 
 func pointerToUUID() *string {
-	s := uuid.New()
+	s := uuid.New().String()
 	return &s
 }
 
@@ -145,7 +145,7 @@ func pointerToRandomDuration() *time.Duration {
 func PointerToReplaceableSliceOfStrings() *v1.ReplaceableSliceOfStrings {
 	return &v1.ReplaceableSliceOfStrings{
 		Items: []string{
-			uuid.New(),
+			uuid.New().String(),
 		},
 	}
 }
@@ -154,7 +154,7 @@ func PointerToReplaceableSliceOfStrings() *v1.ReplaceableSliceOfStrings {
 func PointerToReplaceableMapOfStringString() *v1.ReplaceableMapOfStringString {
 	return &v1.ReplaceableMapOfStringString{
 		Items: map[string]string{
-			uuid.New(): uuid.New(),
+			uuid.New().String(): uuid.New().String(),
 		},
 	}
 }

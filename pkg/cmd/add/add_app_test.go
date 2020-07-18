@@ -23,9 +23,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/add"
 
 	expect "github.com/Netflix/go-expect"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/apps"
 	helm_test "github.com/jenkins-x/jx/v2/pkg/helm/mocks"
-	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -63,7 +63,7 @@ func TestAddAppForGitOps(t *testing.T) {
 			assert.NoError(r, err)
 		}()
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -137,7 +137,7 @@ func TestAddAppForGitOpsWithShortName(t *testing.T) {
 			assert.NoError(r, err)
 		}()
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		shortName := nameUUID.String()
 		name := fmt.Sprintf("jx-app-%s", shortName)
@@ -232,7 +232,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 		testOptions.CommonOptions.Out = console.Out
 		testOptions.CommonOptions.Err = console.Err
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -382,7 +382,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 		testOptions.CommonOptions.Out = console.Out
 		testOptions.CommonOptions.Err = console.Err
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -516,7 +516,7 @@ func TestStashValues(t *testing.T) {
 		testOptions.CommonOptions.Err = console.Err
 		defer console.Cleanup()
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -595,7 +595,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		testOptions.CommonOptions.Out = console.Out
 		testOptions.CommonOptions.Err = console.Err
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -687,7 +687,7 @@ func TestAddApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.0.1"
@@ -744,7 +744,7 @@ func TestAddAppWithShortName(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	shortName := nameUUID.String()
 	name := fmt.Sprintf("jx-app-%s", shortName)
@@ -816,7 +816,7 @@ func TestAddAppFromPath(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.0.1"
@@ -877,7 +877,7 @@ func TestAddLatestApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.1.1"
@@ -944,7 +944,7 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 	_, err = file.Write(data)
 	assert.NoError(t, err)
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.0.1"
@@ -994,7 +994,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.0.1"
@@ -1081,7 +1081,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.0.1"
@@ -1147,7 +1147,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	version := "0.1.8"
@@ -1217,7 +1217,7 @@ func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 		testOptions.CommonOptions.Out = console.Out
 		testOptions.CommonOptions.Err = console.Err
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -1328,7 +1328,7 @@ func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 		testOptions.CommonOptions.Out = console.Out
 		testOptions.CommonOptions.Err = console.Err
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		name := nameUUID.String()
 		version := "0.0.1"
@@ -1411,7 +1411,7 @@ func TestAddAppForGitOpsWithSNAPSHOTVersion(t *testing.T) {
 			assert.NoError(r, err)
 		}()
 
-		nameUUID, err := uuid.NewV4()
+		nameUUID, err := uuid.NewUUID()
 		assert.NoError(r, err)
 		shortName := nameUUID.String()
 		name := fmt.Sprintf("jx-app-%s", shortName)

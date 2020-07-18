@@ -12,20 +12,20 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/pipelinescheduler/testhelpers"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 )
 
 func TestBuild(t *testing.T) {
 
-	org := uuid.New()
+	org := uuid.New().String()
 	leaf1 := &pipelinescheduler.SchedulerLeaf{
 		Org:           org,
-		Repo:          uuid.New(),
+		Repo:          uuid.New().String(),
 		SchedulerSpec: testhelpers.CompleteScheduler(),
 	}
 	leaf2 := &pipelinescheduler.SchedulerLeaf{
 		Org:           org,
-		Repo:          uuid.New(),
+		Repo:          uuid.New().String(),
 		SchedulerSpec: testhelpers.CompleteScheduler(),
 	}
 	leaves := []*pipelinescheduler.SchedulerLeaf{

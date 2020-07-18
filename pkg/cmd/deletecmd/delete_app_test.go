@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/deletecmd"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	"github.com/petergtz/pegomock"
 
@@ -25,7 +25,7 @@ const (
 )
 
 func TestDeleteAppForGitOps(t *testing.T) {
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 
@@ -70,7 +70,7 @@ func TestDeleteAppForGitOps(t *testing.T) {
 }
 
 func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
-	nameUUID, err := uuid.NewV4()
+	nameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	name := nameUUID.String()
 	testOptions := testhelpers.CreateAppTestOptions(true, name, t)

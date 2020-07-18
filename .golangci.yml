@@ -3,8 +3,12 @@ linters-settings:
     list-type: blacklist
     packages:
       - github.com/jenkins-x/jx/v2/pkg/log/
+      - github.com/satori/go.uuid
+      - github.com/pborman/uuid
     packages-with-error-message:
       - github.com/jenkins-x/jx/v2/pkg/log/: "use jenkins-x/jx-logging instead"
+      - github.com/satori/go.uuid: "use github.com/google/uuid instead"
+      - github.com/pborman/uuid: "use github.com/google/uuid instead"
   dupl:
     threshold: 100
   exhaustive:

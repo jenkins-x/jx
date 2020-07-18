@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 	gits_test "github.com/jenkins-x/jx/v2/pkg/gits/mocks"
@@ -25,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/tekton/syntax"
-	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"knative.dev/pkg/kmp"
@@ -454,10 +454,10 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			},
 		},
 	}
-	repoOwnerUUID, err := uuid.NewV4()
+	repoOwnerUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoOwner := repoOwnerUUID.String()
-	repoNameUUID, err := uuid.NewV4()
+	repoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	repoName := repoNameUUID.String()
 	fakeRepo, _ := gits.NewFakeRepository(repoOwner, repoName, nil, nil)

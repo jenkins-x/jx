@@ -1,7 +1,7 @@
 package prow
 
 import (
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/test-infra/prow/pod-utils/decorate"
@@ -16,7 +16,7 @@ func NewProwJob(spec prowapi.ProwJobSpec, labels map[string]string) prowapi.Prow
 //  and to allow us to upgrade go.uuid
 func newProwJob(spec prowapi.ProwJobSpec, extraLabels, extraAnnotations map[string]string) prowapi.ProwJob {
 	labels, annotations := decorate.LabelsAndAnnotationsForSpec(spec, extraLabels, extraAnnotations)
-	name, _ := uuid.NewV1()
+	name := uuid.New()
 
 	return prowapi.ProwJob{
 		TypeMeta: metav1.TypeMeta{

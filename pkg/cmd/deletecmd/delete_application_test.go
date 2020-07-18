@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 
+	"github.com/google/uuid"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	clients_test "github.com/jenkins-x/jx/v2/pkg/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -17,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	"github.com/petergtz/pegomock"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -26,9 +26,9 @@ func TestDeleteApplicationInJenkins(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	t.Parallel()
 
-	testOrgNameUUID, err := uuid.NewV4()
+	testOrgNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
-	testRepoNameUUID, err := uuid.NewV4()
+	testRepoNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	testOrgName := testOrgNameUUID.String()
 	testRepoName := testRepoNameUUID.String()

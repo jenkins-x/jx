@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
 )
@@ -110,7 +110,7 @@ func GoGet(path string, version string, gopath string, goModules bool, sourceOnl
 	dir := filepath.Join(parts...)
 	if !goModules && version != "" {
 
-		branchNameUUID, err := uuid.NewV4()
+		branchNameUUID, err := uuid.NewUUID()
 		if err != nil {
 			return errors.WithStack(err)
 		}

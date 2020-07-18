@@ -8,6 +8,7 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/amazon/session"
@@ -20,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -345,7 +345,7 @@ func (v *defaultVaultCreator) vaultAWSConfig(vaultCRD *v1alpha1.Vault, param Vau
 			bucketName = "vault-unseal." + param.AWS.S3Region + "." + domain
 		}
 
-		valueUUID, err := uuid.NewV4()
+		valueUUID, err := uuid.NewUUID()
 		if err != nil {
 			return vault.CloudProviderConfig{}, errors.Wrapf(err, "Generating UUID failed")
 		}

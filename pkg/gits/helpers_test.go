@@ -16,9 +16,9 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/tests"
 
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -186,7 +186,7 @@ func prepareFetchAndMergeTests(t *testing.T) FetchAndMergeTestEnv {
 	assert.NoError(t, err)
 
 	// Put some commits on a branch
-	branchNameUUID, err := uuid.NewV4()
+	branchNameUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	branchName := branchNameUUID.String()
 	err = gitter.CreateBranchFrom(remoteDir, branchName, baseSha)
@@ -266,7 +266,7 @@ func TestNoForkAndNewDir(t *testing.T) {
 				}, args.gitter)
 				assert.NoError(t, err)
 				args.provider = gits.NewFakeProvider(acmeRepo)
-				uuid, err := uuid.NewV4()
+				uuid, err := uuid.NewUUID()
 				assert.NoError(t, err)
 				args.dir = filepath.Join(os.TempDir(), fmt.Sprintf("git-dir-%s", uuid.String()))
 				return nil
@@ -324,7 +324,7 @@ func TestNewForkAndNewDir(t *testing.T) {
 				args.provider = gits.NewFakeProvider(acmeRepo)
 				// Set the provider username to wile in order to create a fork
 				args.provider.User.Username = "wile"
-				uuid, err := uuid.NewV4()
+				uuid, err := uuid.NewUUID()
 				assert.NoError(t, err)
 				args.dir = filepath.Join(os.TempDir(), fmt.Sprintf("git-dir-%s", uuid.String()))
 				return nil
@@ -540,7 +540,7 @@ func TestExistingForkAndNewDir(t *testing.T) {
 
 				// Set the provider username to wile in order to use the fork
 				args.provider.User.Username = "wile"
-				uuid, err := uuid.NewV4()
+				uuid, err := uuid.NewUUID()
 				assert.NoError(t, err)
 				args.dir = filepath.Join(os.TempDir(), fmt.Sprintf("git-dir-%s", uuid.String()))
 				return nil
@@ -1990,7 +1990,7 @@ func TestPushRepoAndCreatePullRequest(t *testing.T) {
 				forkRepo, err = tt.args.provider.GetRepository(forkRepo.Organisation, forkRepo.Name)
 				assert.NoError(t, err)
 			}
-			uuid, err := uuid.NewV4()
+			uuid, err := uuid.NewUUID()
 			assert.NoError(t, err)
 			if tt.args.branch == "" {
 				tt.args.branch = uuid.String()

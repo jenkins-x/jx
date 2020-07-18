@@ -13,7 +13,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4/config"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	jxconfig "github.com/jenkins-x/jx/v2/pkg/config"
@@ -281,7 +281,7 @@ func PushRepoAndCreatePullRequest(dir string, upstreamRepo *GitRepository, forkR
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			localBranchUUID, err := uuid.NewV4()
+			localBranchUUID, err := uuid.NewUUID()
 			if err != nil {
 				return nil, errors.Wrapf(err, "creating UUID for local branch")
 			}
@@ -602,7 +602,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 		}
 	}
 
-	branchNameUUID, err := uuid.NewV4()
+	branchNameUUID, err := uuid.NewUUID()
 	if err != nil {
 		return "", "", nil, nil, errors.WithStack(err)
 	}
@@ -620,7 +620,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	}
 
 	if upstreamRemote != originRemote || baseRef != branchName {
-		branchNameUUID, err := uuid.NewV4()
+		branchNameUUID, err := uuid.NewUUID()
 		if err != nil {
 			return "", "", nil, nil, errors.WithStack(err)
 		}
@@ -919,7 +919,7 @@ func DuplicateGitRepoFromCommitish(toOrg string, toName string, fromGitURL strin
 			return nil, errors.Wrapf(err, "failed to fetch %s fromGitURL %s", fromCommitish, fromInfo.CloneURL)
 		}
 		if len(parts[1]) == 40 {
-			uuid, _ := uuid.NewV4()
+			uuid, _ := uuid.NewUUID()
 			branchName := fmt.Sprintf("pr-%s", uuid.String())
 
 			err = gitter.CreateBranchFrom(dir, branchName, parts[1])

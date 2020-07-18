@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/google/uuid"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -19,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/tekton"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -166,7 +166,7 @@ func (o *StepReportImageVersionOptions) generateReport(imagesDir string) error {
 		return fmt.Errorf(message)
 	}
 	for _, batchImages := range batches {
-		id, err := uuid.NewV4()
+		id, err := uuid.NewUUID()
 		if err != nil {
 			return err
 		}
