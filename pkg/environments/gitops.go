@@ -455,38 +455,38 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 	err = ioutil.WriteFile(readmeOutPath, []byte(readme), 0600)
 	if err != nil {
 		return errors.Wrapf(err, "write README.md to %s", appDir)
-
-		if verbose {
-			log.Logger().Infof("Writing README.md to %s", readmeOutPath)
+	}
+	if verbose {
+		log.Logger().Infof("Writing README.md to %s", readmeOutPath)
+	}
+	externalFileHandler := func(path string, element map[string]interface{}, key string) error {
+		fileName, _ := filepath.Split(path)
+		err := util.CopyFile(path, filepath.Join(appDir, fileName))
+		if err != nil {
+			return errors.Wrapf(err, "copy %s to %s", path, appDir)
 		}
-		externalFileHandler := func(path string, element map[string]interface{}, key string) error {
-			fileName, _ := filepath.Split(path)
-			err := util.CopyFile(path, filepath.Join(appDir, fileName))
-			if err != nil {
-				return errors.Wrapf(err, "copy %s to %s", path, appDir)
-			}
-			// key for schema is the filename without the extension
-			schemaKey := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-			if schemaPaths, ok := schemas[schemaKey]; ok {
-				for _, schemaPath := range schemaPaths {
-					fileName, _ := filepath.Split(schemaPath)
-					schemaOutPath := filepath.Join(appDir, fileName)
-					err := util.CopyFile(schemaPath, schemaOutPath)
-					if err != nil {
-						return errors.Wrapf(err, "copy %s to %s", schemaPath, appDir)
-					}
-					if verbose {
-						log.Logger().Infof("Writing %s to %s", fileName, schemaOutPath)
-					}
+		// key for schema is the filename without the extension
+		schemaKey := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+		if schemaPaths, ok := schemas[schemaKey]; ok {
+			for _, schemaPath := range schemaPaths {
+				fileName, _ := filepath.Split(schemaPath)
+				schemaOutPath := filepath.Join(appDir, fileName)
+				err := util.CopyFile(schemaPath, schemaOutPath)
+				if err != nil {
+					return errors.Wrapf(err, "copy %s to %s", schemaPath, appDir)
+				}
+				if verbose {
+					log.Logger().Infof("Writing %s to %s", fileName, schemaOutPath)
 				}
 			}
-			return nil
 		}
-		err = helm.HandleExternalFileRefs(rootValues, possibles, "", externalFileHandler)
-		if err != nil {
-			return err
-		}
+		return nil
 	}
+	err = helm.HandleExternalFileRefs(rootValues, possibles, "", externalFileHandler)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

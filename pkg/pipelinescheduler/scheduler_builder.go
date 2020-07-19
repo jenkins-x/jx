@@ -472,7 +472,6 @@ func buildSchedulerProtectionPolicies(repo string, prowConfig *config.Config) *j
 		ProtectionPolicy: repoPolicy,
 		Items:            protectionPolicies,
 	}
-	return nil
 }
 
 func buildSchedulerRequiredPullRequestReviews(requiredPullRequestReviews *config.ReviewPolicy) *jenkinsv1.ReviewPolicy {
