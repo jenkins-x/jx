@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -116,24 +117,21 @@ func WriteBucketURL(u *url.URL, data io.Reader, timeout time.Duration) error {
 
 // WriteBucket writes the data to a bucket URL and key of the for 's3://bucketName' and key 'foo/bar/whatnot.txt'
 // with the given timeout
-func WriteBucket(bucketURL string, key string, data io.Reader, timeout time.Duration) (err error) {
+func WriteBucket(bucketURL string, key string, reader io.Reader, timeout time.Duration) (err error) {
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	bucket, err := blob.Open(ctx, bucketURL)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open bucket %s", bucketURL)
 	}
-	w, err := bucket.NewWriter(ctx, key, nil)
+	data, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create key %s in bucket %s", key, bucketURL)
+		return errors.Wrapf(err, "failed to read data for key %s in bucket %s", key, bucketURL)
 	}
-	defer func() {
-		if e := w.Close(); e != nil && err == nil {
-			err = e
-		}
-		err = errors.Wrapf(err, "failed to write key %s in bucket %s", key, bucketURL)
-	}()
-	_, err = io.Copy(w, data)
-	return
+	err = bucket.WriteAll(ctx, key, data, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write key %s in bucket %s", key, bucketURL)
+	}
+	return nil
 }
 
 // SplitBucketURL splits the full bucket URL into the URL to open the bucket and the file name to refer to
