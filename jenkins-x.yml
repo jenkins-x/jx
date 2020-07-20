@@ -24,7 +24,7 @@ pipelineConfig:
               - name: BASE_WORKSPACE
                 value: /workspace/source
               - name: HELM_HOME
-                value: /builder/home/.helm
+                value: /tekton/home/.helm
               - name: GOPATH
                 value: /workspace/go
               - name: GOPROXY
