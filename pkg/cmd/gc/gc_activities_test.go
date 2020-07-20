@@ -12,8 +12,10 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
+	"knative.dev/pkg/apis"
 
 	"github.com/stretchr/testify/assert"
 
@@ -157,7 +159,7 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&tektonv1alpha1.PipelineRun{
+	run1 := &tektonv1alpha1.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "run1",
 		},
@@ -166,9 +168,15 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 				CompletionTime: &metav1.Time{Time: nowMinusThreeHours},
 			},
 		},
+	}
+	run1.Status.SetCondition(&apis.Condition{
+		Type:   apis.ConditionSucceeded,
+		Status: corev1.ConditionFalse,
 	})
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(run1)
 	assert.NoError(t, err)
-	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(&tektonv1alpha1.PipelineRun{
+
+	run2 := &tektonv1alpha1.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "run2",
 		},
@@ -177,7 +185,29 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 				CompletionTime: &metav1.Time{Time: nowMinusOneHour},
 			},
 		},
+	}
+	run2.Status.SetCondition(&apis.Condition{
+		Type:   apis.ConditionSucceeded,
+		Status: corev1.ConditionFalse,
 	})
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(run2)
+	assert.NoError(t, err)
+
+	run3 := &tektonv1alpha1.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "run3",
+		},
+		Status: tektonv1alpha1.PipelineRunStatus{
+			PipelineRunStatusFields: tektonv1beta1.PipelineRunStatusFields{
+				CompletionTime: &metav1.Time{Time: nowMinusThreeHours},
+			},
+		},
+	}
+	run1.Status.SetCondition(&apis.Condition{
+		Type:   apis.ConditionSucceeded,
+		Status: corev1.ConditionUnknown,
+	})
+	_, err = tektonClient.TektonV1alpha1().PipelineRuns(ns).Create(run3)
 	assert.NoError(t, err)
 
 	_, err = prowJobClient.ProwV1().ProwJobs(ns).Create(&prowjobv1.ProwJob{
@@ -225,11 +255,25 @@ func TestGCPipelineActivitiesWithBatchAndPRBuilds(t *testing.T) {
 	runs, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
 	assert.NoError(t, err)
 
-	assert.Len(t, runs.Items, 1, "One PipelineRun should've been garbage collected")
+	assert.Len(t, runs.Items, 2, "One PipelineRun should've been garbage collected")
 
-	remainingRun := runs.Items[0]
+	var remainingRun *tektonv1alpha1.PipelineRun
+	var incompleteRun *tektonv1alpha1.PipelineRun
+
+	for _, r := range runs.Items {
+		if r.Name == "run2" {
+			remainingRun = r.DeepCopy()
+		}
+		if r.Name == "run3" {
+			incompleteRun = r.DeepCopy()
+		}
+	}
+	assert.NotNil(t, remainingRun)
+	assert.NotNil(t, incompleteRun)
 	assert.NotNil(t, remainingRun.Status.CompletionTime)
 	assert.Equal(t, nowMinusOneHour, remainingRun.Status.CompletionTime.Time, "Expected completion time for remaining PipelineRun of %s, but is %s", nowMinusOneHour, remainingRun.Status.CompletionTime.Time)
+
+	assert.False(t, incompleteRun.IsDone())
 
 	jobs, err := prowJobClient.ProwV1().ProwJobs(ns).List(metav1.ListOptions{})
 	assert.NoError(t, err)
