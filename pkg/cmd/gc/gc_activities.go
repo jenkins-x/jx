@@ -105,7 +105,7 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().IntVarP(&options.PullRequestHistoryLimit, "pr-history-limit", "", 2, "Minimum number of PipelineActivities to keep around per repository Pull Request")
 	cmd.Flags().DurationVarP(&options.PullRequestAgeLimit, "pull-request-age", "p", time.Hour*48, "Maximum age to keep PipelineActivities for Pull Requests")
 	cmd.Flags().DurationVarP(&options.ReleaseAgeLimit, "release-age", "r", time.Hour*24*30, "Maximum age to keep PipelineActivities for Releases")
-	cmd.Flags().DurationVarP(&options.PipelineRunAgeLimit, "pipelinerun-age", "", time.Hour*2, "Maximum age to keep completed PipelineRuns for all pipelines")
+	cmd.Flags().DurationVarP(&options.PipelineRunAgeLimit, "pipelinerun-age", "", time.Hour*12, "Maximum age to keep completed PipelineRuns for all pipelines")
 	cmd.Flags().DurationVarP(&options.ProwJobAgeLimit, "prowjob-age", "", time.Hour*24*7, "Maximum age to keep completed ProwJobs for all pipelines")
 	return cmd
 }
@@ -258,7 +258,7 @@ func (o *GCActivitiesOptions) gcPipelineRuns(ns string) error {
 	for _, pr := range runList.Items {
 		pipelineRun := pr
 		completionTime := pipelineRun.Status.CompletionTime
-		if completionTime != nil && completionTime.Add(o.PipelineRunAgeLimit).Before(now) {
+		if pipelineRun.IsDone() && completionTime != nil && completionTime.Add(o.PipelineRunAgeLimit).Before(now) {
 			err = o.deletePipelineRun(pipelineRunInterface, &pipelineRun)
 			if err != nil {
 				return err
