@@ -62,7 +62,11 @@ var (
 		jx add app jx-app-jacoco
 
 		# Add an app from a local path
-		jx add app .`)
+		jx add app .
+        
+		# Add an app from git repository
+		jx add app https://github.com/jenkins-x-apps/jx-app-kubeless.git
+`)
 )
 
 // NewCmdAddApp creates a command object for the "create" command
