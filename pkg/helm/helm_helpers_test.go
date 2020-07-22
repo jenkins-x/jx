@@ -311,3 +311,33 @@ func TestFindLatestChart(t *testing.T) {
 		})
 	}
 }
+
+func TestIsGitURL(t *testing.T) {
+	tests := []string{
+		"https://github.com/jenkins-x/jx.git",
+		"https://github.com/jenkins-x/jx.git#master",
+		"git@github.com:jenkins-x/jx.git",
+		"git@github.com:jenkins-x/jx.git#master",
+	}
+
+	for _, test := range tests {
+		ok, err := helm.IsGitURL(test)
+		assert2.NoError(t, err)
+		assert2.Equalf(t, ok, true, "%s should be git URL", test)
+	}
+}
+
+func TestIsCommitSHA(t *testing.T) {
+	tests := []string{
+		"642c0ef2d0f640ba1bf0bd042fb29f758d924f55",
+		"0740afcdf8b69ec8d6f073a377752e8e70a86f21",
+		"6fbdd5b",
+		"0740afc",
+	}
+
+	for _, test := range tests {
+		ok, err := helm.IsCommitSHA(test)
+		assert2.NoError(t, err)
+		assert2.Equalf(t, ok, true, "%s should be git commit SHA", test)
+	}
+}

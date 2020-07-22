@@ -115,7 +115,9 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if releaseName == "" {
 				releaseName = fmt.Sprintf("%s-%s", o.Namespace, chartDetails.Name)
 			}
-			if helm.IsLocal(chartName) {
+
+			chartFromGit, _ := helm.IsGitURL(chartName)
+			if helm.IsLocal(chartName) || chartFromGit {
 				// We need to manually build the dependencies
 				err = opts.Helmer.BuildDependency()
 				if err != nil {

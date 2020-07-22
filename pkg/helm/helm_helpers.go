@@ -10,11 +10,15 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/jenkins-x/jx/v2/pkg/versionstream"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
@@ -459,6 +463,90 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 	return nil
 }
 
+// IsGitURL tests whether the given URL is a git URL.
+// The given URL supports <git remote url>#<branch/commit/tag>
+// example: github.com/jenkins-x/jx#master, github.com/jenkins-x/jx#v3, github.com/jenkins-x/jx#2647027a83b543ffb886ee96dc413f860f79615d
+func IsGitURL(url string) (bool, error) {
+	re, err := regexp.Compile(`((git|ssh|http(s)?)|(git@[\w.]+))(:(//)?)([\w.@:/\-~]+)(\.git)(/)?`)
+	if err != nil {
+		return false, err
+	}
+	return re.MatchString(url), nil
+}
+
+// IsCommitSHA tests whether the given s string is a commit SHA.
+func IsCommitSHA(s string) (bool, error) {
+	re, err := regexp.Compile("^[a-f0-9]{5,40}$")
+	if err != nil {
+		return false, err
+	}
+	return re.MatchString(s), nil
+}
+
+// FetchChartFromGit fetch a helm chart from the given git URL, the URL support <git remote url>#<branch/commit/tag>.
+func FetchChartFromGit(path, url string) error {
+	ok, err := IsGitURL(url)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New(fmt.Sprintf("The %s is not Git URL", url))
+	}
+
+	ops := &git.CloneOptions{}
+	s := strings.SplitN(url, "#", 2)
+
+	ops.URL = s[0]
+
+	r, err := git.PlainClone(path, false, ops)
+	if err != nil {
+		return err
+	}
+
+	if len(s) == 1 {
+		return nil
+	}
+
+	w, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+
+	// try checkout commit
+	isCommit, err := IsCommitSHA(s[1])
+	if err != nil {
+		return err
+	}
+	if isCommit {
+		err = w.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(s[1])})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// try checkout from tag
+	ref, err := r.Tag(s[1])
+	if err == nil {
+		err = w.Checkout(&git.CheckoutOptions{Hash: ref.Hash()})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// try checkout from branch
+	err = r.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+	})
+	if err != nil {
+		return err
+	}
+	err = w.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName(s[1])})
+
+	return err
+}
+
 // IsLocal returns whether this chart is being installed from the local filesystem or not
 func IsLocal(chart string) bool {
 	b := strings.HasPrefix(chart, "/") || strings.HasPrefix(chart, ".") || strings.Count(chart, "/") > 1
@@ -476,31 +564,73 @@ func IsLocal(chart string) bool {
 func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, inspector func(dir string) error) error {
 	isLocal := IsLocal(chart)
-	dirPrefix := fmt.Sprintf("jx-helm-fetch-%s-", util.ToValidFileSystemName(chart))
-	if isLocal {
-		dirPrefix = "jx-helm-fetch"
+	dir, err := ioutil.TempDir("", "jx-helm-fetch-")
+	if err != nil {
+		return errors.Wrapf(err, "creating tempdir")
 	}
 
-	dir, err := ioutil.TempDir("", dirPrefix)
+	chartFromGit, err := IsGitURL(chart)
+
+	if err != nil {
+		return errors.Wrapf(err, "checking git URL")
+	}
+
 	defer func() {
 		err1 := os.RemoveAll(dir)
 		if err1 != nil {
 			log.Logger().Warnf("Error removing %s %v", dir, err1)
 		}
 	}()
-	if err != nil {
-		return errors.Wrapf(err, "creating tempdir")
-	}
 	parts := strings.Split(chart, "/")
 	inspectPath := filepath.Join(dir, parts[len(parts)-1])
-	if isLocal {
+
+	if chartFromGit {
+		inspectPath = dir
+		downloadDir, err := ioutil.TempDir("", "jx-helm-fetch-git-")
+		defer func() {
+			err1 := os.RemoveAll(downloadDir)
+			if err1 != nil {
+				log.Logger().Warnf("Error removing %s %v", dir, err1)
+			}
+		}()
+		if err != nil {
+			return errors.Wrapf(err, "creating git repository tempdir")
+		}
+
+		err = FetchChartFromGit(downloadDir, chart)
+		if err != nil {
+			return errors.Wrapf(err, "fetching git repository")
+		}
+
+		var chartsDir []string
+		err = util.GlobAllFiles("", filepath.Join(downloadDir, "*", ChartFileName), func(path string) error {
+			chartsDir = append(chartsDir, filepath.Dir(path))
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(chartsDir) == 0 {
+			return errors.New("Not found Helm chart")
+		}
+
+		if len(chartsDir) != 1 {
+			return errors.New("Cannot install multiple Helm chart")
+		}
+
+		err = util.CopyDir(chartsDir[0], dir, true)
+		if err != nil {
+			return errors.Wrapf(err, "copying %s to %s", chart, dir)
+		}
+		helmer.SetCWD(dir)
+	} else if isLocal {
 		// This is a local path
 		err := util.CopyDir(chart, dir, true)
 		if err != nil {
 			return errors.Wrapf(err, "copying %s to %s", chart, dir)
 		}
 		helmer.SetCWD(dir)
-		inspectPath = dir
 	} else {
 		err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
 		if err != nil {
