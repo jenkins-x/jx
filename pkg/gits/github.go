@@ -1123,7 +1123,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	}
 	releaseInfo.ID = util.DereferenceInt64(id)
 	r2, _, err := p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
-	if r != nil {
+	if r2 != nil {
 		releaseInfo.URL = asText(r2.URL)
 		releaseInfo.HTMLURL = asText(r2.HTMLURL)
 	}
