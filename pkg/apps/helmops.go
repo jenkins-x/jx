@@ -38,6 +38,7 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, name string, version s
 		Repository:  repository,
 		Username:    username,
 		Password:    password,
+		InstallOnly: true,
 	}, o.Helmer, o.KubeClient, o.InstallTimeout, o.VaultClient)
 	if err != nil {
 		return errors.Wrapf(err, "failed to install app %s", app)
