@@ -247,10 +247,20 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
+	// check if we are installing a chart from the filesystem
+	chartDir := filepath.Join(h.CWD, chart)
+	exists, err := util.DirExists(chartDir)
 	if err != nil {
 		return err
 	}
+	if !exists {
+		log.Logger().Debugf("Fetching chart: %s", chart)
+		chartDir, err = h.fetchChart(chart, version, chartsDir, repo, username, password)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueStrings, valueFiles)
 	if err != nil {
 		return err
@@ -484,7 +494,7 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 	if wait && !create {
 		args = append(args, "--wait")
 	}
-	if force {
+	if force && !create {
 		args = append(args, "--force")
 	}
 	if !h.KubectlValidate {
