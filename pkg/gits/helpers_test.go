@@ -380,7 +380,7 @@ func TestNewForkAndNewDir(t *testing.T) {
 		},
 	})
 }
-func TestNoFormAndExistingDir(t *testing.T) {
+func TestNoForkAndExistingDir(t *testing.T) {
 
 	runForkAndPullTestCase(t, forkAndPullTest{
 		name: "noForkAndExistingDir",

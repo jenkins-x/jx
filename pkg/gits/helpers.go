@@ -680,7 +680,7 @@ func ForkAndPullRepo(gitURL string, dir string, baseRef string, branchName strin
 	for _, c := range toCherryPick {
 		err = gitter.CherryPick(dir, c.SHA)
 		if err != nil {
-			if IsEmptyCommitError(err) {
+			if IsEmptyCherryPickCommitError(err) {
 				log.Logger().Debugf("  Ignoring %s as is empty", c.OneLine())
 				err = gitter.Reset(dir, "", true)
 				if err != nil {
