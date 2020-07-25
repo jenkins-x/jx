@@ -31,8 +31,9 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 * [jx verify](https://github.com/jenkins-x/jx-verify/blob/master/docs/cmd/jx-verify.md) a set of commands for verifying Jenkins X installations
 
 
-## Other Plugins
+## Components
 
+* [jx-git-operator](https://github.com/jenkins-x/jx-git-operator) is an operator for triggering jobs when git commits are made
 * [octant-jx](https://github.com/jenkins-x/octant-jx) an open source Jenkins X UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octan)
 
 ## Libraries
