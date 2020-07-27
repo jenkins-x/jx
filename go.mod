@@ -5,7 +5,7 @@ require (
 	github.com/jenkins-x/jx-api v0.0.13
 	github.com/jenkins-x/jx-helpers v1.0.26
 	github.com/jenkins-x/jx-kube-client v0.0.8
-	github.com/jenkins-x/jx-logging v0.0.10
+	github.com/jenkins-x/jx-logging v0.0.11
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
