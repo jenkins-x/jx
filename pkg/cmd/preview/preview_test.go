@@ -17,6 +17,18 @@ import (
 
 func TestGetPreviewValuesConfig(t *testing.T) {
 	t.Parallel()
+
+	// Override the DOCKER_REGISTRY_ORG env var for CI consistency
+	origDRO := os.Getenv("DOCKER_REGISTRY_ORG")
+	os.Setenv("DOCKER_REGISTRY_ORG", "my-org")
+	defer func() {
+		if origDRO != "" {
+			os.Setenv("DOCKER_REGISTRY_ORG", origDRO)
+		} else {
+			os.Unsetenv("DOCKER_REGISTRY_ORG")
+		}
+	}()
+
 	tests := []struct {
 		opts               preview.PreviewOptions
 		env                map[string]string
