@@ -27,7 +27,7 @@ const (
 	SecretVersion = "0.0.40"
 
 	// VerifyVersion the version of the jx verify plugin
-	VerifyVersion = "0.0.10"
+	VerifyVersion = "0.0.12"
 )
 
 var (
