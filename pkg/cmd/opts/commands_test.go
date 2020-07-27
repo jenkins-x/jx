@@ -43,7 +43,7 @@ func TestVerboseOutput(t *testing.T) {
 
 	commandResult := o.RunCommand("echo", "foo")
 
-	// Close the slave end of the pty, and read the remaining bytes from the master end.
+	// Close the worker end of the pty, and read the remaining bytes from the master end.
 	out.Close()
 	<-donec
 

@@ -243,7 +243,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 	)
 	assert.NoError(t, err, "Should not error")
 
-	// Close the slave end of the pty, and read the remaining bytes from the master end.
+	// Close the worker end of the pty, and read the remaining bytes from the master end.
 	// Dump the terminal's screen.
 	t.Log(expect.StripTrailingEmptyLines(console.CurrentState()))
 	console.Close()
