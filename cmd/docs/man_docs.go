@@ -125,7 +125,7 @@ func fillHeader(header *GenManHeader, name string) error {
 
 func manPreamble(buf *bytes.Buffer, header *GenManHeader, cmd *cobra.Command, dashedName string) {
 	description := cmd.Long
-	if len(description) == 0 {
+	if description == "" {
 		description = cmd.Short
 	}
 
@@ -147,7 +147,7 @@ func manPrintFlags(buf *bytes.Buffer, flags *pflag.FlagSet) {
 			return
 		}
 		format := ""
-		if len(flag.Shorthand) > 0 && len(flag.ShorthandDeprecated) == 0 {
+		if len(flag.Shorthand) > 0 && flag.ShorthandDeprecated == "" {
 			format = fmt.Sprintf("**-%s**, **--%s**", flag.Shorthand, flag.Name)
 		} else {
 			format = fmt.Sprintf("**--%s**", flag.Name)
