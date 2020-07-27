@@ -124,14 +124,8 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 				}
 			}
 		}
-		if len(possibles) > 1 {
-			possibleUsers := make([]string, 0)
-			for _, p := range possibles {
-				possibleUsers = append(possibleUsers, p.Name)
-			}
-			return nil, fmt.Errorf("more than one user found in users.jenkins.io with login %s for provider %s, "+
-				"found %s", id, providerKey, possibleUsers)
-		} else if len(possibles) == 1 {
+
+		if len(possibles) > 0 {
 			// Add the label for next time
 			found := &possibles[0]
 			if found.Labels == nil {
@@ -154,28 +148,36 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 	if err != nil {
 		return nil, err
 	}
-	if len(possibles) > 1 {
-		possibleStrings := make([]string, 0)
-		for _, p := range possibles {
-			possibleStrings = append(possibleStrings, p.Name)
-		}
-		return nil, fmt.Errorf("selected more than one user from users.jenkins.io: %v", possibleStrings)
-	} else if len(possibles) == 1 {
+	if len(possibles) > 0 {
+		// use the first user found, this is because there is nothing to link a gh issuer user, and git commit + author user together
+		// so we will have a User for both.
 		found := &possibles[0]
 		if id != "" {
 			// Add the git id to the user
 			if found.Spec.Accounts == nil {
 				found.Spec.Accounts = make([]jenkinsv1.AccountReference, 0)
 			}
-			found.Spec.Accounts = append(found.Spec.Accounts, jenkinsv1.AccountReference{
-				ID:       id,
-				Provider: providerKey,
-			})
+
+			matched := false
+			for key, accountReference := range found.Spec.Accounts {
+				if accountReference.Provider == providerKey {
+					found.Spec.Accounts[key].ID = id
+					matched = true
+				}
+			}
+
+			if !matched {
+				found.Spec.Accounts = append(found.Spec.Accounts, jenkinsv1.AccountReference{
+					ID:       id,
+					Provider: providerKey,
+				})
+			}
+
 			// Add the label as well
 			if found.Labels == nil {
 				found.Labels = make(map[string]string)
 			}
-			found.Labels[providerKey] = id
+			found.Labels[providerKey] = naming.ToValidValue(id)
 			log.Logger().Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
 				"emails match", found.Name, found.Spec.Email, id)
 			log.Logger().Infof("Adding label %s=%s to user %s in users.jenkins.io", providerKey, id, found.Name)
