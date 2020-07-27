@@ -23,7 +23,7 @@ func GetJXPlugin(name string, version string) (string, error) {
 // CreateJXPlugin creates the jx plugin
 func CreateJXPlugin(name, version string) jenkinsv1.Plugin {
 	binaries := extensions.CreateBinaries(func(p extensions.Platform) string {
-		return fmt.Sprintf("https://storage.googleapis.com/cloudbees-jx-plugins/plugin/%s/%s/jx-%s-%s-%s.%s", name, version, name, strings.ToLower(p.Goos), strings.ToLower(p.Goarch), p.Extension())
+		return fmt.Sprintf("https://github.com/jenkins-x/jx-%s/releases/download/v%s/jx-%s-%s-%s.%s", name, version, name, strings.ToLower(p.Goos), strings.ToLower(p.Goarch), p.Extension())
 	})
 
 	plugin := jenkinsv1.Plugin{
