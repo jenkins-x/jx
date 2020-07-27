@@ -163,6 +163,8 @@ github.com/jenkins-x/jx-api v0.0.11 h1:MGLiiSj9VmlOfpSjzDRxq14LAwWgyCRvBHOgRZaCm
 github.com/jenkins-x/jx-api v0.0.11/go.mod h1:+UBXFtmDMcmQg/1aDi/HhMV9Ww0m9+p0L/ZiGAh3fgY=
 github.com/jenkins-x/jx-api v0.0.13 h1:vK77HgVmw17ik/pbOzJKdrd/itBaFPVWI+VVM9jGHGo=
 github.com/jenkins-x/jx-api v0.0.13/go.mod h1:/TyG05VMeX2hydFPHh6nDfPPXTBCQaFCuet/pdPvjUA=
+github.com/jenkins-x/jx-api v0.0.16 h1:3qM9WwFZhymV2SKUOtZyhjChqGTjlQmhSZuNJmc2f8c=
+github.com/jenkins-x/jx-api v0.0.16/go.mod h1:QKLHk4VzI+sDBPSzN4K+QdEjNIBnCHS3DKY5YbGeCdY=
 github.com/jenkins-x/jx-helpers v1.0.26 h1:HhHYIzxee133JCpoCKPMwDRorV0AWGZjd5/2wN0ZTf8=
 github.com/jenkins-x/jx-helpers v1.0.26/go.mod h1:nF8mZ7Jna4HPCfP1K+YHA7UiBkz1EXtm+DCUHvhxnIc=
 github.com/jenkins-x/jx-kube-client v0.0.8 h1:XK/TP2qnhHPb/vhaGHmvVilWGDtARIZ1DOEHp/6/h0Y=
