@@ -17,7 +17,7 @@ import (
 
 // GetGitOptions the command line options
 type GetCVEOptions struct {
-	GetOptions
+	Options
 	ImageName         string
 	ImageID           string
 	Version           string
@@ -45,7 +45,7 @@ var (
 // NewCmdGetCVE creates the command
 func NewCmdGetCVE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetCVEOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

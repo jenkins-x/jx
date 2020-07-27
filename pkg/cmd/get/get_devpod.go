@@ -17,7 +17,7 @@ import (
 
 // GetDevPodOptions the command line options
 type GetDevPodOptions struct {
-	GetOptions
+	Options
 	opts.CommonDevPodOptions
 
 	AllUsernames bool
@@ -40,7 +40,7 @@ var (
 // NewCmdGetDevPod creates the command
 func NewCmdGetDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetDevPodOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

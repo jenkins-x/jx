@@ -12,7 +12,7 @@ import (
 
 // GetBuildPackOptions containers the CLI options
 type GetBuildPackOptions struct {
-	GetOptions
+	Options
 
 	All bool
 }
@@ -44,7 +44,7 @@ var (
 // NewCmdGetBuildPack creates the new command for: jx get env
 func NewCmdGetBuildPack(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildPackOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

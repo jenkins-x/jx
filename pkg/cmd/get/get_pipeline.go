@@ -1,34 +1,30 @@
 package get
 
 import (
-	"errors"
+	"fmt"
 	"sort"
 
-	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/v2/pkg/jenkins"
-
-	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
+	"github.com/jenkins-x/jx/v2/pkg/tekton"
+	"github.com/pkg/errors"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 
 	"github.com/spf13/cobra"
 
-	"strings"
-	"time"
-
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/v2/pkg/table"
+	table2 "github.com/jenkins-x/jx/v2/pkg/table"
 )
 
-// GetPipelineOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
+// PipelineOptions is the start of the data required to perform the operation.
+// As new fields are added, add them here instead of
 // referencing the cmd.Flags()
-type GetPipelineOptions struct {
-	GetOptions
-
-	JenkinsSelector opts.JenkinsSelectorOptions
-
+type PipelineOptions struct {
+	Options
 	ProwOptions prow.Options
 }
 
@@ -41,16 +37,13 @@ var (
 	getPipelineExample = templates.Examples(`
 		# list all pipelines
 		jx get pipeline
-
-		# Lists all the pipelines in a custom Jenkins App
-		jx get pipeline -m
 	`)
 )
 
 // NewCmdGetPipeline creates the command
 func NewCmdGetPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &GetPipelineOptions{
-		GetOptions: GetOptions{
+	options := &PipelineOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -71,82 +64,68 @@ func NewCmdGetPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options.AddGetFlags(cmd)
 
-	cmd.Flags().BoolVarP(&options.JenkinsSelector.UseCustomJenkins, "custom", "m", false, "List the pipelines in custom Jenkins App instead of the default execution engine in Jenkins X")
-	cmd.Flags().StringVarP(&options.JenkinsSelector.CustomJenkinsName, "name", "n", "", "The name of the custom Jenkins App if you don't wish to list the pipelines in the default execution engine in Jenkins X")
-
 	return cmd
 }
 
 // Run implements this command
-func (o *GetPipelineOptions) Run() error {
-	jo := &o.JenkinsSelector
-	if jo.CustomJenkinsName != "" {
-		jo.UseCustomJenkins = true
-	}
-
-	_, _, err := o.JXClient()
+func (o *PipelineOptions) Run() error {
+	tektonClient, ns, err := o.TektonClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create tekton client")
 	}
 
-	client, currentNamespace, err := o.KubeClientAndNamespace()
+	pipelines := tektonClient.TektonV1alpha1().PipelineRuns(ns)
+	prList, err := pipelines.List(metav1.ListOptions{})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to list PipelineRuns in namespace %s", ns)
 	}
 
-	isProw, err := o.IsProw()
-	if err != nil {
-		return err
+	if len(prList.Items) == 0 {
+		return errors.New(fmt.Sprintf("no PipelineRuns were found in namespace %s", ns))
 	}
 
-	if jo.UseCustomJenkins || !isProw {
-		jenkins, err := o.CreateCustomJenkinsClient(jo)
-		if err != nil {
-			return err
+	var owner, repo, branch, context, buildNumber, status string
+	names := []string{}
+	m := map[string]*pipelineapi.PipelineRun{}
+	for k := range prList.Items {
+		pr := prList.Items[k]
+		status = "not completed"
+		if tekton.PipelineRunIsComplete(&pr) {
+			status = "completed"
 		}
-		jobs, err := jenkins.GetJobs()
-		if err != nil {
-			return err
+		labels := pr.Labels
+		if labels == nil {
+			continue
 		}
-		if len(jobs) == 0 {
-			return outputEmptyListWarning(o.Out)
+		owner = labels[tekton.LabelOwner]
+		repo = labels[tekton.LabelRepo]
+		branch = labels[tekton.LabelBranch]
+		context = labels[tekton.LabelContext]
+		buildNumber = labels[tekton.LabelBuild]
+
+		if owner == "" {
+			log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelOwner, pr.Name, labels)
+			continue
+		}
+		if repo == "" {
+			log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelRepo, pr.Name, labels)
+			continue
+		}
+		if branch == "" {
+			log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelBranch, pr.Name, labels)
+			continue
 		}
 
-		if o.Output != "" {
-			return o.renderResult(jobs, o.Output)
-		}
+		name := fmt.Sprintf("%s/%s/%s #%s %s", owner, repo, branch, buildNumber, status)
 
-		table := createTable(o)
-
-		for _, j := range jobs {
-			job, err := jenkins.GetJob(j.Name)
-			if err != nil {
-				return err
-			}
-			err = o.dump(jenkins, job.Name, &table)
-			if err != nil {
-				return err
-			}
+		if context != "" {
+			name = fmt.Sprintf("%s-%s", name, context)
 		}
-		table.Render()
-		return nil
+		names = append(names, name)
+		m[name] = &pr
 	}
-	o.ProwOptions = prow.Options{
-		KubeClient: client,
-		NS:         currentNamespace,
-	}
-	names, err := o.ProwOptions.GetReleaseJobs()
-	if err != nil {
-		return err
-	}
-	if len(names) == 0 {
-		return errors.New("no pipelines found")
-	}
+
 	sort.Strings(names)
-
-	if len(names) == 0 {
-		return outputEmptyListWarning(o.Out)
-	}
 
 	if o.Output != "" {
 		return o.renderResult(names, o.Output)
@@ -162,61 +141,8 @@ func (o *GetPipelineOptions) Run() error {
 	return nil
 }
 
-func createTable(o *GetPipelineOptions) table.Table {
+func createTable(o *PipelineOptions) table2.Table {
 	table := o.CreateTable()
 	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
 	return table
-}
-
-func (o *GetPipelineOptions) dump(jenkinsClient gojenkins.JenkinsClient, name string, table *table.Table) error {
-	job, err := jenkinsClient.GetJob(name)
-	if err != nil {
-		return err
-	}
-
-	if job.Jobs != nil {
-		for _, child := range job.Jobs {
-			//Todo: Recursive call
-			o.dump(jenkinsClient, job.FullName+"/"+child.Name, table) //nolint:errcheck
-		}
-		if len(job.Jobs) == 0 {
-			log.Logger().Warnf("Job %s has no children!", job.Name)
-		}
-	} else {
-		job.Url = jenkins.SwitchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
-		last, err := jenkinsClient.GetLastBuild(job)
-
-		if err != nil {
-			if jenkinsClient.IsErrNotFound(err) {
-				if o.matchesFilter(&job) {
-					table.AddRow(job.FullName, job.Url, "", "Never Built", "")
-				}
-			} else {
-				log.Logger().Warnf("Failed to find last build for job %s: %s", job.Name, err.Error())
-			}
-			return nil
-		}
-		if o.matchesFilter(&job) {
-			if last.Building {
-				table.AddRow(job.FullName, job.Url, "#"+last.Id, "Building", time.Duration(last.EstimatedDuration).String()+"(est.)")
-			} else {
-				table.AddRow(job.FullName, job.Url, "#"+last.Id, last.Result, time.Duration(last.Duration).String())
-			}
-		}
-	}
-	return nil
-}
-
-func (o *GetPipelineOptions) matchesFilter(job *gojenkins.Job) bool {
-	args := o.Args
-	if len(args) == 0 {
-		return true
-	}
-	name := job.FullName
-	for _, arg := range args {
-		if strings.Contains(name, arg) {
-			return true
-		}
-	}
-	return false
 }

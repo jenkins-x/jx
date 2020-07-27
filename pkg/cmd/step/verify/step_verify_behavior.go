@@ -151,7 +151,7 @@ func (o *BehaviorOptions) followLogs(owner string, repo string) error {
 	commonOptions := *o.CommonOptions
 	commonOptions.BatchMode = true
 	lo := &get.GetBuildLogsOptions{
-		GetOptions: get.GetOptions{
+		Options: get.Options{
 			CommonOptions: &commonOptions,
 		},
 		Tail:           true,

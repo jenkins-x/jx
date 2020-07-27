@@ -19,7 +19,7 @@ import (
 
 // GetStreamOptions the command line options
 type GetStreamOptions struct {
-	GetOptions
+	Options
 
 	Kind               string
 	VersionsRepository string
@@ -46,7 +46,7 @@ var (
 // NewCmdGetStream creates the command
 func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetStreamOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

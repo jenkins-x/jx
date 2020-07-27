@@ -3,7 +3,6 @@ package get
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/get/vault"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/get/vault/config"
@@ -18,9 +17,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
-// GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
+// Options is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
-type GetOptions struct {
+type Options struct {
 	*opts.CommonOptions
 
 	Output string
@@ -55,7 +54,7 @@ var (
 // NewCmdGet creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
 func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &GetOptions{
+	options := &Options{
 		CommonOptions: commonOpts,
 	}
 
@@ -112,23 +111,18 @@ func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run implements this command
-func (o *GetOptions) Run() error {
+func (o *Options) Run() error {
 	return o.Cmd.Help()
 }
 
-// outputEmptyListWarning outputs a warning indicating that no items are available to display
-func outputEmptyListWarning(out io.Writer) error {
-	_, err := fmt.Fprintf(out, "%s\n", "No resources found.")
-	return err
-}
-
-func (o *GetOptions) AddGetFlags(cmd *cobra.Command) {
+// AddGetFlags adds an output flag to change the format of the output
+func (o *Options) AddGetFlags(cmd *cobra.Command) {
 	o.Cmd = cmd
 	cmd.Flags().StringVarP(&o.Output, "output", "o", "", "The output format such as 'yaml'")
 }
 
 // renderResult renders the result in a given output format
-func (o *GetOptions) renderResult(value interface{}, format string) error {
+func (o *Options) renderResult(value interface{}, format string) error {
 	switch format {
 	case "json":
 		data, err := json.Marshal(value)

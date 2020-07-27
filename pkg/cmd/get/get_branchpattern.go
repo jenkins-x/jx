@@ -9,7 +9,7 @@ import (
 
 // GetBranchPatternOptions containers the CLI options
 type GetBranchPatternOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -28,7 +28,7 @@ var (
 // NewCmdGetBranchPattern creates the new command for: jx get env
 func NewCmdGetBranchPattern(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBranchPatternOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

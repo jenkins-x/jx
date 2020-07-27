@@ -47,7 +47,7 @@ func NewCmdOpen(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &OpenOptions{
 		ConsoleOptions: ConsoleOptions{
 			GetURLOptions: get.GetURLOptions{
-				GetOptions: get.GetOptions{
+				Options: get.Options{
 					CommonOptions: commonOpts,
 				},
 			},

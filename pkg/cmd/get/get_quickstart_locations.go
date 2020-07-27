@@ -14,7 +14,7 @@ import (
 
 // GetQuickstartLocationOptions containers the CLI options
 type GetQuickstartLocationOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -38,7 +38,7 @@ var (
 // NewCmdGetQuickstartLocation creates the new command for: jx get env
 func NewCmdGetQuickstartLocation(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetQuickstartLocationOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

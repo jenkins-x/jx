@@ -11,7 +11,7 @@ import (
 
 // GetHelmBinOptions containers the CLI options
 type GetHelmBinOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -30,7 +30,7 @@ var (
 // NewCmdGetHelmBin creates the new command for: jx get env
 func NewCmdGetHelmBin(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetHelmBinOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

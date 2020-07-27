@@ -14,7 +14,7 @@ import (
 
 // GetTeamOptions containers the CLI options
 type GetTeamOptions struct {
-	GetOptions
+	Options
 
 	Pending bool
 }
@@ -36,7 +36,7 @@ var (
 // NewCmdGetTeam creates the new command for: jx get env
 func NewCmdGetTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTeamOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

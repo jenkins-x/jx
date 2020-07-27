@@ -21,7 +21,7 @@ import (
 
 // GetIssueOptions contains the command line options
 type GetIssueOptions struct {
-	GetOptions
+	Options
 
 	Dir string
 	Id  string
@@ -42,7 +42,7 @@ var (
 // NewCmdGetIssue creates the command
 func NewCmdGetIssue(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetIssueOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

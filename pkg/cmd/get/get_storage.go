@@ -16,7 +16,7 @@ import (
 
 // GetStorageOptions contains the CLI options
 type GetStorageOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -33,7 +33,7 @@ var (
 // NewCmdGetStorage creates the new command for: jx get env
 func NewCmdGetStorage(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetStorageOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

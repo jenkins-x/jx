@@ -96,7 +96,7 @@ var _ = Describe("get preview", func() {
 
 			options := &get.GetPreviewOptions{
 				GetEnvOptions: get.GetEnvOptions{
-					GetOptions: get.GetOptions{
+					Options: get.Options{
 						CommonOptions: commonOpts,
 					},
 				},

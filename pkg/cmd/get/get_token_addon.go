@@ -31,7 +31,7 @@ var (
 func NewCmdGetTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTokenAddonOptions{
 		GetTokenOptions{
-			GetOptions: GetOptions{
+			Options: Options{
 				CommonOptions: commonOpts,
 			},
 		},

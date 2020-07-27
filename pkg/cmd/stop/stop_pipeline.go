@@ -23,8 +23,8 @@ import (
 )
 
 // StopPipelineOptions contains the command line options
-type StopPipelineOptions struct {
-	get.GetOptions
+type PipelineOptions struct {
+	get.Options
 
 	Build           int
 	Filter          string
@@ -50,8 +50,8 @@ var (
 
 // NewCmdStopPipeline creates the command
 func NewCmdStopPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &StopPipelineOptions{
-		GetOptions: get.GetOptions{
+	options := &PipelineOptions{
+		Options: get.Options{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -70,87 +70,28 @@ func NewCmdStopPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVarP(&options.Build, "build", "", 0, "The build number to stop")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "",
+		"Filters all the available jobs by those that contain the given text")
 	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
 }
 
 // Run implements this command
-func (o *StopPipelineOptions) Run() error {
+func (o *PipelineOptions) Run() error {
 	devEnv, _, err := o.DevEnvAndTeamSettings()
 	if err != nil {
 		return err
 	}
 
 	isProw := devEnv.Spec.IsProwOrLighthouse()
-	if o.JenkinsSelector.IsCustom() {
-		isProw = false
+	if !isProw {
+		return errors.New("Only prow/lighthouse is supported as a webhook engine")
 	}
-
-	if isProw {
-		return o.cancelPipelineRun()
-	}
-	return o.stopJenkinsJob()
+	return o.cancelPipelineRun()
 }
 
-func (o *StopPipelineOptions) stopJenkinsJob() error {
-	jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
-	if err != nil {
-		return err
-	}
-	o.Jobs = jobMap
-	args := o.Args
-	names := []string{}
-	for k := range o.Jobs {
-		names = append(names, k)
-	}
-	sort.Strings(names)
-
-	if len(args) == 0 {
-		defaultName := ""
-		for _, n := range names {
-			if strings.HasSuffix(n, "/master") {
-				defaultName = n
-				break
-			}
-		}
-		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, "", o.GetIOFileHandles())
-		if err != nil {
-			return err
-		}
-		args = []string{name}
-	}
-	for _, a := range args {
-		err = o.stopJob(a, names)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (o *StopPipelineOptions) stopJob(name string, allNames []string) error {
-	job := o.Jobs[name]
-	jenkinsClient, err := o.JenkinsClient()
-	if err != nil {
-		return err
-	}
-	build := o.Build
-	if build <= 0 {
-		last, err := jenkinsClient.GetLastBuild(job)
-		if err != nil {
-			return err
-		}
-		build = last.Number
-		if build <= 0 {
-			return fmt.Errorf("No build available for %s", name)
-		}
-	}
-	return jenkinsClient.StopBuild(job, build)
-}
-
-func (o *StopPipelineOptions) cancelPipelineRun() error {
+func (o *PipelineOptions) cancelPipelineRun() error {
 	tektonClient, ns, err := o.TektonClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create tekton client")
@@ -161,58 +102,72 @@ func (o *StopPipelineOptions) cancelPipelineRun() error {
 		return errors.Wrapf(err, "failed to list PipelineRuns in namespace %s", ns)
 	}
 
+	if len(prList.Items) == 0 {
+		return errors.Wrapf(err, "no PipelineRuns were found in namespace %s", ns)
+	}
 	allNames := []string{}
 	m := map[string]*pipelineapi.PipelineRun{}
-	for _, p := range prList.Items {
-		pr := p
-		if !tekton.PipelineRunIsComplete(&pr) {
-			labels := pr.Labels
-			if labels == nil {
-				continue
-			}
-			owner := labels[tekton.LabelOwner]
-			repo := labels[tekton.LabelRepo]
-			branch := labels[tekton.LabelBranch]
-			context := labels[tekton.LabelContext]
-			buildNumber := labels[tekton.LabelBuild]
-
-			if owner == "" {
-				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelOwner, pr.Name, labels)
-				continue
-			}
-			if repo == "" {
-				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelRepo, pr.Name, labels)
-				continue
-			}
-			if branch == "" {
-				log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelBranch, pr.Name, labels)
-				continue
-			}
-
-			name := fmt.Sprintf("%s/%s/%s #%s", owner, repo, branch, buildNumber)
-
-			if context != "" {
-				name = fmt.Sprintf("%s-%s", name, context)
-			}
-			allNames = append(allNames, name)
-			m[name] = &pr
+	for k := range prList.Items {
+		pr := prList.Items[k]
+		if tekton.PipelineRunIsComplete(&pr) {
+			continue
 		}
+		labels := pr.Labels
+		if labels == nil {
+			continue
+		}
+		owner := labels[tekton.LabelOwner]
+		repo := labels[tekton.LabelRepo]
+		branch := labels[tekton.LabelBranch]
+		context := labels[tekton.LabelContext]
+		buildNumber := labels[tekton.LabelBuild]
+
+		if owner == "" {
+			log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelOwner,
+				pr.Name, labels)
+			continue
+		}
+		if repo == "" {
+			log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelRepo,
+				pr.Name, labels)
+			continue
+		}
+		if branch == "" {
+			log.Logger().Warnf("missing label %s on PipelineRun %s has labels %#v", tekton.LabelBranch,
+				pr.Name, labels)
+			continue
+		}
+
+		name := fmt.Sprintf("%s/%s/%s #%s", owner, repo, branch, buildNumber)
+
+		if context != "" {
+			name = fmt.Sprintf("%s-%s", name, context)
+		}
+		allNames = append(allNames, name)
+		m[name] = &pr
 	}
 	sort.Strings(allNames)
-	names := util.StringsContaining(allNames, o.Filter)
-	if len(names) == 0 {
-		log.Logger().Warnf("no PipelineRuns are still running which match the filter %s from all possible names %s", o.Filter, strings.Join(allNames, ", "))
-		return nil
+	names := allNames
+	if o.Filter != "" {
+		names = util.StringsContaining(allNames, o.Filter)
+		if len(names) == 0 {
+			log.Logger().Warnf("no PipelineRuns are still running which match the filter %s from all"+
+				" possible names %s", o.Filter, strings.Join(allNames, ", "))
+			return nil
+		}
 	}
 
 	args := o.Args
 	if len(args) == 0 {
-		name, err := util.PickName(names, "Which pipeline do you want to stop: ", "select a pipeline to cancel", o.GetIOFileHandles())
+		name, err := util.PickName(names, "Which pipeline do you want to stop: ",
+			"select a pipeline to cancel", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
 
-		if answer, err := util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true, "you can always restart a cancelled pipeline with 'jx start pipeline'", o.GetIOFileHandles()); !answer {
+		if answer, err := util.Confirm(fmt.Sprintf("cancel pipeline %s", name), true,
+			"you can always restart a cancelled pipeline with 'jx start pipeline'",
+			o.GetIOFileHandles()); !answer {
 			return err
 		}
 		args = []string{name}

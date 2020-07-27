@@ -39,7 +39,7 @@ var (
 func NewCmdGetPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetPreviewOptions{
 		GetEnvOptions: GetEnvOptions{
-			GetOptions: GetOptions{
+			Options: Options{
 				CommonOptions: commonOpts,
 			},
 		},

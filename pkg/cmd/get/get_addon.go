@@ -13,7 +13,7 @@ import (
 
 // GetAddonOptions the command line options
 type GetAddonOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -31,7 +31,7 @@ var (
 // NewCmdGetAddon creates the command
 func NewCmdGetAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetAddonOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

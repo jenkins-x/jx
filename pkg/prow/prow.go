@@ -26,12 +26,13 @@ const (
 	TektonAgent = "tekton"
 )
 
+// ConfigMapName, PluginsConfigMapName are the names of the configmaps which store prow related config
 const (
-	ProwConfigMapName           = "config"
-	ProwPluginsConfigMapName    = "plugins"
-	ProwExternalPluginsFilename = "external-plugins.yaml"
-	ProwConfigFilename          = "config.yaml"
-	ProwPluginsFilename         = "plugins.yaml"
+	ConfigMapName           = "config"
+	PluginsConfigMapName    = "plugins"
+	ExternalPluginsFilename = "external-plugins.yaml"
+	ConfigFilename          = "config.yaml"
+	PluginsFilename         = "plugins.yaml"
 )
 
 // Options for Prow
@@ -303,27 +304,27 @@ func (o *Options) saveProwConfig(prowConfig *config.Config, create bool) error {
 	}
 
 	data := make(map[string]string)
-	data[ProwConfigFilename] = string(configYAML)
+	data[ConfigFilename] = string(configYAML)
 	cm := &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ProwConfigMapName,
+			Name: ConfigMapName,
 		},
 	}
 
 	if create {
 		// replace with git repository version of a configmap
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
-		err = errors.Wrapf(err, "creating the config map %q", ProwConfigMapName)
+		err = errors.Wrapf(err, "creating the config map %q", ConfigMapName)
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
-		err = errors.Wrapf(err, "updating the config map %q", ProwConfigMapName)
+		err = errors.Wrapf(err, "updating the config map %q", ConfigMapName)
 	}
 	return err
 }
 
 func (o *Options) GetProwConfig() (*config.Config, bool, error) {
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ConfigMapName, metav1.GetOptions{})
 	create := true
 	prowConfig := &config.Config{}
 	// config doesn't exist, creating
@@ -349,7 +350,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 	} else {
 		// config exists, updating
 		create = false
-		err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[ConfigFilename]), &prowConfig)
 		if err != nil {
 			return prowConfig, create, errors.Wrap(err, "unmarshaling prow config")
 		}
@@ -416,10 +417,10 @@ func (o *Options) LoadProwPluginsFromFile() (*plugins.Configuration, error) {
 
 // LoadProwConfig loads prow config from configmap
 func (o *Options) LoadProwConfig() (*config.Config, error) {
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ConfigMapName, metav1.GetOptions{})
 	prowConfig := &config.Config{}
 	if err == nil {
-		err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[ConfigFilename]), &prowConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "unmarshaling prow config")
 		}
@@ -431,10 +432,10 @@ func (o *Options) LoadProwConfig() (*config.Config, error) {
 
 // LoadPluginConfig loads prow plugins from a configmap
 func (o *Options) LoadPluginConfig() (*plugins.Configuration, error) {
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwPluginsConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(PluginsConfigMapName, metav1.GetOptions{})
 	pluginConfig := &plugins.Configuration{}
 	if err == nil {
-		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), pluginConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[PluginsFilename]), pluginConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "unmarshaling plugins")
 		}
@@ -446,17 +447,17 @@ func (o *Options) LoadPluginConfig() (*plugins.Configuration, error) {
 
 func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configuration,
 	externalPlugins *ExternalPlugins) error) error {
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwPluginsConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(PluginsConfigMapName, metav1.GetOptions{})
 	create := true
 	pluginConfig := &plugins.Configuration{}
 	externalPlugins := &ExternalPlugins{}
 	if err == nil {
 		create = false
-		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), pluginConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[PluginsFilename]), pluginConfig)
 		if err != nil {
 			return errors.Wrap(err, "unmarshaling plugins")
 		}
-		err = yaml.Unmarshal([]byte(cm.Data[ProwExternalPluginsFilename]), externalPlugins)
+		err = yaml.Unmarshal([]byte(cm.Data[ExternalPluginsFilename]), externalPlugins)
 		if err != nil {
 			return errors.Wrap(err, "unmarshaling external plugins")
 		}
@@ -465,8 +466,8 @@ func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configur
 	if pluginConfig == nil {
 		pluginConfig = &plugins.Configuration{}
 		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
-		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
-		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: ProwPluginsConfigMapName}
+		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ConfigMapName}
+		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: PluginsConfigMapName}
 
 	}
 	if len(pluginConfig.Plugins) == 0 {
@@ -502,20 +503,20 @@ func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configur
 	}
 
 	data := make(map[string]string)
-	data[ProwPluginsFilename] = string(pluginYAML)
-	data[ProwExternalPluginsFilename] = string(externalPluginsYAML)
+	data[PluginsFilename] = string(pluginYAML)
+	data[ExternalPluginsFilename] = string(externalPluginsYAML)
 	cm = &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ProwPluginsConfigMapName,
+			Name: PluginsConfigMapName,
 		},
 	}
 	if create {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
-		err = errors.Wrapf(err, "createing the %q config map in namespace %q", ProwPluginsConfigMapName, o.NS)
+		err = errors.Wrapf(err, "createing the %q config map in namespace %q", PluginsConfigMapName, o.NS)
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
-		err = errors.Wrapf(err, "updating the %q config map in namespace %q", ProwPluginsConfigMapName, o.NS)
+		err = errors.Wrapf(err, "updating the %q config map in namespace %q", PluginsConfigMapName, o.NS)
 	}
 	return err
 }
@@ -585,21 +586,21 @@ func (o *Options) AddExternalProwPlugins(adds []plugins.ExternalPlugin) error {
 }
 
 func (o *Options) GetReleaseJobs() ([]string, error) {
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting the release jobs from %q config map in namespace %q", ProwConfigMapName, o.NS)
+		return nil, errors.Wrapf(err, "getting the release jobs from %q config map in namespace %q", ConfigMapName, o.NS)
 	}
 
 	prowConfig := &config.Config{}
-	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+	err = yaml.Unmarshal([]byte(cm.Data[ConfigFilename]), &prowConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling prow config")
 	}
 	var jobs []string
 
 	for repo, p := range prowConfig.Postsubmits {
-		for _, q := range p {
-			for _, b := range q.Branches {
+		for k := range p {
+			for _, b := range p[k].Branches {
 				repo = strings.Replace(repo, ":", "", -1)
 				branch := prowBranchConfigToGitBranchName(b)
 				jobName := fmt.Sprintf("%s/%s", repo, branch)
@@ -615,13 +616,13 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 
 func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit, error) {
 	p := config.Postsubmit{}
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return p, errors.Wrapf(err, "getting the presubmit jobs from %q config map in namespace %q", ProwConfigMapName, o.NS)
+		return p, errors.Wrapf(err, "getting the presubmit jobs from %q config map in namespace %q", ConfigMapName, o.NS)
 	}
 
 	prowConfig := &config.Config{}
-	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+	err = yaml.Unmarshal([]byte(cm.Data[ConfigFilename]), &prowConfig)
 	if err != nil {
 		return p, errors.Wrap(err, "unmarshaling prow config")
 	}

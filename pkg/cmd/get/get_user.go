@@ -15,7 +15,7 @@ import (
 
 // GetUserOptions containers the CLI options
 type GetUserOptions struct {
-	GetOptions
+	Options
 
 	Pending bool
 }
@@ -34,7 +34,7 @@ var (
 // NewCmdGetUser creates the new command for: jx get env
 func NewCmdGetUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetUserOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

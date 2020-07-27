@@ -18,7 +18,7 @@ import (
 
 // GetEnvOptions containers the CLI options
 type GetEnvOptions struct {
-	GetOptions
+	Options
 
 	PromotionStrategy string
 	PreviewOnly       bool
@@ -41,7 +41,7 @@ var (
 // NewCmdGetEnv creates the new command for: jx get env
 func NewCmdGetEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetEnvOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}
