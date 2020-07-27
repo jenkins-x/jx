@@ -113,7 +113,7 @@ pipelineConfig:
                 - --repo
                 - https://github.com/jenkins-x/jenkins-x-builders-ml.git
 
-              - name: update-lighthouse
+              - name: update-lighthouse-jx
                 image: gcr.io/jenkinsxio/builder-go
                 command: jx
                 args:
@@ -128,7 +128,7 @@ pipelineConfig:
                 - --build
                 - "\"make mod\""
                 - --repo
-                - https://github.com/jenkins-x/lighthouse.git
+                - https://github.com/jenkins-x/lighthouse-jx-controller.git
                 # Disable GOPROXY for go module updates to deal with go 1.13 semver resolution issue
                 env:
                 - name: GOPROXY
