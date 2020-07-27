@@ -43,6 +43,10 @@ var deprecatedCommands = map[string]deprecationInfo{
 		date: "Sep 1 2020",
 		info: "This commands will have no replacement.",
 	},
+	"create addon kubeless": {
+		replacement: "jx add app jx-app-kubeless",
+		date:        "Sep 1 2020",
+	},
 }
 
 // deprecateInfo keeps some deprecation details related to a command
