@@ -1,0 +1,148 @@
+linters-settings:
+  depguard:
+    list-type: blacklist
+    packages:
+      - github.com/jenkins-x/jx/v2/pkg/log/
+      - github.com/satori/go.uuid
+      - github.com/pborman/uuid
+    packages-with-error-message:
+      - github.com/jenkins-x/jx/v2/pkg/log/: "use jenkins-x/jx-logging instead"
+      - github.com/satori/go.uuid: "use github.com/google/uuid instead"
+      - github.com/pborman/uuid: "use github.com/google/uuid instead"
+  dupl:
+    threshold: 100
+  exhaustive:
+    default-signifies-exhaustive: false
+  funlen:
+    lines: 200
+    statements: 150
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+      - importShadow # not important for now
+      - unnamedResult # not important
+  gocyclo:
+    min-complexity: 15
+  goimports:
+  golint:
+    min-confidence: 0
+  gofmt:
+    simplify: true
+  gomnd:
+    settings:
+      mnd:
+        # don't include the "operation" and "assign"
+        checks: argument,case,condition,return
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Debugf
+          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Infof
+          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Warnf
+          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Errorf
+          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Fatalf
+  lll:
+    line-length: 140
+  maligned:
+    suggest-new: true
+  misspell:
+  nolintlint:
+    allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
+    allow-unused: false # report any unused nolint directives
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
+  disable-all: true
+  enable:
+    - asciicheck
+    - bodyclose
+    - deadcode
+    - depguard
+#    - dogsled
+    - dupl
+    - errcheck
+#    - funlen
+#    - goconst
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - ineffassign
+#    - interfacer (This tool is deprecated)
+    - misspell
+    - nakedret
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - golint
+    - gocritic
+    - govet
+#    - lll
+#    - gocyclo
+#    - nestif
+  # don't enable:
+  # - testpackage
+  # - gochecknoinits
+  # - stylecheck
+  # - lll
+  # - govet
+  # - whitespace
+  # - exhaustive (TODO: enable after next release; current release at time of writing is v1.27)
+  # - gochecknoglobals
+  # - gocognit
+  # - godot
+  # - godox
+  # - goerr113
+  # - maligned
+  # - prealloc
+  # - wsl
+  # - nolintlint
+  # - gomnd
+  # - scopelint
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+#    - path: _test\.go
+#      linters:
+#        - gomnd
+#    https://github.com/go-critic/go-critic/issues/926
+    - linters:
+        - gocritic
+      text: "unnecessaryDefer:"
+  max-same-issues: 0
+  
+run:
+  skip-dirs:
+    - test/testdata_etc
+    - internal/cache
+    - internal/renameio
+    - internal/robustio
+# golangci.com configuration
+# https://github.com/golangci/golangci/wiki/Configuration
+service:
+  golangci-lint-version: 1.29.x # use the fixed version to not introduce new linters unexpectedly
+  prepare:
+    - echo "here I can run custom commands, but no preparation needed for this repo"

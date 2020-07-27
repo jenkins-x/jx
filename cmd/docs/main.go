@@ -111,7 +111,7 @@ func parseArgs() (*options, error) {
 	return opts, err
 }
 
-func parseMDContent(mdString string) (description string, examples string) {
+func parseMDContent(mdString string) (description, examples string) {
 	parsedContent := strings.Split(mdString, "\n## ")
 	for _, s := range parsedContent {
 		if strings.Index(s, "Description") == 0 {

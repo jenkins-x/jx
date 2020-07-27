@@ -26,13 +26,13 @@ const (
 )
 
 // ShowOptions the options for viewing running PRs
-type VersionOptions struct {
+type Options struct {
 	Verbose bool
 }
 
 // NewCmdVersion creates a command object for the "version" command
-func NewCmdVersion() (*cobra.Command, *VersionOptions) {
-	o := &VersionOptions{}
+func NewCmdVersion() (*cobra.Command, *Options) {
+	o := &Options{}
 
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -46,7 +46,7 @@ func NewCmdVersion() (*cobra.Command, *VersionOptions) {
 }
 
 // Run implements the command
-func (o *VersionOptions) Run() error {
+func (o *Options) Run() error {
 	v := GetVersion()
 	log.Logger().Infof("version: %s", termcolor.ColorInfo(v))
 	return nil

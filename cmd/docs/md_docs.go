@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
+func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
@@ -55,7 +55,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 
 	short := cmd.Short
 	long := cmd.Long
-	if len(long) == 0 {
+	if long == "" {
 		long = short
 	}
 
@@ -80,7 +80,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		buf.WriteString(fmt.Sprintf("%s\n\n", cmd.Example))
 	}
 
-	if err := printOptions(buf, cmd, name); err != nil {
+	if err := printOptions(buf, cmd); err != nil {
 		return err
 	}
 	if hasSeeAlso(cmd) {

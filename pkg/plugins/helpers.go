@@ -11,7 +11,7 @@ import (
 )
 
 // GetJXPlugin returns the path to the locally installed jx plugin
-func GetJXPlugin(name string, version string) (string, error) {
+func GetJXPlugin(name, version string) (string, error) {
 	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return "", err

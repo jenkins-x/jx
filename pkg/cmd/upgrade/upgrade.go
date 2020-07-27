@@ -25,13 +25,13 @@ var (
 )
 
 // UpgradeOptions the options for upgrading a cluster
-type UpgradeOptions struct {
+type Options struct {
 	CommandRunner cmdrunner.CommandRunner
 }
 
 // NewCmdUpgrade creates a command object for the command
-func NewCmdUpgrade() (*cobra.Command, *UpgradeOptions) {
-	o := &UpgradeOptions{}
+func NewCmdUpgrade() (*cobra.Command, *Options) {
+	o := &Options{}
 
 	cmd := &cobra.Command{
 		Use:     "upgrade",
@@ -47,7 +47,7 @@ func NewCmdUpgrade() (*cobra.Command, *UpgradeOptions) {
 }
 
 // Run implements the command
-func (o *UpgradeOptions) Run() error {
+func (o *Options) Run() error {
 	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return errors.Wrap(err, "failed to find plugin bin directory")
@@ -56,7 +56,8 @@ func (o *UpgradeOptions) Run() error {
 	if o.CommandRunner == nil {
 		o.CommandRunner = cmdrunner.DefaultCommandRunner
 	}
-	for _, p := range plugins.Plugins {
+	for k := range plugins.Plugins {
+		p := plugins.Plugins[k]
 		log.Logger().Infof("checking binary jx plugin %s version %s is installed", termcolor.ColorInfo(p.Name), termcolor.ColorInfo(p.Spec.Version))
 		fileName, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
 		if err != nil {
