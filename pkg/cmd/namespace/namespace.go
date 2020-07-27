@@ -83,7 +83,9 @@ func (o *Options) Run() error {
 
 	f := kubeclient.NewFactory()
 	config, err := f.CreateKubeConfig()
-
+	if err != nil {
+		return errors.Wrap(err, "creating kubernetes configuration")
+	}
 	cfg, pathOptions, err := kubeclient.LoadConfig()
 	if err != nil {
 		return errors.Wrap(err, "loading Kubernetes configuration")
@@ -207,8 +209,8 @@ func getNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	if err != nil {
 		return names, fmt.Errorf("loading namespaces %s", err)
 	}
-	for _, n := range list.Items {
-		names = append(names, n.Name)
+	for k := range list.Items {
+		names = append(names, list.Items[k].Name)
 	}
 	sort.Strings(names)
 	return names, nil

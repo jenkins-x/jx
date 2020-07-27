@@ -38,7 +38,7 @@ func Main(args []string) *cobra.Command {
 	getPluginCommandGroups := func() (templates.PluginCommandGroups, bool) {
 		verifier := &extensions.CommandOverrideVerifier{
 			Root:        cmd,
-			SeenPlugins: make(map[string]string, 0),
+			SeenPlugins: make(map[string]string),
 		}
 		pluginCommandGroups, err := po.GetPluginCommandGroups(verifier, plugins.Plugins)
 		if err != nil {
@@ -220,7 +220,7 @@ type managedPluginHandler struct {
 }
 
 // Lookup implements PluginHandler
-func (h *managedPluginHandler) Lookup(filename string, pluginBinDir string) (string, error) {
+func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
 	jxClient, ns, err := jxclient.LazyCreateJXClientAndNamespace(h.JXClient, h.Namespace)
 	if err != nil {
 		return "", err
@@ -253,11 +253,11 @@ func (h *managedPluginHandler) Execute(executablePath string, cmdArgs, environme
 type localPluginHandler struct{}
 
 // Lookup implements PluginHandler
-func (h *localPluginHandler) Lookup(filename string, pluginBinDir string) (string, error) {
+func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
 	// if on Windows, append the "exe" extension
 	// to the filename that we are looking up.
 	if runtime.GOOS == "windows" {
-		filename = filename + ".exe"
+		filename += ".exe"
 	}
 
 	return exec.LookPath(filename)
@@ -284,7 +284,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	for len(remainingArgs) > 0 {
 		commandName := fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-"))
 		path, err := pluginHandler.Lookup(commandName, pluginBinDir)
-		if err != nil || len(path) == 0 {
+		if err != nil || path == "" {
 			// lets see if we have previously downloaded this binary plugin
 			path = FindPluginBinary(pluginBinDir, commandName)
 			if path != "" {
@@ -305,7 +305,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 		break
 	}
 
-	if len(foundBinaryPath) == 0 {
+	if foundBinaryPath == "" {
 		return nil
 	}
 
@@ -320,7 +320,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 }
 
 // FindPluginBinary tries to find the jx-foo binary plugin in the plugins dir `~/.jx/plugins/jx/bin` dir `
-func FindPluginBinary(pluginDir string, commandName string) string {
+func FindPluginBinary(pluginDir, commandName string) string {
 	if pluginDir != "" {
 		files, err := ioutil.ReadDir(pluginDir)
 		if err != nil {
