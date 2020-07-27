@@ -24,8 +24,7 @@ func main() {
 				Regex: `version: (.*)`,
 				Files: []string{
 					"docker/gcr.io/jenkinsxio-labs-private/jx-cli.yml",
-					"packages/jxl.yml",
-					"charts/jx-labs/jxl-boot.yml",
+					"packages/jx-cli.yml",
 				},
 			},
 			RegexFiles{
