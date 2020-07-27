@@ -35,7 +35,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -84,7 +84,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -131,7 +131,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -178,7 +178,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -227,7 +227,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -279,7 +279,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -330,7 +330,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -381,7 +381,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND
@@ -430,7 +430,7 @@ items:
         value: /workspace/source
       - name: DOCKER_REGISTRY
       - name: DOCKER_REGISTRY_ORG
-        value: jenkins-x
+        value: abayer
       - name: BUILD_NUMBER
         value: "1"
       - name: PIPELINE_KIND

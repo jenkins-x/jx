@@ -74,6 +74,17 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	_, err = os.Stat(packsDir)
 	assert.NoError(t, err)
 
+	// Override the DOCKER_REGISTRY_ORG env var for CI consistency
+	origDRO := os.Getenv("DOCKER_REGISTRY_ORG")
+	os.Setenv("DOCKER_REGISTRY_ORG", "abayer")
+	defer func() {
+		if origDRO != "" {
+			os.Setenv("DOCKER_REGISTRY_ORG", origDRO)
+		} else {
+			os.Unsetenv("DOCKER_REGISTRY_ORG")
+		}
+	}()
+
 	rand.Seed(12345)
 
 	resolver := func(importFile *jenkinsfile.ImportFile) (string, error) {

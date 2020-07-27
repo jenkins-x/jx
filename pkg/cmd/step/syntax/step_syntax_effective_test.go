@@ -59,6 +59,17 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 	_, err = os.Stat(packsDir)
 	assert.NoError(t, err)
 
+	// Override the DOCKER_REGISTRY_ORG env var for CI consistency
+	origDRO := os.Getenv("DOCKER_REGISTRY_ORG")
+	os.Setenv("DOCKER_REGISTRY_ORG", "abayer")
+	defer func() {
+		if origDRO != "" {
+			os.Setenv("DOCKER_REGISTRY_ORG", origDRO)
+		} else {
+			os.Unsetenv("DOCKER_REGISTRY_ORG")
+		}
+	}()
+
 	resolver := func(importFile *jenkinsfile.ImportFile) (string, error) {
 		dirPath := []string{packsDir, "import_dir", importFile.Import}
 		// lets handle cross platform paths in `importFile.File`
