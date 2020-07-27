@@ -4,7 +4,7 @@ require (
 	cloud.google.com/go v0.37.4 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gophercloud/gophercloud v0.1.0 // indirect
-	github.com/jenkins-x/jx v0.0.0-20200501072805-de27d267fa83
+	github.com/jenkins-x/jx v1.3.981-0.20200625050556-5ccee8e660bc
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.4 // indirect
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5 // indirect
