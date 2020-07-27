@@ -3,7 +3,7 @@ package create
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
+	options2 "github.com/jenkins-x/jx/v2/pkg/cmd/create/options"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 
@@ -18,11 +18,10 @@ import (
 
 var (
 	createBranchPatternLong = templates.LongDesc(`
-		Create a git branch pattern for your team. 
+		Create a git branch pattern for your team.
+		
+The pattern should match all the branches you wish to automate CI/CD on when creating or importing projects.
 
-		The pattern should match all the branches you wish to automate CI/CD on when creating or importing projects.
-
-		For more documentation see: [https://jenkins-x.io/docs/using-jx/creating/import/#branch-patterns](https://jenkins-x.io/docs/using-jx/creating/import/#branch-patterns)
 `)
 
 	createBranchPatternExample = templates.Examples(`
@@ -33,16 +32,16 @@ var (
 )
 
 // CreateBranchPatternOptions the options for the create spring command
-type CreateBranchPatternOptions struct {
-	options.CreateOptions
+type BranchPatternOptions struct {
+	options2.CreateOptions
 
 	BranchPattern string
 }
 
 // NewCmdCreateBranchPattern creates a command object for the "create" command
 func NewCmdCreateBranchPattern(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &CreateBranchPatternOptions{
-		CreateOptions: options.CreateOptions{
+	options := &BranchPatternOptions{
+		CreateOptions: options2.CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -65,9 +64,9 @@ func NewCmdCreateBranchPattern(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 // Run implements the command
-func (o *CreateBranchPatternOptions) Run() error {
+func (o *BranchPatternOptions) Run() error {
 	if len(o.Args) == 0 {
-		return fmt.Errorf("Missing argument for the branch pattern")
+		return fmt.Errorf("missing argument for the branch pattern")
 	}
 	arg := o.Args[0]
 
