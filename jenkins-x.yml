@@ -39,18 +39,6 @@ pipelineConfig:
               - name: upload-binaries
                 command: make goreleaser
                 image: gcr.io/jenkinsxio-labs/go-releaser:0.0.18
-#              - name: copy-to-bucket
-#                command: gsutil cp dist/*.gz dist/*.zip gs://cloudbees-jx-cli-plugin/plugin/${VERSION}
-#                image: gcr.io/jenkinsxio-labs-private/jxl
-              - command: ./promote.sh
+              - name: promote-release
+                command: ./promote/main
                 dir: /workspace/source
-                name: promote-release
-#              - name: upload-plugin
-#                command: ./hack/upload_plugin.sh
-#                image: gcr.io/jenkinsxio-labs-private/github-release:0.0.6
-#                env:
-#                - name: GITHUB_TOKEN
-#                  valueFrom:
-#                    secretKeyRef:
-#                      name: jx-pipeline-git-github-github
-#                      key: password
