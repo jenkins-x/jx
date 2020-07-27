@@ -21,11 +21,11 @@ func TestPlugins(t *testing.T) {
 			for _, b := range p.Spec.Binaries {
 				if b.Goos == "Linux" && b.Goarch == "amd64" {
 					foundLinux = true
-					assert.Equal(t, "https://storage.googleapis.com/cloudbees-jx-plugins/plugin/gitops/"+plugins.GitOpsVersion+"/jx-gitops-linux-amd64.tar.gz", b.URL, "URL for linux binary")
+					assert.Equal(t, "https://github.com/jenkins-x/jx-gitops/releases/download/v"+plugins.GitOpsVersion+"/jx-gitops-linux-amd64.tar.gz", b.URL, "URL for linux binary")
 					t.Logf("found linux binary URL %s", b.URL)
 				} else if b.Goos == "Windows" && b.Goarch == "amd64" {
 					foundWindows = true
-					assert.Equal(t, "https://storage.googleapis.com/cloudbees-jx-plugins/plugin/gitops/"+plugins.GitOpsVersion+"/jx-gitops-windows-amd64.zip", b.URL, "URL for windows binary")
+					assert.Equal(t, "https://github.com/jenkins-x/jx-gitops/releases/download/v"+plugins.GitOpsVersion+"/jx-gitops-windows-amd64.zip", b.URL, "URL for windows binary")
 					t.Logf("found windows binary URL %s", b.URL)
 				}
 			}
