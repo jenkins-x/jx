@@ -15,7 +15,7 @@ import (
 
 // DeleteGkeOptions Options for deleting a GKE cluster
 type DeleteGkeOptions struct {
-	get.GetOptions
+	get.Options
 	Region    string
 	ProjectID string
 }
@@ -34,7 +34,7 @@ var (
 // NewCmdDeleteGke command for deleting a GKE cluster
 func NewCmdDeleteGke(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteGkeOptions{
-		GetOptions: get.GetOptions{
+		Options: get.Options{
 			CommonOptions: commonOpts,
 		},
 	}

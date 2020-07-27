@@ -83,11 +83,11 @@ func TestMergeProwConfigEnvironment(t *testing.T) {
 	assert.NoError(t, err)
 
 	data := make(map[string]string)
-	data[prow.ProwConfigFilename] = string(c)
+	data[prow.ConfigFilename] = string(c)
 
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: prow.ProwConfigMapName,
+			Name: prow.ConfigMapName,
 		},
 		Data: data,
 	}
@@ -98,10 +98,10 @@ func TestMergeProwConfigEnvironment(t *testing.T) {
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 	assert.Equal(t, "debug", prowConfig.LogLevel)
 	assert.NotEmpty(t, prowConfig.Presubmits["test/repo"])
 
@@ -135,11 +135,11 @@ func TestMergeProwPlugin(t *testing.T) {
 	assert.NoError(t, err)
 
 	data = make(map[string]string)
-	data[prow.ProwPluginsFilename] = string(c)
+	data[prow.PluginsFilename] = string(c)
 
 	cm = &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: prow.ProwPluginsConfigMapName,
+			Name: prow.PluginsConfigMapName,
 		},
 		Data: data,
 	}
@@ -150,10 +150,10 @@ func TestMergeProwPlugin(t *testing.T) {
 	err = o.AddProwPlugins()
 	assert.NoError(t, err)
 
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.PluginsConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.PluginsFilename]), &pluginConfig))
 	assert.Equal(t, "okey dokey", pluginConfig.Welcome[0].MessageTemplate)
 	assert.Equal(t, "test/repo", pluginConfig.Approve[0].Repos[0])
 
@@ -185,11 +185,11 @@ func TestAddProwPlugin(t *testing.T) {
 	err = o.AddProwPlugins()
 	assert.NoError(t, err)
 
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.PluginsConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	pluginConfig := &plugins.Configuration{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.PluginsFilename]), &pluginConfig))
 
 	assert.Equal(t, "test/repo", pluginConfig.Approve[0].Repos[0])
 	assert.Equal(t, "test/repo2", pluginConfig.Approve[1].Repos[0])
@@ -231,14 +231,14 @@ func TestAddProwExternalPlugin(t *testing.T) {
 	err = prow.AddExternalPlugins(o.KubeClient, nil, o.NS, externalPlugin)
 	assert.NoError(t, err)
 
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.PluginsConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	pluginConfig := &plugins.Configuration{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.PluginsFilename]), &pluginConfig))
 
 	externalPlugins := &prow.ExternalPlugins{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwExternalPluginsFilename]), &externalPlugins))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ExternalPluginsFilename]), &externalPlugins))
 
 	assert.Contains(t, externalPlugins.Items, externalPlugin)
 
@@ -345,11 +345,11 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	// now modify the cm
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig := &config.Config{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 1, len(prowConfig.Keeper.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
@@ -361,22 +361,22 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	data = make(map[string]string)
-	data[prow.ProwConfigFilename] = string(configYAML)
+	data[prow.ConfigFilename] = string(configYAML)
 	cm = &v1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
-			Name: prow.ProwConfigMapName,
+			Name: prow.ConfigMapName,
 		},
 	}
 
 	_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 
 	// ensure the value was modified
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 
 	p = prowConfig.Presubmits["test/repo"]
 	assert.Equal(t, "foo", p[0].Agent)
@@ -386,11 +386,11 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	// assert value is reset
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 1, len(prowConfig.Keeper.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
@@ -405,11 +405,11 @@ func TestReplaceProwConfig(t *testing.T) {
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
@@ -421,11 +421,11 @@ func TestReplaceProwConfig(t *testing.T) {
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 3, len(prowConfig.Keeper.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Keeper.Queries[1].Repos))
@@ -496,10 +496,10 @@ func TestGetPostSubmitJob(t *testing.T) {
 }
 
 func getProwConfig(t *testing.T, o TestOptions) (*config.Config, error) {
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 	prowConfig := &config.Config{}
-	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ConfigFilename]), &prowConfig))
 	return prowConfig, err
 }
 

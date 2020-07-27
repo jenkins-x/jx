@@ -25,7 +25,7 @@ import (
 
 // GetBuildLogsOptions the command line options
 type GetBuildLogsOptions struct {
-	GetOptions
+	Options
 
 	Tail                    bool
 	Wait                    bool
@@ -71,7 +71,7 @@ var (
 // NewCmdGetBuildLogs creates the command
 func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -308,7 +308,7 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 		pluginYAML, err := yaml.Marshal(pluginConfig)
 		assert.NoError(t, err)
 		data := make(map[string]string)
-		data[prow.ProwPluginsFilename] = string(pluginYAML)
+		data[prow.PluginsFilename] = string(pluginYAML)
 		cm := &v12.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ConfigMap",
@@ -316,7 +316,7 @@ func (o *StepSchedulerApplyTestOptions) createSchedulerTestOptions(testType stri
 			},
 			Data: data,
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      prow.ProwPluginsConfigMapName,
+				Name:      prow.PluginsConfigMapName,
 				Namespace: "jx",
 			},
 		}

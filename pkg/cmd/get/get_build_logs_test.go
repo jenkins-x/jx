@@ -48,7 +48,7 @@ func TestGetTektonLogsForRunningBuild(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &commonOpts,
 		},
 		TektonLogger: &logs.TektonLogger{
@@ -95,7 +95,7 @@ func TestGetTektonLogsForRunningBuildWithPendingPod(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &commonOpts,
 		},
 		TektonLogger: &logs.TektonLogger{
@@ -130,7 +130,7 @@ func TestGetTektonLogsForRunningBuildWithLegacyRepoLabel(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &commonOpts,
 		},
 		TektonLogger: &logs.TektonLogger{
@@ -181,7 +181,7 @@ func TestGetTektonLogsForRunningBuildWithWaitTime(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &commonOpts,
 		},
 		TektonLogger: &logs.TektonLogger{
@@ -237,7 +237,7 @@ func TestGetTektonLogsForStoredLogs(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &commonOpts,
 		},
 		TektonLogger: &logs.TektonLogger{
@@ -282,7 +282,7 @@ func TestWithMetapipeline(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &opts.CommonOptions{
 				BatchMode: true,
 			},
@@ -330,7 +330,7 @@ func TestGetTektonLogsForRunningBuildWithMultipleStages(t *testing.T) {
 	ns := "jx"
 
 	o := &GetBuildLogsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: &commonOpts,
 		},
 		TektonLogger: &logs.TektonLogger{

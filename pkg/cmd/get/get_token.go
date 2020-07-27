@@ -9,7 +9,7 @@ import (
 
 // GetTokenOptions the command line options
 type GetTokenOptions struct {
-	GetOptions
+	Options
 
 	Kind string
 	Name string
@@ -18,7 +18,7 @@ type GetTokenOptions struct {
 // NewCmdGetToken creates the command
 func NewCmdGetToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTokenOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

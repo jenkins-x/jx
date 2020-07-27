@@ -15,7 +15,7 @@ import (
 
 // GetBuildPodsOptions the command line options
 type GetBuildPodsOptions struct {
-	GetOptions
+	Options
 
 	Namespace   string
 	BuildFilter builds.BuildPodInfoFilter
@@ -48,7 +48,7 @@ var (
 // NewCmdGetBuildPods creates the command
 func NewCmdGetBuildPods(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildPodsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -326,7 +326,7 @@ func (o *StepE2EGCOptions) deleteEksCluster(cluster *cluster.Cluster, client clu
 
 func (o *StepE2EGCOptions) deleteGkeCluster(cluster *gke.Cluster) {
 	deleteOptions := &deletecmd.DeleteGkeOptions{
-		GetOptions: get.GetOptions{
+		Options: get.Options{
 			CommonOptions: &opts.CommonOptions{},
 		},
 	}

@@ -13,7 +13,7 @@ import (
 
 // GetConfigOptions the command line options
 type GetConfigOptions struct {
-	GetOptions
+	Options
 
 	Dir string
 }
@@ -33,7 +33,7 @@ var (
 // NewCmdGetConfig creates the command
 func NewCmdGetConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetConfigOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -16,7 +16,7 @@ import (
 
 // GetTrackerOptions the command line options
 type GetTrackerOptions struct {
-	GetOptions
+	Options
 
 	Kind string
 	Dir  string
@@ -37,7 +37,7 @@ var (
 // NewCmdGetTracker creates the command
 func NewCmdGetTracker(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTrackerOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

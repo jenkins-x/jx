@@ -35,7 +35,7 @@ type Rate struct {
 
 // GetAddonOptions the command line options
 type GetLimitsOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -53,7 +53,7 @@ var (
 // NewCmdGetLimits creates the command
 func NewCmdGetLimits(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetLimitsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

@@ -13,7 +13,7 @@ import (
 
 // GetURLOptions the command line options
 type GetURLOptions struct {
-	GetOptions
+	Options
 
 	Namespace    string
 	Environment  string
@@ -35,7 +35,7 @@ var (
 // NewCmdGetURL creates the command
 func NewCmdGetURL(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetURLOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

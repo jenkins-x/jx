@@ -20,7 +20,7 @@ import (
 
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
-	GetOptions
+	Options
 	Namespace  string
 	ShowStatus bool
 	GitOps     bool
@@ -79,7 +79,7 @@ var (
 // NewCmdGetApps creates the new command for: jx get version
 func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetAppsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}
@@ -104,7 +104,7 @@ func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *GetAppsOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
-	kubeClient, err := o.GetOptions.KubeClient()
+	kubeClient, err := o.Options.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (o *GetAppsOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "getting jx client")
 	}
-	envsDir, err := o.GetOptions.EnvironmentsDir()
+	envsDir, err := o.Options.EnvironmentsDir()
 	if err != nil {
 		return errors.Wrap(err, "getting the the GitOps environments dir")
 	}

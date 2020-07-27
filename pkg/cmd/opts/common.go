@@ -413,6 +413,11 @@ func (o *CommonOptions) TektonClient() (tektonclient.Interface, string, error) {
 	return o.tektonClient, o.currentNamespace, nil
 }
 
+// SetTektonClient sets the tekton client
+func (o *CommonOptions) SetTektonClient(client tektonclient.Interface) {
+	o.tektonClient = client
+}
+
 // KnativeServeClient returns or creates the knative serve client
 func (o *CommonOptions) KnativeServeClient() (kserve.Interface, string, error) {
 	if o.factory == nil {

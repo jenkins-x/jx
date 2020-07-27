@@ -15,7 +15,7 @@ import (
 
 // GetReleaseOptions containers the CLI options
 type GetReleaseOptions struct {
-	GetOptions
+	Options
 
 	Filter    string
 	Namespace string
@@ -38,7 +38,7 @@ var (
 // NewCmdGetRelease creates the new command for: jx get env
 func NewCmdGetRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetReleaseOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

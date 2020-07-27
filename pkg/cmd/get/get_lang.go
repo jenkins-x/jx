@@ -13,7 +13,7 @@ import (
 
 // GetLangOptions containers the CLI options
 type GetLangOptions struct {
-	GetOptions
+	Options
 	StepOptions step.StepOptions
 
 	Pending bool
@@ -33,7 +33,7 @@ var (
 // NewCmdGetLang creates the new command for: jx get env
 func NewCmdGetLang(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetLangOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 		StepOptions: step.StepOptions{

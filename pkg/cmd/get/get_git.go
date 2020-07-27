@@ -10,7 +10,7 @@ import (
 
 // GetGitOptions the command line options
 type GetGitOptions struct {
-	GetOptions
+	Options
 }
 
 var (
@@ -28,7 +28,7 @@ var (
 // NewCmdGetGit creates the command
 func NewCmdGetGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetGitOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

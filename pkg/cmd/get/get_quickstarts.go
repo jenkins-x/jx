@@ -14,7 +14,7 @@ import (
 
 //GetQuickstartsOptions -  the command line options
 type GetQuickstartsOptions struct {
-	GetOptions
+	Options
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
 	ShortFormat         bool
@@ -36,7 +36,7 @@ var (
 //NewCmdGetQuickstarts creates the command
 func NewCmdGetQuickstarts(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetQuickstartsOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}

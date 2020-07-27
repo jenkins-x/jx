@@ -16,7 +16,7 @@ import (
 
 // GetChatOptions the command line options
 type GetChatOptions struct {
-	GetOptions
+	Options
 
 	Kind string
 	Dir  string
@@ -37,7 +37,7 @@ var (
 // NewCmdGetChat creates the command
 func NewCmdGetChat(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetChatOptions{
-		GetOptions: GetOptions{
+		Options: Options{
 			CommonOptions: commonOpts,
 		},
 	}
