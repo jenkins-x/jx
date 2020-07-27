@@ -630,13 +630,13 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	if commit.Author.Email != "" && commit.Author.Name != "" {
 		author, err = resolver.GitSignatureAsUser(&commit.Author)
 		if err != nil {
-			log.Logger().Warnf("Failed to enrich commit %s with issues: %v", sha, err)
+			log.Logger().Warnf("failed to enrich commit with issues, error getting git signature for git author %s: %v", commit.Author, err)
 		}
 	}
 	if commit.Committer.Email != "" && commit.Committer.Name != "" {
 		committer, err = resolver.GitSignatureAsUser(&commit.Committer)
 		if err != nil {
-			log.Logger().Warnf("Failed to enrich commit %s with issues: %v", sha, err)
+			log.Logger().Warnf("failed to enrich commit with issues, error getting git signature for git committer %s: %v", commit.Committer, err)
 		}
 	}
 	var authorDetails, committerDetails v1.UserDetails
