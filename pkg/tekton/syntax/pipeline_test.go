@@ -60,13 +60,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -94,7 +94,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						sh.StepCmd("echo"),
 						sh.StepArg("again"))),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -104,7 +104,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -113,7 +113,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo hello world"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -138,7 +138,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						sh.StageStep(sh.StepCmd("echo"), sh.StepArg("again"))),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -148,7 +148,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit, tb.ResourceTargetPath("source"))),
@@ -157,7 +157,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 						tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo hello world"), tb.StepWorkingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -192,7 +192,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				sh.PipelineStage("Last Stage",
 					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -208,7 +208,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage", "another-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-first-stage-1", "jx", sh.TaskStageLabel("First Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-first-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -217,7 +217,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo first"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -225,14 +225,14 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 						tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo hello world"), tb.StepWorkingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo again"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-last-stage-1", "jx", sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-last-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -277,7 +277,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				sh.PipelineStage("Last Stage",
 					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -300,7 +300,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage", "some-other-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-first-stage-1", "jx", sh.TaskStageLabel("First Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-first-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -309,7 +309,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo first"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -317,7 +317,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 						tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo hello world"), tb.StepWorkingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -325,14 +325,14 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo again"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-some-other-stage-1", "jx", sh.TaskStageLabel("Some other stage"), tb.TaskSpec(
+				tb.Task("somepipeline-some-other-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Some other stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo otherwise"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-last-stage-1", "jx", sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-last-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -394,7 +394,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StageStep(sh.StepCmd("ls")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -411,7 +411,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("stage3")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-stage1-1", "jx", sh.TaskStageLabel("stage1"), tb.TaskSpec(
+				tb.Task("somepipeline-stage1-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -420,7 +420,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage2-1", "jx", sh.TaskStageLabel("stage2"), tb.TaskSpec(
+				tb.Task("somepipeline-stage2-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage2"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -428,7 +428,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage3-1", "jx", sh.TaskStageLabel("stage3"), tb.TaskSpec(
+				tb.Task("somepipeline-stage3-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -436,7 +436,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage4-1", "jx", sh.TaskStageLabel("stage4"), tb.TaskSpec(
+				tb.Task("somepipeline-stage4-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -476,7 +476,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -495,7 +495,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("stage4")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-stage1-1", "jx", sh.TaskStageLabel("stage1"), tb.TaskSpec(
+				tb.Task("somepipeline-stage1-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -504,7 +504,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage3-1", "jx", sh.TaskStageLabel("stage3"), tb.TaskSpec(
+				tb.Task("somepipeline-stage3-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -512,7 +512,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage4-1", "jx", sh.TaskStageLabel("stage4"), tb.TaskSpec(
+				tb.Task("somepipeline-stage4-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -520,7 +520,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-stage5-1", "jx", sh.TaskStageLabel("stage5"), tb.TaskSpec(
+				tb.Task("somepipeline-stage5-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("stage5"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -563,13 +563,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-stage-with-environment", "somepipeline-a-stage-with-environment-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-stage-with-environment-1", "jx",
+				tb.Task("somepipeline-a-stage-with-environment-1", tb.TaskNamespace("jx"),
 					sh.TaskStageLabel("A stage with environment"),
 					tb.TaskSpec(
 						tb.TaskInputs(
@@ -663,13 +663,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("goodbye")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -695,7 +695,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StageStep(sh.StepCmd("ls")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a", "somepipeline-a-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -705,7 +705,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-1", "jx", sh.TaskStageLabel("a"), tb.TaskSpec(
+				tb.Task("somepipeline-a-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("a"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -714,7 +714,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("ls"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-wh-this-is-cool-1", "jx", sh.TaskStageLabel("wh-this-is-cool"),
+				tb.Task("somepipeline-wh-this-is-cool-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("wh-this-is-cool"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -740,14 +740,14 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 			),
 			/* TODO: Stop erroring out once we figure out how to handle task timeouts again
-															pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+															pipeline: tb.Pipeline("somepipeline-1", tb.TaskNamespace("jx"), tb.PipelineSpec(
 																tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 																	tb.PipelineTaskInputResource("workspace", "somepipeline"),
 																	tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 																	tb.PipelineTaskOutputResource("workspace", "somepipeline")),
 									tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-																					tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"),
+																					tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), TaskStageLabel("A Working Stage"),
 																	tb.TaskSpec(
 												tb.TaskTimeout(50*time.Minute),
 																	tb.TaskInputs(
@@ -770,13 +770,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("world")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -810,13 +810,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("hello"), sh.StepArg("after")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -875,13 +875,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -936,13 +936,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -988,13 +988,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1038,13 +1038,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1084,13 +1084,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1137,13 +1137,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					sh.StageEnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx",
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"),
 					sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
@@ -1196,7 +1196,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						sh.StepArg("in another dir"),
 						sh.StepDir("another-relative-dir/with/a/subdir"))),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -1206,7 +1206,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -1216,7 +1216,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"),
 						tb.StepArgs("cd /workspace/source/a-relative-dir && echo hello world"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -1272,13 +1272,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1334,7 +1334,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				sh.PipelineStage("Last Stage",
 					sh.StageStep(sh.StepCmd("echo"), sh.StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
@@ -1350,7 +1350,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.RunAfter("a-working-stage", "another-stage")),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-first-stage-1", "jx", sh.TaskStageLabel("First Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-first-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -1359,7 +1359,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"), tb.StepCommand("jx"), tb.StepArgs("step", "git", "merge", "--verbose"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo first"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
@@ -1367,14 +1367,14 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 						tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo hello world"), tb.StepWorkingDir("/workspace/source")),
 					)),
-				tb.Task("somepipeline-another-stage-1", "jx", sh.TaskStageLabel("Another stage"), tb.TaskSpec(
+				tb.Task("somepipeline-another-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
 					tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source")),
 					tb.Step("some-image:0.0.1", tb.StepName("step2"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("echo again"), tb.StepWorkingDir("/workspace/source")),
 				)),
-				tb.Task("somepipeline-last-stage-1", "jx", sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
+				tb.Task("somepipeline-last-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("source"))),
@@ -1423,13 +1423,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 				),
 				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
 			tasks: []*tektonv1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage-1", "jx", sh.TaskStageLabel("A Working Stage"),
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
 					tb.TaskSpec(
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,

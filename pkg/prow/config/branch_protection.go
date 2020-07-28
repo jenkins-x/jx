@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-	"github.com/jenkins-x/lighthouse-config/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config"
 	"github.com/pkg/errors"
 )
 

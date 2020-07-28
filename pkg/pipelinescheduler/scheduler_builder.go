@@ -8,8 +8,8 @@ import (
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
-	"github.com/jenkins-x/lighthouse-config/pkg/config"
-	"github.com/jenkins-x/lighthouse-config/pkg/plugins"
+	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/plugins"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
