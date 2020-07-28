@@ -7,8 +7,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
 	prowconfig "github.com/jenkins-x/jx/v2/pkg/prow/config"
-	"github.com/jenkins-x/lighthouse-config/pkg/config"
-	"github.com/jenkins-x/lighthouse-config/pkg/plugins"
+	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/plugins"
 	"github.com/stretchr/testify/assert"
 
 	v1 "k8s.io/api/core/v1"

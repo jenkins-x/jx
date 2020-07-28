@@ -5,7 +5,7 @@ package config
 import (
 	"testing"
 
-	"github.com/jenkins-x/lighthouse-config/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 

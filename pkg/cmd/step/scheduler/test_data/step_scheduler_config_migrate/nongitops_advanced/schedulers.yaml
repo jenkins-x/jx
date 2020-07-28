@@ -16,14 +16,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -262,14 +258,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -504,14 +496,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     lgtm:
       reviewActsAsLgtm: true
       storeTreeHash: false
@@ -754,14 +742,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     lgtm:
       reviewActsAsLgtm: true
       storeTreeHash: false
@@ -1004,14 +988,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -1246,14 +1226,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     periodics:
       entries:
       - agent: ""
@@ -1391,14 +1367,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -1637,14 +1609,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -1883,14 +1851,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -2128,14 +2092,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -2374,14 +2334,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -2620,14 +2576,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -2866,14 +2818,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -3112,14 +3060,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -3358,14 +3302,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -3604,14 +3544,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -3850,14 +3786,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -4096,14 +4028,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -4342,14 +4270,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -4588,14 +4512,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -4834,14 +4754,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -5080,14 +4996,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -5324,14 +5236,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -5570,14 +5478,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -5816,14 +5720,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -6062,14 +5962,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -6308,14 +6204,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -6554,14 +6446,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -6800,14 +6688,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -7046,14 +6930,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -7292,14 +7172,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -7538,14 +7414,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -7784,14 +7656,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -8030,14 +7898,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -8276,14 +8140,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -8520,14 +8380,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -8764,14 +8620,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -9008,14 +8860,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -9239,14 +9087,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -9470,14 +9314,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -9710,14 +9550,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -9954,14 +9790,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -10198,14 +10030,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -10442,14 +10270,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -10686,14 +10510,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -10930,14 +10750,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -11174,14 +10990,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -11414,14 +11226,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -11658,14 +11466,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -11902,14 +11706,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     lgtm:
       reviewActsAsLgtm: true
       storeTreeHash: false
@@ -12274,14 +12074,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -12518,14 +12314,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -12762,14 +12554,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     lgtm:
       reviewActsAsLgtm: true
       storeTreeHash: false
@@ -13245,14 +13033,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -13485,14 +13269,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -13729,14 +13509,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0
@@ -13973,14 +13749,10 @@ items:
       - https://dashboard.infra.jrawlings.co.uk/teams
     - name: jobURLTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
-      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index
-        .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get
-        build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch`
-        whilst connected to the cluster. UI support coming soon. {{end}}'
+      - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
     merger:
       blockerLabel: ""
       maxGoroutines: 0

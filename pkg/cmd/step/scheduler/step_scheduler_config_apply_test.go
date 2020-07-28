@@ -21,7 +21,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/v2/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
-	"github.com/jenkins-x/lighthouse-config/pkg/plugins"
+	"github.com/jenkins-x/lighthouse/pkg/plugins"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
