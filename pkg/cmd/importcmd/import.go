@@ -11,6 +11,7 @@ import (
 	jenkinsio "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/step/create/pr"
 	"github.com/jenkins-x/jx/v2/pkg/maven"
+	"github.com/spf13/viper"
 
 	"github.com/cenkalti/backoff"
 	"github.com/denormal/go-gitignore"
@@ -1269,7 +1270,7 @@ func (options *ImportOptions) skipPathForReplacement(path string, fi os.FileInfo
 	return false, nil
 }
 
-func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
+func replacePlaceholdersInFile(replacer viper.StringReplacer, file string) error {
 	input, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.Logger().Errorf("failed to read file %s: %v", file, err)
@@ -1289,7 +1290,7 @@ func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 	return nil
 }
 
-func replacePlaceholdersInPathBase(replacer *strings.Replacer, path string) error {
+func replacePlaceholdersInPathBase(replacer viper.StringReplacer, path string) error {
 	base := filepath.Base(path)
 	newBase := replacer.Replace(base)
 	if newBase != base {
