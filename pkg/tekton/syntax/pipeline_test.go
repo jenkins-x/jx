@@ -1236,6 +1236,84 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			),
 		},
 		{
+			name: "sidecars",
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(
+					sh.PipelineSidecar(&corev1.Container{
+						Name:  "top-level-sidecar",
+						Image: "top-level/sidecar:tag",
+					}),
+				),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageOptions(
+						sh.StageSidecar(&corev1.Container{
+							Name:  "stage-level-sidecar",
+							Image: "stage-level/sidecar:latest",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "shared-volume",
+									MountPath: "/shared",
+								},
+							},
+						}),
+						sh.StageVolume(&corev1.Volume{
+							Name: "shared-volume",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						}),
+						sh.StageContainerOptions(
+							sh.ContainerVolumeMount("shared-volume", "/mnt/shared"),
+						),
+					),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world"),
+						sh.StepName("A Step With Spaces And Such"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", tb.PipelineNamespace("jx"), tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+				),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", tb.TaskNamespace("jx"), sh.TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("source"))),
+						tb.Step(resolvedGitMergeImage, tb.StepName("setup-builder-home"), tb.StepCommand("/bin/sh", "-c"), tb.StepArgs("[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home"), tb.StepWorkingDir("/workspace/source"),
+							sh.StepVolumeMount("shared-volume", "/mnt/shared"),
+						),
+						tb.Step(resolvedGitMergeImage, tb.StepName("git-merge"),
+							tb.StepCommand("jx"),
+							tb.StepArgs("step", "git", "merge", "--verbose"),
+							tb.StepWorkingDir("/workspace/source"),
+							sh.StepVolumeMount("shared-volume", "/mnt/shared"),
+						),
+						tb.Step("some-image:0.0.1", tb.StepName("a-step-with-spaces-and-such"),
+							tb.StepCommand("/bin/sh", "-c"),
+							tb.StepArgs("echo hello world"),
+							tb.StepWorkingDir("/workspace/source"),
+							sh.StepVolumeMount("shared-volume", "/mnt/shared"),
+						),
+						tb.Sidecar("stage-level-sidecar", "stage-level/sidecar:latest",
+							tb.VolumeMount("shared-volume", "/shared"),
+						),
+						tb.Sidecar("top-level-sidecar", "top-level/sidecar:tag"),
+						tb.TaskVolume("shared-volume", tb.VolumeSource(corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						})),
+					)),
+			},
+			structure: sh.PipelineStructure("somepipeline-1",
+				sh.StructureStage("A Working Stage", sh.StructureStageTaskRef("somepipeline-a-working-stage-1")),
+			),
+		},
+		{
 			name: "volumes",
 			expected: sh.ParsedPipeline(
 				sh.PipelineOptions(
@@ -1906,6 +1984,13 @@ func getOverridesTestVolume() *corev1.Volume {
 	}
 }
 
+func getOverridesTestSidecar() *corev1.Container {
+	return &corev1.Container{
+		Name:  "stage-sidecar",
+		Image: "stage/sidecar:tag",
+	}
+}
+
 func getOverridesTestContainerOptions() *corev1.Container {
 	return &corev1.Container{
 		Resources: corev1.ResourceRequirements{
@@ -1957,6 +2042,45 @@ func TestApplyNonStepOverridesToPipeline(t *testing.T) {
 				),
 				sh.PipelineStage("Another stage",
 					sh.StageOptions(sh.StageVolume(getOverridesTestVolume())),
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "sidecar-on-whole-pipeline",
+			override: &syntax.PipelineOverride{
+				Sidecars: []*corev1.Container{getOverridesTestSidecar()},
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineOptions(sh.PipelineSidecar(getOverridesTestSidecar())),
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("again"))),
+			),
+		},
+		{
+			name: "sidecar-on-single-stage",
+			override: &syntax.PipelineOverride{
+				Stage:    "Another stage",
+				Sidecars: []*corev1.Container{getOverridesTestSidecar()},
+			},
+			expected: sh.ParsedPipeline(
+				sh.PipelineAgent("some-image"),
+				sh.PipelineStage("A Working Stage",
+					sh.StageStep(
+						sh.StepCmd("echo"),
+						sh.StepArg("hello"), sh.StepArg("world")),
+				),
+				sh.PipelineStage("Another stage",
+					sh.StageOptions(sh.StageSidecar(getOverridesTestSidecar())),
 					sh.StageStep(
 						sh.StepCmd("echo"),
 						sh.StepArg("again"))),
@@ -2148,6 +2272,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		sh.PipelineOptions(
 			sh.PipelineOptionsRetry(5),
 			sh.PipelineOptionsTimeout(30, syntax.TimeoutUnitSeconds),
+			sh.PipelineSidecar(&corev1.Container{Name: "my-sidecar", Image: "banana:latest"}),
 			sh.PipelineVolume(&corev1.Volume{Name: "banana"}),
 		),
 		sh.PipelineEnvVar("ANIMAL", "MONKEY"),
@@ -2170,6 +2295,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				sh.StageOptionsUnstash("some-name", ""),
 				sh.StageOptionsTimeout(15, syntax.TimeoutUnitMinutes),
 				sh.StageOptionsRetry(2),
+				sh.StageSidecar(&corev1.Container{Name: "some-sidecar", Image: "some/sidecar:tag"}),
 				sh.StageVolume(&corev1.Volume{Name: "apple"}),
 				sh.StageVolume(&corev1.Volume{Name: "orange"}),
 			),
@@ -2232,6 +2358,10 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				Time: 30,
 				Unit: syntax.TimeoutUnitSeconds,
 			},
+			Sidecars: []*corev1.Container{{
+				Name:  "my-sidecar",
+				Image: "banana:latest",
+			}},
 			Volumes: []*corev1.Volume{{
 				Name: "banana",
 			}},
@@ -2287,6 +2417,10 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							Unit: syntax.TimeoutUnitMinutes,
 						},
 						Retry: 2,
+						Sidecars: []*corev1.Container{{
+							Name:  "some-sidecar",
+							Image: "some/sidecar:tag",
+						}},
 						Volumes: []*corev1.Volume{{
 							Name: "apple",
 						}, {
