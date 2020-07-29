@@ -4,6 +4,7 @@ import (
 	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/jenkins-x/jx/v2/pkg/cloud"
+	aksStorage "github.com/jenkins-x/jx/v2/pkg/cloud/aks/storage"
 	amazonStorage "github.com/jenkins-x/jx/v2/pkg/cloud/amazon/storage"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/gke/storage"
@@ -23,6 +24,8 @@ func NewBucketProvider(requirements *config.RequirementsConfig) buckets.Provider
 		fallthrough
 	case cloud.AWS:
 		return amazonStorage.NewAmazonBucketProvider(requirements)
+	case cloud.AKS:
+		return aksStorage.NewAKSBucketProvider(requirements)
 	default:
 		// we have an implementation for GKE / EKS but not for AKS so we should fall back to default
 		// but we don't have every func implemented

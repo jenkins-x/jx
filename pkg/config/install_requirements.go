@@ -489,6 +489,10 @@ type VeleroConfig struct {
 	Schedule string `json:"schedule" envconfig:"JX_REQUIREMENT_VELERO_SCHEDULE"`
 	// TimeToLive period for backups to be retained
 	TimeToLive string `json:"ttl" envconfig:"JX_REQUIREMENT_VELERO_TTL"`
+	// ResourceGroup for Velero Bucket
+	ResourceGroup string `json:"resourceGroup"`
+	// BucketName for Velero Bucket
+	BucketName string `json:"bucketName"`
 }
 
 // AutoUpdateConfig contains auto update config
