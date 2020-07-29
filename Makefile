@@ -219,5 +219,8 @@ lint: ## Lint the code
 code-generate:
 	./hack/generate.sh
 
+.PHONY: mod
+mod: build ## Would like to have tidy-deps here but that tends to cause problems
+
 include Makefile.docker
 include Makefile.codegen
