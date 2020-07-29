@@ -128,6 +128,7 @@ type RootOptions struct {
 	// like CPU/RAM requests/limits, secrets, ports, etc. Some of these things will end up with native syntax approaches
 	// down the road.
 	ContainerOptions              *corev1.Container   `json:"containerOptions,omitempty"`
+	Sidecars                      []*corev1.Container `json:"sidecars,omitempty"`
 	Volumes                       []*corev1.Volume    `json:"volumes,omitempty"`
 	DistributeParallelAcrossNodes bool                `json:"distributeParallelAcrossNodes,omitempty"`
 	Tolerations                   []corev1.Toleration `json:"tolerations,omitempty"`
@@ -265,15 +266,16 @@ const (
 
 // PipelineOverride allows for overriding named steps, stages, or pipelines in the build pack or default pipeline
 type PipelineOverride struct {
-	Pipeline         string            `json:"pipeline,omitempty"`
-	Stage            string            `json:"stage,omitempty"`
-	Name             string            `json:"name,omitempty"`
-	Step             *Step             `json:"step,omitempty"`
-	Steps            []*Step           `json:"steps,omitempty"`
-	Type             *StepOverrideType `json:"type,omitempty"`
-	Agent            *Agent            `json:"agent,omitempty"`
-	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
-	Volumes          []*corev1.Volume  `json:"volumes,omitempty"`
+	Pipeline         string              `json:"pipeline,omitempty"`
+	Stage            string              `json:"stage,omitempty"`
+	Name             string              `json:"name,omitempty"`
+	Step             *Step               `json:"step,omitempty"`
+	Steps            []*Step             `json:"steps,omitempty"`
+	Type             *StepOverrideType   `json:"type,omitempty"`
+	Agent            *Agent              `json:"agent,omitempty"`
+	ContainerOptions *corev1.Container   `json:"containerOptions,omitempty"`
+	Sidecars         []*corev1.Container `json:"sidecars,omitempty"`
+	Volumes          []*corev1.Volume    `json:"volumes,omitempty"`
 }
 
 var _ apis.Validatable = (*ParsedPipeline)(nil)
@@ -814,6 +816,12 @@ func validateRootOptions(o *RootOptions, volumes []*corev1.Volume, kubeClient ku
 			}
 		}
 
+		for i, s := range o.Sidecars {
+			if err := validateSidecarContainer(s, volumes).ViaFieldIndex("sidecars", i); err != nil {
+				return err
+			}
+		}
+
 		return validateContainerOptions(o.ContainerOptions, volumes).ViaField("containerOptions")
 	}
 
@@ -891,6 +899,37 @@ func validateContainerOptions(c *corev1.Container, volumes []*corev1.Volume) *ap
 			return &apis.FieldError{
 				Message: "TTY cannot be specified in containerOptions",
 				Paths:   []string{"tty"},
+			}
+		}
+		if len(c.VolumeMounts) > 0 {
+			for i, m := range c.VolumeMounts {
+				if !isVolumeMountValid(m, volumes) {
+					fieldErr := &apis.FieldError{
+						Message: fmt.Sprintf("Volume mount name %s not found in volumes for stage or pipeline", m.Name),
+						Paths:   []string{"name"},
+					}
+
+					return fieldErr.ViaFieldIndex("volumeMounts", i)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateSidecarContainer(c *corev1.Container, volumes []*corev1.Volume) *apis.FieldError {
+	if c != nil {
+		if c.Name == "" {
+			return &apis.FieldError{
+				Message: "Name cannot be empty in sidecar",
+				Paths:   []string{"name"},
+			}
+		}
+		if c.Image == "" {
+			return &apis.FieldError{
+				Message: "Image cannot be empty in sidecar",
+				Paths:   []string{"image"},
 			}
 		}
 		if len(c.VolumeMounts) > 0 {
@@ -1412,6 +1451,7 @@ type stageToTaskParams struct {
 	parentAgent          *Agent
 	parentWorkspace      string
 	parentContainer      *corev1.Container
+	parentSidecars       []*corev1.Container
 	parentVolumes        []*corev1.Volume
 	depth                int8
 	enclosingStage       *transformedStage
@@ -1424,6 +1464,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 	}
 
 	stageContainer := &corev1.Container{}
+	var stageSidecars []*corev1.Container
 	var stageVolumes []*corev1.Volume
 
 	if params.stage.Options != nil {
@@ -1437,6 +1478,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 			if o.ContainerOptions != nil {
 				stageContainer = o.ContainerOptions
 			}
+			stageSidecars = o.Sidecars
 			stageVolumes = o.Volumes
 		}
 		if o.Stash != nil {
@@ -1459,6 +1501,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 		}
 		stageContainer = merged
 	}
+	stageSidecars = append(stageSidecars, params.parentSidecars...)
 	stageVolumes = append(stageVolumes, params.parentVolumes...)
 
 	env := scopedEnv(params.stage.GetEnv(), params.parentEnv)
@@ -1513,6 +1556,14 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 
 		t.Spec.Outputs = &tektonv1alpha1.Outputs{
 			Resources: []tektonv1alpha1.TaskResource{*ws},
+		}
+
+		for _, sidecar := range stageSidecars {
+			if sidecar != nil {
+				t.Spec.Sidecars = append(t.Spec.Sidecars, tektonv1beta1.Sidecar{
+					Container: *sidecar,
+				})
+			}
 		}
 
 		// We don't want to dupe volumes for the Task if there are multiple steps
@@ -1576,6 +1627,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 				parentAgent:          agent,
 				parentWorkspace:      *ts.Stage.Options.Workspace,
 				parentContainer:      stageContainer,
+				parentSidecars:       stageSidecars,
 				parentVolumes:        stageVolumes,
 				depth:                params.depth + 1,
 				enclosingStage:       &ts,
@@ -1605,6 +1657,7 @@ func stageToTask(params stageToTaskParams) (*transformedStage, error) {
 				parentAgent:     agent,
 				parentWorkspace: *ts.Stage.Options.Workspace,
 				parentContainer: stageContainer,
+				parentSidecars:  stageSidecars,
 				parentVolumes:   stageVolumes,
 				depth:           params.depth + 1,
 				enclosingStage:  &ts,
@@ -1881,6 +1934,7 @@ func (j *ParsedPipeline) GenerateCRDs(params CRDsFromPipelineParams) (*tektonv1a
 	}
 
 	var parentContainer *corev1.Container
+	var parentSidecars []*corev1.Container
 	var parentVolumes []*corev1.Volume
 
 	baseWorkingDir := j.WorkingDir
@@ -1891,6 +1945,7 @@ func (j *ParsedPipeline) GenerateCRDs(params CRDsFromPipelineParams) (*tektonv1a
 			return nil, nil, nil, errors.New("Retry at top level not yet supported")
 		}
 		parentContainer = o.ContainerOptions
+		parentSidecars = o.Sidecars
 		parentVolumes = o.Volumes
 	}
 
@@ -1943,6 +1998,7 @@ func (j *ParsedPipeline) GenerateCRDs(params CRDsFromPipelineParams) (*tektonv1a
 			parentAgent:          j.Agent,
 			parentWorkspace:      "default",
 			parentContainer:      parentContainer,
+			parentSidecars:       parentSidecars,
 			parentVolumes:        parentVolumes,
 			depth:                0,
 			previousSiblingStage: previousStage,
@@ -2350,6 +2406,12 @@ func ApplyNonStepOverridesToPipeline(pipeline *ParsedPipeline, override *Pipelin
 				}
 			}
 		}
+		if len(override.Sidecars) > 0 {
+			if pipeline.Options == nil {
+				pipeline.Options = &RootOptions{}
+			}
+			pipeline.Options.Sidecars = append(pipeline.Options.Sidecars, override.Sidecars...)
+		}
 		if len(override.Volumes) > 0 {
 			if pipeline.Options == nil {
 				pipeline.Options = &RootOptions{}
@@ -2399,6 +2461,15 @@ func ApplyNonStepOverridesToStage(stage Stage, override *PipelineOverride) Stage
 					stage.Options.ContainerOptions = mergedContainer
 				}
 			}
+		}
+
+		if len(override.Sidecars) > 0 {
+			if stage.Options == nil {
+				stage.Options = &StageOptions{
+					RootOptions: &RootOptions{},
+				}
+			}
+			stage.Options.Sidecars = append(stage.Options.Sidecars, override.Sidecars...)
 		}
 
 		if len(override.Volumes) > 0 {

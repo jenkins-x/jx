@@ -160,6 +160,16 @@ func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 	}
 }
 
+// PipelineSidecar adds a sidecar container to the RootOptions for the pipeline
+func PipelineSidecar(sidecar *corev1.Container) PipelineOptionsOp {
+	return func(options *syntax.RootOptions) {
+		if options.Sidecars == nil {
+			options.Sidecars = []*corev1.Container{}
+		}
+		options.Sidecars = append(options.Sidecars, sidecar)
+	}
+}
+
 // PipelineVolume adds a volume to the RootOptions for the pipeline
 func PipelineVolume(volume *corev1.Volume) PipelineOptionsOp {
 	return func(options *syntax.RootOptions) {
@@ -167,6 +177,19 @@ func PipelineVolume(volume *corev1.Volume) PipelineOptionsOp {
 			options.Volumes = []*corev1.Volume{}
 		}
 		options.Volumes = append(options.Volumes, volume)
+	}
+}
+
+// StageSidecar adds a sidecar to the StageOptions for the stage
+func StageSidecar(sidecar *corev1.Container) StageOptionsOp {
+	return func(options *syntax.StageOptions) {
+		if options.RootOptions == nil {
+			options.RootOptions = &syntax.RootOptions{}
+		}
+		if options.Sidecars == nil {
+			options.Sidecars = []*corev1.Container{}
+		}
+		options.Sidecars = append(options.Sidecars, sidecar)
 	}
 }
 
