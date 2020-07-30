@@ -9,7 +9,7 @@ const (
 	AdminVersion = "0.0.55"
 
 	// ApplicationVersion the version of the jx application plugin
-	ApplicationVersion = "0.0.8"
+	ApplicationVersion = "0.0.12"
 
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.152"
@@ -21,7 +21,7 @@ const (
 	PreviewVersion = "0.0.10"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.47"
+	ProjectVersion = "0.0.49"
 
 	// PromoteVersion the version of the jx promote plugin
 	PromoteVersion = "0.0.56"
