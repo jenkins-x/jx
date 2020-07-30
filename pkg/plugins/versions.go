@@ -17,6 +17,9 @@ const (
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.12"
 
+	// PreviewVersion the version of the jx preview plugin
+	PreviewVersion = "0.0.10"
+
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.0.47"
 
@@ -37,6 +40,7 @@ var (
 		CreateJXPlugin("application", ApplicationVersion),
 		CreateJXPlugin("gitops", GitOpsVersion),
 		CreateJXPlugin("pipeline", PipelineVersion),
+		CreateJXPlugin("preview", PreviewVersion),
 		CreateJXPlugin("project", ProjectVersion),
 		CreateJXPlugin("promote", PromoteVersion),
 		CreateJXPlugin("secret", SecretVersion),
