@@ -69,6 +69,7 @@ func CreatePromotePR(o *pr.StepCreatePrOptions, fn func(string) ([]operations.Ch
 		o = &pr.StepCreatePrOptions{}
 		o.SkipAutoMerge = true
 	}
+	o.Fork = false
 	if o.CommonOptions == nil {
 		f := clients.NewFactory()
 		o.CommonOptions = opts.NewCommonOptionsWithTerm(f, os.Stdin, os.Stdout, os.Stderr)
