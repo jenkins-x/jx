@@ -539,7 +539,7 @@ func (o *PreviewOptions) Run() error {
 
 	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", o.Name)
 	if url != "" {
-		comment += fmt.Sprintf(" [here](%s) ", url)
+		comment += fmt.Sprintf(` <a href="%s" target="_blank">here</a> `, url)
 	}
 
 	pipeline := o.GetJenkinsJobName()
