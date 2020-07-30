@@ -834,8 +834,8 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 
 	provider := factory.NewBucketProvider(requirements)
 
-	if storageEntryConfig.URL == "" {
-		// lets allow the storage bucket to be entered or created
+	if storageEntryConfig.URL == "" && !requirements.Terraform.StorageBucketsCreated {
+		// lets allow the storage bucket to be entered or created so long as terraform hasn't indicated these are under its control
 		if o.BatchMode {
 			log.Logger().Warnf("No URL provided for storage: %s", name)
 			return nil
@@ -872,6 +872,8 @@ func (o *StepVerifyPreInstallOptions) verifyStorageEntry(requirements *config.Re
 				return errors.Wrapf(err, "failed to save changes to file: %s", requirementsFileName)
 			}
 		}
+	} else if storageEntryConfig.URL == "" && requirements.Terraform.StorageBucketsCreated {
+		return errors.Errorf("If storage is enabled for %s and terraform.storageBucketsCreated = true then a storage URL must be specified", name)
 	}
 
 	if storageEntryConfig.URL != "" {

@@ -189,7 +189,7 @@ func (o *RequirementsOptions) applyDefaults() error {
 		r.Kaniko = o.Flags.Kaniko
 	}
 	if o.FlagChanged("terraform") {
-		r.Terraform = o.Flags.Terraform
+		r.Terraform.TerraformProvisioned = o.Flags.Terraform
 	}
 	if o.FlagChanged("vault-disable-url-discover") {
 		r.Vault.DisableURLDiscovery = o.Flags.VaultDisableURLDiscover

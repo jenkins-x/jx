@@ -489,6 +489,10 @@ type VeleroConfig struct {
 	Schedule string `json:"schedule" envconfig:"JX_REQUIREMENT_VELERO_SCHEDULE"`
 	// TimeToLive period for backups to be retained
 	TimeToLive string `json:"ttl" envconfig:"JX_REQUIREMENT_VELERO_TTL"`
+	// ResourceGroup for Velero Bucket
+	ResourceGroup string `json:"resourceGroup,omitempty"`
+	// BucketName for Velero Bucket
+	BucketName string `json:"bucketName,omitempty"`
 }
 
 // AutoUpdateConfig contains auto update config
@@ -513,6 +517,14 @@ type GithubAppConfig struct {
 type RequirementsValues struct {
 	// RequirementsConfig contains the logical installation requirements
 	RequirementsConfig *RequirementsConfig `json:"jxRequirements,omitempty"`
+}
+
+// TerraformConfig houses flags for Terraform to indicate what has occurred during terraformed clusters
+type TerraformConfig struct {
+	// TerraformProvisioned indicates if cluster provisioned via Terraform
+	TerraformProvisioned bool `json:"terraformProvisioned,omitempty"`
+	// StorageBucketsCreated indicates if storage buckets been created via Terraform
+	StorageBucketsCreated bool `json:"storageBucketsCreated,omitempty"`
 }
 
 // RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
@@ -546,8 +558,8 @@ type RequirementsConfig struct {
 	SecretStorage SecretStorageType `json:"secretStorage,omitempty" envconfig:"JX_REQUIREMENT_SECRET_STORAGE_TYPE"`
 	// Storage contains storage requirements
 	Storage StorageConfig `json:"storage"`
-	// Terraform specifies if  we are managing the kubernetes cluster and cloud resources with Terraform
-	Terraform bool `json:"terraform,omitempty"`
+	// Terraform specifies if we are managing the kubernetes cluster and cloud resources with Terraform and other Terraform control flags
+	Terraform TerraformConfig `json:"terraform,omitempty"`
 	// Vault the configuration for vault
 	Vault VaultConfig `json:"vault,omitempty"`
 	// Velero the configuration for running velero for backing up the cluster resources
@@ -811,7 +823,7 @@ func (c *RequirementsConfig) IsLazyCreateSecrets(flag string) (bool, error) {
 		}
 	} else {
 		// lets default from the requirements
-		if !c.Terraform {
+		if !c.Terraform.TerraformProvisioned {
 			return true, nil
 		}
 	}
