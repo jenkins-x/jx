@@ -10,4 +10,4 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline) |  | [0.0.12](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.12) | 
 [jenkins-x/jx-application](https://github.com/jenkins-x/jx-application) |  | [0.0.10](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.10) | 
 [jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops) |  | [0.0.152](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.152) | 
-[jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview) |  | [0.0.8](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.8) | 
+[jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview) |  | [0.0.10](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.10) | 
