@@ -1,6 +1,6 @@
 image:
-  repository: gcr.io/jenkinsxio/jx
-  tag: 2.0.399
+  repository: gcr.io/jenkins-x-infra/jx
+  tag: 2.1.121
   pullPolicy: IfNotPresent
 
 replicaCount: 1
