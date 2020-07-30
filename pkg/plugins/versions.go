@@ -9,7 +9,7 @@ const (
 	AdminVersion = "0.0.55"
 
 	// ApplicationVersion the version of the jx application plugin
-	ApplicationVersion = "0.0.10"
+	ApplicationVersion = "0.0.12"
 
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.152"
