@@ -22,7 +22,6 @@ Check out [how to install jx](https://jenkins-x.io/docs/getting-started/setup/in
 Please check out the [Getting Started Guide](https://jenkins-x.io/docs/getting-started/) on how to:
 
 * [create new Kubernetes clusters with Jenkins X](https://jenkins-x.io/docs/getting-started/setup/create-cluster/)
-* [install Jenkins X on existing Kubernetes clusters](https://jenkins-x.io/docs/install-setup/installing/boot/)
 
 Then [what to do next when you have Jenkins X installed](https://jenkins-x.io/docs/create-project/).
 
