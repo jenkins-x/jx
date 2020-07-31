@@ -15,7 +15,7 @@ const (
 	GitOpsVersion = "0.0.158"
 
 	// PipelineVersion the version of the jx pipeline plugin
-	PipelineVersion = "0.0.12"
+	PipelineVersion = "0.0.14"
 
 	// PreviewVersion the version of the jx preview plugin
 	PreviewVersion = "0.0.24"
