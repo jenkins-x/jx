@@ -881,8 +881,8 @@ github.com/jenkins-x/go-scm v1.5.141 h1:sd0A41HYU6i9Kfl5/jH3ldgq4VkSiwuW5+KwvRxT
 github.com/jenkins-x/go-scm v1.5.141/go.mod h1:PCT338UhP/pQ0IeEeMEf/hoLTYKcH7qjGEKd7jPkeYg=
 github.com/jenkins-x/go-scm v1.5.150 h1:KTeXDW1PusqzCoZ2iWJWA+JILnaxHbGRl/pHgebXmx4=
 github.com/jenkins-x/go-scm v1.5.150/go.mod h1:PCT338UhP/pQ0IeEeMEf/hoLTYKcH7qjGEKd7jPkeYg=
-github.com/jenkins-x/go-scm v1.5.152 h1:Zn/5ZOpFJMkCe0l6e4+my1E+uOBkkyRsVdWAaHn29Xg=
-github.com/jenkins-x/go-scm v1.5.152/go.mod h1:PCT338UhP/pQ0IeEeMEf/hoLTYKcH7qjGEKd7jPkeYg=
+github.com/jenkins-x/go-scm v1.5.153 h1:FJmGMbCkByuOMNCcCyPa7gMLeqNyuQQB3azBVmiTdMI=
+github.com/jenkins-x/go-scm v1.5.153/go.mod h1:PCT338UhP/pQ0IeEeMEf/hoLTYKcH7qjGEKd7jPkeYg=
 github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314 h1:kyBMx/ucSV92S+umX/V6DDaPNynlFFOM9MGJWApltoU=
 github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314/go.mod h1:C6j5HgwlHGjRU27W4XCs6jXksqYFo8OdBu+p44jqQeM=
 github.com/jenkins-x/jx-api v0.0.11 h1:MGLiiSj9VmlOfpSjzDRxq14LAwWgyCRvBHOgRZaCm94=
@@ -898,8 +898,8 @@ github.com/jenkins-x/lighthouse v0.0.6/go.mod h1:T1esqDSkYVY5J9K2s/BKa0c47Jgw8W2
 github.com/jenkins-x/lighthouse v0.0.692/go.mod h1:VGr4O2XStvrLzH4LeCLJk7PCZjLNYtj4yTWMKr3RjIU=
 github.com/jenkins-x/lighthouse v0.0.693 h1:wG9wEOA4yehzNVCBuSlWjhDD48HphiBUnibz9saEvWM=
 github.com/jenkins-x/lighthouse v0.0.693/go.mod h1:ZdPDSnkMwwsEG1+XqLCj/xTgWTIxiLPa/+/4cVHhzQ0=
-github.com/jenkins-x/lighthouse v0.0.698 h1:rH8kxGMnq2EdHsGQcNwobk+l/3RVSHMSeqpWxi+Kqf8=
-github.com/jenkins-x/lighthouse v0.0.698/go.mod h1:VsyKO3U2IE8TPAulMoxProMuJJi9Y8e+vaJ0bgWYgAg=
+github.com/jenkins-x/lighthouse v0.0.699 h1:p557UiIpM2kuq+KRTZBBwBBZYlTJa39KE4XUhFne/+Q=
+github.com/jenkins-x/lighthouse v0.0.699/go.mod h1:ACbJ377lNyRPkrXvDa30y2MSCCD7fKEX3HS8gRHCfRo=
 github.com/jenkins-x/lighthouse-config v0.0.4 h1:P581lKt4aU2flsFLajPIGx22Si3ow/4KLwAuwWIsgB4=
 github.com/jenkins-x/lighthouse-config v0.0.4/go.mod h1:4ekc+gfCMs4WWKEWhElH2UWOXUMZJkEg9hyM1nPfuys=
 github.com/jenkins-x/lighthouse-config v0.0.5 h1:RyfM6kHs1/8Hc4uRhHd4kvSvRJhbWi3Fm7tlf5JYAFQ=
