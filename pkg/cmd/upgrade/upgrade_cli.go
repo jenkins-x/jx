@@ -23,11 +23,11 @@ var (
 
 		The exact version used for the version stream is stored in the Team Settings on the 'dev' Environment CRD.
 
-		For more information on Version Streams see: [https://jenkins-x.io/docs/concepts/version-stream/](https://jenkins-x.io/docs/concepts/version-stream/)
+		For more information on Version Streams see: [https://jenkins-x.io/about/concepts/version-stream/](https://jenkins-x.io/about/concepts/version-stream/)
 `)
 
 	upgradeCLIExample = templates.Examples(`
-		# Upgrades the Jenkins X CLI tools 
+		# Upgrades the Jenkins X CLI tools
 		jx upgrade cli
 	`)
 )
