@@ -2,6 +2,7 @@ blunderbuss: {}
 cat: {}
 cherry_pick_unapproved: {}
 config_updater:
+  gzip: false
   maps:
     env/prow/config.yaml:
       name: config
