@@ -1,7 +1,8 @@
 blunderbuss: {}
 cat: {}
 cherry_pick_unapproved: {}
-config_updater: {}
+config_updater:
+  gzip: false
 heart: {}
 label:
   additional_labels: null
