@@ -57,5 +57,5 @@ dependencies:
   owner: jenkins-x
   repo: jx-test
   url: https://github.com/jenkins-x/jx-test
-  version: 0.0.10
-  versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.10
+  version: 0.0.12
+  versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.12
