@@ -196,9 +196,6 @@ deck:
       "\\*.log": ["buildlog"]
       #"artifacts/junit.*\\.xml": ["junit"] # Remember to escape your '\' in yaml strings!
 gerrit: {}
-owners_dir_blacklist:
-  default: null
-  repos: null
 plank:
   job_url_prefix: 'https://dashboard.infra.jrawlings.co.uk/teams'
   report_template: '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
