@@ -20,9 +20,6 @@ deck:
 gerrit: {}
 github:
   LinkURL: null
-owners_dir_blacklist:
-  default: null
-  repos: null
 plank: {}
 pod_namespace: jx
 postsubmits:
