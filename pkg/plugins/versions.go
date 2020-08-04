@@ -29,6 +29,9 @@ const (
 	// SecretVersion the version of the jx secret plugin
 	SecretVersion = "0.0.44"
 
+	// TestVersion the version of the jx test plugin
+	TestVersion = "0.0.8"
+
 	// VerifyVersion the version of the jx verify plugin
 	VerifyVersion = "0.0.12"
 )
@@ -44,6 +47,7 @@ var (
 		CreateJXPlugin("project", ProjectVersion),
 		CreateJXPlugin("promote", PromoteVersion),
 		CreateJXPlugin("secret", SecretVersion),
+		CreateJXPlugin("test", TestVersion),
 		CreateJXPlugin("verify", VerifyVersion),
 	}
 )
