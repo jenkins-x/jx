@@ -32,7 +32,7 @@ var (
 		jx step git close --org https://github.com/jenkins-x --org https://github.com/jenkins-x
 
 		# Close unused issue trackers, wikis and projects for an organization
-		jx step git close --org https://github.com/jenkins-x --whitelist jenkins-x/jx
+		jx step git close --org https://github.com/jenkins-x --include jenkins-x/jx
 
 `)
 )
