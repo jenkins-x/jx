@@ -40,8 +40,8 @@ const KustomizeVersion = "3.5.1"
 // GlooVersion binary version to use
 const GlooVersion = "1.3.23"
 
-// GlobalBinaryPathWhitelist binaries that require to be on the path but do not need to exist in JX_HOME/bin
-var GlobalBinaryPathWhitelist = []string{
+// GlobalBinaryPathAllowlist binaries that require to be on the path but do not need to exist in JX_HOME/bin
+var GlobalBinaryPathAllowlist = []string{
 	"az",
 	"gcloud",
 	"oc",

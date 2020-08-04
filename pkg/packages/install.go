@@ -187,7 +187,7 @@ func ShouldInstallBinary(name string) (bool, error) {
 		return download, errors.Wrapf(err, "unable to find JXBinLocation at %s", binDir)
 	}
 
-	if util.Contains(GlobalBinaryPathWhitelist, name) {
+	if util.Contains(GlobalBinaryPathAllowlist, name) {
 		_, err = exec.LookPath(fileName)
 		if err != nil {
 			log.Logger().Warnf("%s is not available on your PATH", util.ColorInfo(fileName))
