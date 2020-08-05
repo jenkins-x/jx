@@ -59,3 +59,9 @@ dependencies:
   url: https://github.com/jenkins-x/jx-test
   version: 0.0.16
   versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.16
+- host: github.com
+  owner: jenkins-x
+  repo: jxl-base-image
+  url: https://github.com/jenkins-x/jxl-base-image
+  version: 0.0.61
+  versionURL: ""
