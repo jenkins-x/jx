@@ -237,7 +237,17 @@ func UpdateDependencyMatrix(dir string, update *v1.DependencyUpdate) error {
 	if err != nil {
 		return errors.Wrapf(err, "writing %s", path)
 	}
-	err = GenerateMarkdownDependencyMatrix(filepath.Join(dir, DependencyMatrixDirName, "matrix.md"), dependencyMatrix)
+
+	// lets default to README.md unless we already have a matrix.md file
+	markdownFile := filepath.Join(dir, DependencyMatrixDirName, "matrix.md")
+	exists, err := util.FileExists(markdownFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if file exists %s", markdownFile)
+	}
+	if !exists {
+		markdownFile = filepath.Join(dir, DependencyMatrixDirName, "README.md")
+	}
+	err = GenerateMarkdownDependencyMatrix(markdownFile, dependencyMatrix)
 	if err != nil {
 		return errors.WithStack(err)
 	}
