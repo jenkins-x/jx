@@ -19,12 +19,15 @@ import (
 )
 
 const (
-	// DependencyMatrixDirName is the name of the directory in which the dependency matrix is stored in git
-	DependencyMatrixDirName = "dependency-matrix"
 	// DependencyMatrixYamlFileName is the name of file in which the dependency matrix will be stored
 	DependencyMatrixYamlFileName = "matrix.yaml"
 	// DependencyMatrixAssetName is the name of the asset when the dependency matrix is added to the release on the git provider
 	DependencyMatrixAssetName = "dependency-matrix.yaml"
+)
+
+var (
+	// DependencyMatrixDirName is the name of the directory in which the dependency matrix is stored in git
+	DependencyMatrixDirName = "dependency-matrix"
 )
 
 // DependencyMatrix is the dependency matrix for a git repo
