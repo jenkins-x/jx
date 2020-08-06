@@ -15,8 +15,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-promote
   url: https://github.com/jenkins-x/jx-promote
-  version: 0.0.74
-  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.74
+  version: 0.0.76
+  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.76
 - host: github.com
   owner: jenkins-x
   repo: jx-project
@@ -57,8 +57,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-test
   url: https://github.com/jenkins-x/jx-test
-  version: 0.0.16
-  versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.16
+  version: 0.0.18
+  versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.18
 - host: github.com
   owner: jenkins-x
   repo: jxl-base-image
