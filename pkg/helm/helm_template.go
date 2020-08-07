@@ -284,7 +284,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	helmPrePhase := "pre-install"
 	helmPostPhase := "post-install"
 	wait := true
-	create := true
+	create := false
 	force := true
 
 	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create, force)
