@@ -61,11 +61,7 @@ func (o *StatusOptions) Run() error {
 
 	client, namespace, err := o.KubeClientAndNamespace()
 	if err != nil {
-
 		log.Logger().Warnf("Unable to connect to Kubernetes cluster -  is one running ?")
-		log.Logger().Warnf("you could try: jx create cluster - e.g: %s", create.CreateClusterExample)
-		log.Logger().Warnf(create.CreateClusterLong)
-
 		return err
 	}
 

@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/cmd/create/vault"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/v2/pkg/cmd/importcmd"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/v2/pkg/cmd/opts"
@@ -61,7 +62,6 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddon(commonOpts))
 	cmd.AddCommand(NewCmdCreateBranchPattern(commonOpts))
 	cmd.AddCommand(NewCmdCreateChat(commonOpts))
-	cmd.AddCommand(NewCmdCreateCluster(commonOpts))
 	cmd.AddCommand(NewCmdCreateDevPod(commonOpts))
 	cmd.AddCommand(NewCmdCreateDockerAuth(commonOpts))
 	cmd.AddCommand(NewCmdCreateDocs(commonOpts))
@@ -106,4 +106,17 @@ func (o *CreateProjectOptions) addCreateAppFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.OutDir, opts.OptionOutputDir, "o", "", "Directory to output the project to. Defaults to the current directory")
 
 	o.AddImportFlags(cmd, true)
+}
+
+// AddLabel adds the given label key and value to the label string
+func AddLabel(labels string, name string, value string) string {
+	username := util.SanitizeLabel(value)
+	if username != "" {
+		sep := ""
+		if labels != "" {
+			sep = ","
+		}
+		labels += sep + util.SanitizeLabel(name) + "=" + username
+	}
+	return labels
 }

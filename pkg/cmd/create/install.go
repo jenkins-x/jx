@@ -159,8 +159,12 @@ type Secrets struct {
 }
 
 const (
-	JX_GIT_TOKEN = "JX_GIT_TOKEN" // #nosec
-	JX_GIT_USER  = "JX_GIT_USER"
+	// DefaultIBMRepoURL is the url of the default helm IBM repo
+	DefaultIBMRepoURL = "https://registry.bluemix.net/helm/ibm"
+	// JxGitToken is the environment variable storing git token
+	JxGitToken = "JX_GIT_TOKEN" // #nosec
+	// JxGitUser is the environment variable storing git username
+	JxGitUser = "JX_GIT_USER"
 
 	ServerlessJenkins = "Serverless Jenkins X Pipelines with Tekton"
 
@@ -1283,14 +1287,14 @@ func (options *InstallOptions) configureGitAuth() error {
 	gitServer := options.GitRepositoryOptions.ServerURL
 	gitAPIToken := options.GitRepositoryOptions.ApiToken
 	if gitUsername == "" {
-		gitUsernameEnv := os.Getenv(JX_GIT_USER)
+		gitUsernameEnv := os.Getenv(JxGitUser)
 		if gitUsernameEnv != "" {
 			gitUsername = gitUsernameEnv
 		}
 	}
 
 	if gitAPIToken == "" {
-		gitAPITokenEnv := os.Getenv(JX_GIT_TOKEN)
+		gitAPITokenEnv := os.Getenv(JxGitToken)
 		if gitAPITokenEnv != "" {
 			gitAPIToken = gitAPITokenEnv
 		}
@@ -1962,7 +1966,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	case cloud.IKS:
-		_, err := options.AddHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
+		_, err := options.AddHelmBinaryRepoIfMissing(DefaultIBMRepoURL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
 		}
@@ -3357,23 +3361,6 @@ func (options *InstallOptions) setValuesFileValue(fileName string, key string, v
 	err = ioutil.WriteFile(fileName, []byte(text), util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to save updated helm values YAML file %s", fileName)
-	}
-	return nil
-}
-
-// validateClusterName checks for compliance of a user supplied
-// cluster name against GKE's rules for these names.
-func validateClusterName(clustername string) error {
-	// Check for length greater than 27.
-	if len(clustername) > maxGKEClusterNameLength {
-		err := fmt.Errorf("cluster name %s is greater than the maximum %d characters", clustername, maxGKEClusterNameLength)
-		return err
-	}
-	// Now we need only make sure that clustername is limited to
-	// lowercase alphanumerics and dashes.
-	if util.DisallowedLabelCharacters.MatchString(clustername) {
-		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
-		return err
 	}
 	return nil
 }

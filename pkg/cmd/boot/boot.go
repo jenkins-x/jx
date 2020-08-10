@@ -63,9 +63,7 @@ var (
 `)
 
 	bootExample = templates.Examples(`
-		# create a kubernetes cluster via Terraform or via jx
-		jx create cluster gke --skip-installation
-
+		# create a kubernetes cluster via Terraform 
 		# now lets boot up Jenkins X installing/upgrading whatever is needed
 		jx boot
 
@@ -587,14 +585,12 @@ func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig
 func (o *BootOptions) verifyClusterConnection() error {
 	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
-		return errors.Wrapf(err, "Unable to get current kube client/namespace  You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
-			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
+		return errors.Wrap(err, "Unable to get current kube client/namespace  You are not currently connected to a cluster, please connect to the cluster that you intend to")
 	}
 
 	_, err = client.CoreV1().Pods(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "Unable to list pods. You are not currently connected to a cluster, please connect to the cluster that you intend to %s\n"+
-			"Alternatively create a new cluster using %s", util.ColorInfo("jx boot"), util.ColorInfo("jx create cluster"))
+		return errors.Wrap(err, "Unable to list pods. You are not currently connected to a cluster, please connect to the cluster that you intend to")
 	}
 
 	return nil

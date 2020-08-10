@@ -105,7 +105,7 @@ func (o *EditAddonOptions) Run() error {
 		}
 		config.Enabled = value
 	} else {
-		config.Enabled, err = util.Confirm("Enable addon "+o.Name, config.Enabled, "If an addon is enabled it is installed when using 'jx create cluster' or 'jx install'", o.GetIOFileHandles())
+		config.Enabled, err = util.Confirm("Enable addon "+o.Name, config.Enabled, "If an addon is enabled it is installed when using 'jx install'", o.GetIOFileHandles())
 		if err != nil {
 			return err
 		}
