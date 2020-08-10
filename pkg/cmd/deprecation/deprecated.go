@@ -43,9 +43,57 @@ var deprecatedCommands = map[string]deprecationInfo{
 		date: "Sep 1 2020",
 		info: "This commands will have no replacement.",
 	},
-	"create addon kubeless": {
-		replacement: "jx add app jx-app-kubeless",
+	"create addon": {
 		date:        "Sep 1 2020",
+		replacement: "jx add app",
+	},
+	"create addon ambassador": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-ambassador",
+	},
+	"create addon anchore": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-anchore",
+	},
+	"create addon envctl": {
+		date: "Sep 1 2020",
+		info: "This commands will have no replacement.",
+	},
+	"create addon flagger": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-flagger",
+	},
+	"create addon gloo": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-gloo",
+	},
+	"create addon ingctl": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-ingress",
+	},
+	"create addon istio": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-istio",
+	},
+	"create addon kubeless": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-kubeless",
+	},
+	"create addon owasp-zap": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-owasp-zap",
+	},
+	"create addon pipeline-events": {
+		date: "Sep 1 2020",
+		info: "This commands will have no replacement.",
+	},
+	"create addon prometheus": {
+		date:        "Sep 1 2020",
+		replacement: "jx add app jx-app-prometheus",
+	},
+	"create addon prow": {
+		date: "Sep 1 2020",
+		info: "This commands will have no replacement.",
 	},
 }
 
