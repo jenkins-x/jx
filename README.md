@@ -25,7 +25,7 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 * [jx application](https://github.com/jenkins-x/jx-application/blob/master/docs/cmd/jx-application.md) for viewing applications in your environments
 * [jx gitops](https://github.com/jenkins-x/jx-gitops/blob/master/docs/cmd/jx-gitops.md) a set of commands used inside pipelines for modifying helm charts, kpt files, using kustomise or modifying kubernetes resources for GitOps
 * [jx pipeline](https://github.com/jenkins-x/jx-pipeline/blob/master/docs/cmd/jx-pipeline.md#jx-pipeline) a command for working with Jenkins X and Tekton Pipelines
-* [jx preview](https://github.com/jenkins-x/jx-preview/blob/master/docs/cmd/jx-preview.md#jx-preview) a command for creating Preview Environments
+* [jx preview](https://github.com/jenkins-x/jx-preview/blob/master/docs/cmd/preview.md#preview) a command for creating Preview Environments
 * [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-promote.md#jx-promote) a command for promoting a new version of an application to an Environment
 * [jx project](https://github.com/jenkins-x/jx-project/blob/master/docs/cmd/project.md) a set of commands for importing projects or creating new projects from quickstarts or wizards
 * [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
