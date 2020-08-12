@@ -56,7 +56,7 @@ var (
 	CreateClusterLong = templates.LongDesc(`
 		This command creates a new Kubernetes cluster, installing required local dependencies and provisions the Jenkins X platform
 
-		You can see a demo of this command here: [https://jenkins-x.io/demos/create_cluster/](https://jenkins-x.io/demos/create_cluster/)
+		You can see a demo of this command here: [https://jenkins-x.io/demos/create_cluster/](https://jenkins-x.io/docs/resources/demos-talks-posts/create_cluster/)
 
 		%s
 
