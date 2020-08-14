@@ -1,4 +1,4 @@
-FROM gcr.io/jenkinsxio-labs-private/jxl-base:0.0.61
+FROM gcr.io/jenkinsxio-labs-private/jx-cli-base:0.0.3
 
 COPY ./build/linux/jx /usr/bin/jx
 
