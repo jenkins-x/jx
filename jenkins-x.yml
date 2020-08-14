@@ -51,5 +51,5 @@ pipelineConfig:
                 command: make goreleaser
                 image: gcr.io/jenkinsxio-labs/go-releaser:0.0.18
               - name: promote-release
-                command: ./promote/main
+                command: ./promote.sh
                 dir: /workspace/source
