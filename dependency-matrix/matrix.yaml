@@ -65,3 +65,9 @@ dependencies:
   url: https://github.com/jenkins-x/jxl-base-image
   version: 0.0.61
   versionURL: ""
+- host: github.com
+  owner: jenkins-x
+  repo: jx-cli-base-image
+  url: https://github.com/jenkins-x/jx-cli-base-image
+  version: 0.0.3
+  versionURL: ""
