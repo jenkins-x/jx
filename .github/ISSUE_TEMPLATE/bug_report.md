@@ -1,3 +1,8 @@
+---
+name: Bug report
+about: File a bug report
+---
+
 ### Summary
 
 ### Steps to reproduce the behavior
