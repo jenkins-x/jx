@@ -2,6 +2,7 @@ package namespace
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
@@ -32,6 +33,7 @@ type Options struct {
 	Input      input.Interface
 	Args       []string
 	Create     bool
+	QuiteMode  bool
 	BatchMode  bool
 }
 
@@ -69,6 +71,7 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 
 	cmd.Flags().BoolVarP(&options.Create, "create", "c", false, "Creates the specified namespace if it does not exist")
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Enables batch mode")
+	cmd.Flags().BoolVarP(&options.QuiteMode, "quiet", "q", false, "Do not fail if the namespace does not exist")
 	return cmd, options
 }
 
@@ -100,7 +103,7 @@ func (o *Options) Run() error {
 
 	info := termcolor.ColorInfo
 	if ns != "" && ns != currentNS {
-		ctx, err := changeNamespace(client, cfg, pathOptions, ns, o.Create)
+		ctx, err := changeNamespace(client, cfg, pathOptions, ns, o.Create, o.QuiteMode)
 		if err != nil {
 			return err
 		}
@@ -133,12 +136,12 @@ func namespace(o *Options) string {
 	return ns
 }
 
-func changeNamespace(client kubernetes.Interface, config *api.Config, pathOptions clientcmd.ConfigAccess, ns string, create bool) (*api.Context, error) {
+func changeNamespace(client kubernetes.Interface, config *api.Config, pathOptions clientcmd.ConfigAccess, ns string, create, quietMode bool) (*api.Context, error) {
 	_, err := client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != nil {
 		switch err.(type) {
 		case *apierrors.StatusError:
-			err = handleStatusError(err, client, ns, create)
+			err = handleStatusError(err, client, ns, create, quietMode)
 			if err != nil {
 				return nil, err
 			}
@@ -163,12 +166,19 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 	return ctx, nil
 }
 
-func handleStatusError(err error, client kubernetes.Interface, ns string, create bool) error {
+func handleStatusError(err error, client kubernetes.Interface, ns string, create, quietMode bool) error {
 	statusErr, _ := err.(*apierrors.StatusError)
-	if statusErr.Status().Reason == metav1.StatusReasonNotFound && create {
-		err = createNamespace(client, ns)
-		if err != nil {
-			return err
+	if statusErr.Status().Reason == metav1.StatusReasonNotFound {
+		if quietMode {
+			log.Logger().Infof("namespace %s does not exist yet", ns)
+			os.Exit(0)
+			return nil
+		}
+		if create {
+			err = createNamespace(client, ns)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		return err
