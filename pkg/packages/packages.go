@@ -23,7 +23,7 @@ const IBMCloudVersion = "0.10.1"
 const IamAuthenticatorAwsVersion = "1.12.7"
 
 // EksCtlVersion binary version to use
-const EksCtlVersion = "0.11.1"
+const EksCtlVersion = "0.25.0"
 
 // KubectlVersion binary version to use
 const KubectlVersion = "1.16.5"
