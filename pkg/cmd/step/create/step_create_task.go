@@ -309,6 +309,13 @@ func (o *StepCreateTaskOptions) Run() error {
 
 	pipelineName := tekton.PipelineResourceNameFromGitInfo(o.GitInfo, o.Branch, o.Context, tekton.BuildPipeline.String())
 
+	if o.KanikoFlags == "" {
+		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
+		if err != nil {
+			return fmt.Errorf("could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
+		}
+		o.KanikoFlags = data["kaniko.flags"]
+	}
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {
 		return err
@@ -504,13 +511,6 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		o.KanikoSecretMount = kanikoSecretMount
 	}
 
-	if o.KanikoFlags == "" {
-		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
-		if err != nil {
-			return nil, fmt.Errorf("could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
-		}
-		o.KanikoFlags = data["kaniko.flags"]
-	}
 	if o.DockerRegistry == "" && !o.InterpretMode {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
