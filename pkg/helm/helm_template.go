@@ -373,6 +373,15 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	helmCrdPhase := "crd-install"
 	helmPrePhase := "pre-upgrade"
 	helmPostPhase := "post-upgrade"
+
+	// Hack helm hooks
+	if len(MatchingHooks(helmHooks, "post-install", "")) > 0 && len(MatchingHooks(helmHooks, helmPostPhase, "")) == 0 {
+		helmPostPhase = "post-install"
+		if len(MatchingHooks(helmHooks, "pre-install", "")) > 0 && len(MatchingHooks(helmHooks, helmPrePhase, "")) == 0 {
+			helmPrePhase = "pre-install"
+		}
+	}
+
 	create := false
 
 	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create, force)
