@@ -288,10 +288,11 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 		path, err := pluginHandler.Lookup(commandName, pluginBinDir)
 		if err != nil || path == "" {
 			// lets see if we have a local binary on the PATH
-			path := FindPluginBinary(pluginBinDir, commandName)
+			path = FindPluginBinary(pluginBinDir, commandName)
 			if path == "" {
 				// lets use the downloaded plugin instead
-				for _, p := range plugins.Plugins {
+				for i := range plugins.Plugins {
+					p := plugins.Plugins[i]
 					if p.Spec.Name == commandName {
 						path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
 						if err != nil {
