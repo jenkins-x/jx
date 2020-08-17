@@ -118,6 +118,7 @@ type StepCreateTaskOptions struct {
 	ProjectID           string
 	DockerRegistry      string
 	DockerRegistryOrg   string
+	KanikoFlags         string
 	AdditionalEnvVars   map[string]string
 	PodTemplates        map[string]*corev1.Pod
 	UseBranchAsRevision bool
@@ -219,6 +220,7 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
 	cmd.Flags().StringVarP(&o.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&o.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
+	cmd.Flags().StringVarP(&o.KanikoFlags, "kaniko-flags", "", "", "Optional flags to pass to kaniko builds; such as to indicate --insecure docker registry being used")
 	cmd.Flags().DurationVarP(&o.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 }
 
@@ -502,6 +504,13 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		o.KanikoSecretMount = kanikoSecretMount
 	}
 
+	if o.KanikoFlags == "" {
+		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
+		if err != nil {
+			return nil, fmt.Errorf("could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
+		}
+		o.KanikoFlags = data["kaniko.flags"]
+	}
 	if o.DockerRegistry == "" && !o.InterpretMode {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
@@ -879,6 +888,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY_ORG",
 			Value: o.DockerRegistryOrg,
+		})
+	}
+	if kube.GetSliceEnvVar(envVars, "KANIKO_FLAGS") == nil && o.KanikoFlags != "" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "KANIKO_FLAGS",
+			Value: o.KanikoFlags,
 		})
 	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
