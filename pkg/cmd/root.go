@@ -21,7 +21,9 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/pkg/homedir"
 	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -285,8 +287,22 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 		commandName := fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-"))
 		path, err := pluginHandler.Lookup(commandName, pluginBinDir)
 		if err != nil || path == "" {
-			// lets see if we have previously downloaded this binary plugin
-			path = FindPluginBinary(pluginBinDir, commandName)
+			// lets see if we have a local binary on the PATH
+			path := FindPluginBinary(pluginBinDir, commandName)
+			if path == "" {
+				// lets use the downloaded plugin instead
+				for _, p := range plugins.Plugins {
+					if p.Spec.Name == commandName {
+						path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
+						if err != nil {
+							return errors.Wrapf(err, "failed to install binary plugin %s version %s to %s", commandName, p.Spec.Version, pluginBinDir)
+						}
+						if path != "" {
+							break
+						}
+					}
+				}
+			}
 			if path != "" {
 				foundBinaryPath = path
 				break
@@ -309,10 +325,13 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 		return nil
 	}
 
+	nextArgs := cmdArgs[len(remainingArgs):]
+	log.Logger().Debugf("using the plugin command: %s", termcolor.ColorInfo(foundBinaryPath+" "+strings.Join(nextArgs, " ")))
+
 	// invoke cmd binary relaying the current environment and args given
 	// remainingArgs will always have at least one element.
-	// execve will make remainingArgs[0] the "binary name".
-	if err := pluginHandler.Execute(foundBinaryPath, append([]string{foundBinaryPath}, cmdArgs[len(remainingArgs):]...), os.Environ()); err != nil {
+	// execute will make remainingArgs[0] the "binary name".
+	if err := pluginHandler.Execute(foundBinaryPath, append([]string{foundBinaryPath}, nextArgs...), os.Environ()); err != nil {
 		return err
 	}
 
