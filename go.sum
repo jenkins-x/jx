@@ -910,8 +910,8 @@ github.com/jenkins-x/lighthouse v0.0.704 h1:obHj86ejymWhrV8X0HOEbAC2+ppU4Z+8cIyO
 github.com/jenkins-x/lighthouse v0.0.704/go.mod h1:aQi++6uPNYI43Q+IspMoNIUosKGsT1qYg6KSPB34Oyo=
 github.com/jenkins-x/lighthouse v0.0.707 h1:TCzvd+kFhNfCwBBvFfPYjGInC4AA1VKW+EYazKfTODg=
 github.com/jenkins-x/lighthouse v0.0.707/go.mod h1:tYg7UU3MAP0NWZVZN66gYLfGcZNItQt8G4ZZwPvmEsY=
-github.com/jenkins-x/lighthouse v0.0.739 h1:7jIzP3Qz5B5Hi6aUhCsAIWM+IjM/ixOw5oVUKldwsiU=
-github.com/jenkins-x/lighthouse v0.0.739/go.mod h1:hGYlF+SjDNY7RBD41az+270UbT3PowdU+Q1YONE05dY=
+github.com/jenkins-x/lighthouse v0.0.740 h1:ImSM7lP987wwJM9l9WMBJjK6LM/Od4GtOwvzcL1fp3I=
+github.com/jenkins-x/lighthouse v0.0.740/go.mod h1:y8zsbRMPW9utN4mtfXXQekxIk1Pbijv3VMH4jbA60WE=
 github.com/jenkins-x/lighthouse-config v0.0.4 h1:P581lKt4aU2flsFLajPIGx22Si3ow/4KLwAuwWIsgB4=
 github.com/jenkins-x/lighthouse-config v0.0.4/go.mod h1:4ekc+gfCMs4WWKEWhElH2UWOXUMZJkEg9hyM1nPfuys=
 github.com/jenkins-x/lighthouse-config v0.0.5 h1:RyfM6kHs1/8Hc4uRhHd4kvSvRJhbWi3Fm7tlf5JYAFQ=
