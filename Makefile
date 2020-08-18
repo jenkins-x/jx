@@ -81,7 +81,7 @@ get-test-deps: ## Install test dependencies
 print-version: ## Print version
 	@echo $(VERSION)
 
-build: $(GO_DEPENDENCIES) clean ## Build jx-labs binary for current OS
+build: $(GO_DEPENDENCIES) clean ## Build jx-cli binary for current OS
 	go mod download
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/$(BINARY_NAME) $(MAIN_SRC_FILE)
 
