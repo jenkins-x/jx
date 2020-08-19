@@ -24,6 +24,7 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 * [jx admin](https://github.com/jenkins-x/jx-admin/blob/master/docs/cmd/jx-admin.md) for administration commands (creating a new environment, booting it up with the operator)
 * [jx application](https://github.com/jenkins-x/jx-application/blob/master/docs/cmd/jx-application.md) for viewing applications in your environments
 * [jx gitops](https://github.com/jenkins-x/jx-gitops/blob/master/docs/cmd/jx-gitops.md) a set of commands used inside pipelines for modifying helm charts, kpt files, using kustomise or modifying kubernetes resources for GitOps
+* [jx jenkins](https://github.com/jenkins-x/jx-jenkins/blob/master/docs/cmd/jx-jenkins.md) a set of commands for working with [Jenkins](https://jenkins.io/) servers in kubernetes
 * [jx pipeline](https://github.com/jenkins-x/jx-pipeline/blob/master/docs/cmd/jx-pipeline.md#jx-pipeline) a command for working with Jenkins X and Tekton Pipelines
 * [jx preview](https://github.com/jenkins-x/jx-preview/blob/master/docs/cmd/preview.md#preview) a command for creating Preview Environments
 * [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-promote.md#jx-promote) a command for promoting a new version of an application to an Environment
@@ -44,9 +45,13 @@ These are the modular libraries which have been refactored out of the main [jenk
        
 * [go-scm](https://github.com/jenkins-x/go-scm) API for working with SCM providers
 * [jx-api](https://github.com/jenkins-x/jx-api) the core JX APIs
-* [jx-apps](https://github.com/jenkins-x/jx-apps) a library for loading/saving the `jx-apps.yml` file
 * [jx-helpers](https://github.com/jenkins-x/jx-helpers) a bunch of utilities (mostly from the `util` package) refactored + no longer dependent on [jenkins-x/jx](https://github.com/jenkins-x/jx/) 
 * [jx-kube-client](https://github.com/jenkins-x/jx-kube-client) the core library for working with kube/jx/tekton clients
 * [jx-logging](https://github.com/jenkins-x/jx-logging) logging APIs
-* [lighthouse-config](https://github.com/jenkins-x/lighthouse-config) for configuring lighthouses
                                              
+
+
+### Deprecated libraries
+
+* [jx-apps](https://github.com/jenkins-x/jx-apps) a library for loading/saving the `jx-apps.yml` file
+* [lighthouse-config](https://github.com/jenkins-x/lighthouse-config) for configuring lighthouses
