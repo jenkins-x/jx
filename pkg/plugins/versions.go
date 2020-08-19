@@ -14,6 +14,9 @@ const (
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.186"
 
+	// JenkinsVersion the version of the jx jenkins plugin
+	JenkinsVersion = "0.0.22"
+
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.14"
 
@@ -42,6 +45,7 @@ var (
 		CreateJXPlugin("admin", AdminVersion),
 		CreateJXPlugin("application", ApplicationVersion),
 		CreateJXPlugin("gitops", GitOpsVersion),
+		CreateJXPlugin("jenkins", JenkinsVersion),
 		CreateJXPlugin("pipeline", PipelineVersion),
 		CreateJXPlugin("preview", PreviewVersion),
 		CreateJXPlugin("project", ProjectVersion),
