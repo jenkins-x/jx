@@ -49,5 +49,5 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio-labs/go-releaser:0.0.18
               - name: promote-release
                 command: ./promote.sh
-                image: gcr.io/jenkinsxio-labs-private/jx-cli
+                image: gcr.io/jenkinsxio/jx-cli
                 dir: /workspace/source
