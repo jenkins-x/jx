@@ -66,6 +66,8 @@ function setup_env() {
   exp GINKGO_ARGS "-v"
 
   exp JX_HOME "/tmp/jxhome"
+  jx install dependencies --all
+  kubectl version --short
   exp KUBECONFIG "${JX_HOME}/config"
 
   # lets avoid the git/credentials causing confusion during the test
