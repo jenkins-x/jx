@@ -7,6 +7,9 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config/branchprotection"
+	"github.com/jenkins-x/lighthouse/pkg/config/job"
+	"github.com/jenkins-x/lighthouse/pkg/config/keeper"
 	"github.com/jenkins-x/lighthouse/pkg/plugins"
 	"github.com/pkg/errors"
 	"github.com/rollout/rox-go/core/utils"
@@ -105,12 +108,6 @@ func buildPlugins(answer *plugins.Configuration, scheduler *jenkinsv1.SchedulerS
 				}
 			}
 
-		}
-		if answer.ConfigUpdater.ConfigFile == "" {
-			answer.ConfigUpdater.ConfigFile = scheduler.ConfigUpdater.ConfigFile
-		}
-		if answer.ConfigUpdater.PluginFile == "" {
-			answer.ConfigUpdater.PluginFile = scheduler.ConfigUpdater.PluginFile
 		}
 	}
 	if answer.Lgtm == nil {
@@ -219,7 +216,7 @@ func buildProwConfig(prowConfig *config.ProwConfig, scheduler *jenkinsv1.Schedul
 	return nil
 }
 
-func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) error {
+func buildPolicy(answer *branchprotection.Policy, policy *jenkinsv1.ProtectionPolicy) error {
 	if policy.Protect != nil {
 		answer.Protect = policy.Protect
 	}
@@ -228,7 +225,7 @@ func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) erro
 	}
 	if policy.RequiredStatusChecks != nil {
 		if answer.RequiredStatusChecks == nil {
-			answer.RequiredStatusChecks = &config.ContextPolicy{}
+			answer.RequiredStatusChecks = &branchprotection.ContextPolicy{}
 		}
 		err := buildBranchProtectionContextPolicy(answer.RequiredStatusChecks, policy.RequiredStatusChecks)
 		if err != nil {
@@ -237,7 +234,7 @@ func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) erro
 	}
 	if policy.RequiredPullRequestReviews != nil {
 		if answer.RequiredPullRequestReviews == nil {
-			answer.RequiredPullRequestReviews = &config.ReviewPolicy{}
+			answer.RequiredPullRequestReviews = &branchprotection.ReviewPolicy{}
 		}
 		err := buildRequiredPullRequestReviews(answer.RequiredPullRequestReviews, policy.RequiredPullRequestReviews)
 		if err != nil {
@@ -246,7 +243,7 @@ func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) erro
 	}
 	if policy.Restrictions != nil {
 		if answer.Restrictions == nil {
-			answer.Restrictions = &config.Restrictions{}
+			answer.Restrictions = &branchprotection.Restrictions{}
 		}
 		err := buildRestrictions(answer.Restrictions, policy.Restrictions)
 		if err != nil {
@@ -256,7 +253,7 @@ func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) erro
 	return nil
 }
 
-func buildBranchProtectionContextPolicy(answer *config.ContextPolicy,
+func buildBranchProtectionContextPolicy(answer *branchprotection.ContextPolicy,
 	policy *jenkinsv1.BranchProtectionContextPolicy) error {
 	if policy.Contexts != nil {
 		if answer.Contexts == nil {
@@ -281,7 +278,7 @@ func buildBranchProtectionContextPolicy(answer *config.ContextPolicy,
 	return nil
 }
 
-func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *jenkinsv1.ReviewPolicy) error {
+func buildRequiredPullRequestReviews(answer *branchprotection.ReviewPolicy, policy *jenkinsv1.ReviewPolicy) error {
 	if policy.Approvals != nil {
 		answer.Approvals = policy.Approvals
 	}
@@ -293,7 +290,7 @@ func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *jenkin
 	}
 	if policy.DismissalRestrictions != nil {
 		if answer.DismissalRestrictions == nil {
-			answer.DismissalRestrictions = &config.Restrictions{}
+			answer.DismissalRestrictions = &branchprotection.Restrictions{}
 		}
 		err := buildRestrictions(answer.DismissalRestrictions, policy.DismissalRestrictions)
 		if err != nil {
@@ -303,7 +300,7 @@ func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *jenkin
 	return nil
 }
 
-func buildRestrictions(answer *config.Restrictions, restrictions *jenkinsv1.Restrictions) error {
+func buildRestrictions(answer *branchprotection.Restrictions, restrictions *jenkinsv1.Restrictions) error {
 	if restrictions.Users != nil {
 		if answer.Users == nil {
 			answer.Users = make([]string, 0)
@@ -351,15 +348,15 @@ func buildJobConfig(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 
 func buildPostsubmits(jobConfig *config.JobConfig, items []*jenkinsv1.Postsubmit, orgName string, repoName string) error {
 	if jobConfig.Postsubmits == nil {
-		jobConfig.Postsubmits = make(map[string][]config.Postsubmit)
+		jobConfig.Postsubmits = make(map[string][]job.Postsubmit)
 	}
 	orgSlashRepo := orgSlashRepo(orgName, repoName)
 	for _, postsubmit := range items {
 		if _, ok := jobConfig.Postsubmits[orgSlashRepo]; !ok {
-			jobConfig.Postsubmits[orgSlashRepo] = make([]config.Postsubmit, 0)
+			jobConfig.Postsubmits[orgSlashRepo] = make([]job.Postsubmit, 0)
 		}
-		c := config.Postsubmit{}
-		err := buildJobBase(&c.JobBase, postsubmit.JobBase)
+		c := job.Postsubmit{}
+		err := buildJobBase(&c.Base, postsubmit.JobBase)
 		if err != nil {
 			return errors.Wrapf(err, "building JobBase from %v", postsubmit.JobBase)
 		}
@@ -390,15 +387,15 @@ func buildPostsubmits(jobConfig *config.JobConfig, items []*jenkinsv1.Postsubmit
 func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 	items []*jenkinsv1.Presubmit, orgName string, repoName string) error {
 	if jobConfig.Presubmits == nil {
-		jobConfig.Presubmits = make(map[string][]config.Presubmit)
+		jobConfig.Presubmits = make(map[string][]job.Presubmit)
 	}
 	orgSlashRepo := orgSlashRepo(orgName, repoName)
 	for _, presubmit := range items {
 		if _, ok := jobConfig.Presubmits[orgSlashRepo]; !ok {
-			jobConfig.Presubmits[orgSlashRepo] = make([]config.Presubmit, 0)
+			jobConfig.Presubmits[orgSlashRepo] = make([]job.Presubmit, 0)
 		}
-		c := config.Presubmit{}
-		err := buildJobBase(&c.JobBase, presubmit.JobBase)
+		c := job.Presubmit{}
+		err := buildJobBase(&c.Base, presubmit.JobBase)
 		if err != nil {
 			return errors.Wrapf(err, "building JobBase from %v", presubmit.JobBase)
 		}
@@ -441,9 +438,9 @@ func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 			}
 		}
 		if presubmit.MergeType != nil {
-			mt := config.PullRequestMergeType(*presubmit.MergeType)
+			mt := keeper.PullRequestMergeType(*presubmit.MergeType)
 			if prowConfig.Keeper.MergeType == nil && mt != "" {
-				prowConfig.Keeper.MergeType = make(map[string]config.PullRequestMergeType)
+				prowConfig.Keeper.MergeType = make(map[string]keeper.PullRequestMergeType)
 			}
 			if mt != "" {
 				prowConfig.Keeper.MergeType[orgSlashRepo] = mt
@@ -466,17 +463,17 @@ func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 
 		}
 		if presubmit.ContextPolicy != nil {
-			policy := config.KeeperRepoContextPolicy{}
+			policy := keeper.RepoContextPolicy{}
 			err := buildRepoContextPolicy(&policy, presubmit.ContextPolicy)
 			if err != nil {
 				return errors.Wrapf(err, "building RepoContextPolicy from %v", presubmit)
 			}
 			if prowConfig.Keeper.ContextOptions.Orgs == nil {
-				prowConfig.Keeper.ContextOptions.Orgs = make(map[string]config.KeeperOrgContextPolicy)
+				prowConfig.Keeper.ContextOptions.Orgs = make(map[string]keeper.OrgContextPolicy)
 			}
 			if _, ok := prowConfig.Keeper.ContextOptions.Orgs[orgName]; !ok {
-				prowConfig.Keeper.ContextOptions.Orgs[orgName] = config.KeeperOrgContextPolicy{
-					Repos: make(map[string]config.KeeperRepoContextPolicy),
+				prowConfig.Keeper.ContextOptions.Orgs[orgName] = keeper.OrgContextPolicy{
+					Repos: make(map[string]keeper.RepoContextPolicy),
 				}
 			}
 			prowConfig.Keeper.ContextOptions.Orgs[orgName].Repos[repoName] = policy
@@ -486,7 +483,7 @@ func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 	return nil
 }
 
-func buildGlobalBranchProtection(answer *config.BranchProtection,
+func buildGlobalBranchProtection(answer *branchprotection.Config,
 	globalProtectionPolicy *jenkinsv1.GlobalProtectionPolicy) error {
 	if globalProtectionPolicy.ProtectTested != nil {
 		answer.ProtectTested = *globalProtectionPolicy.ProtectTested
@@ -500,30 +497,30 @@ func buildGlobalBranchProtection(answer *config.BranchProtection,
 	return nil
 }
 
-func buildBranchProtection(answer *config.BranchProtection,
+func buildBranchProtection(answer *branchprotection.Config,
 	protectionPolicy *jenkinsv1.ProtectionPolicy, orgName string, repoName string, branchName string) error {
 	if orgName != "" {
 		if answer.Orgs == nil {
-			answer.Orgs = make(map[string]config.Org)
+			answer.Orgs = make(map[string]branchprotection.Org)
 		}
 		if _, ok := answer.Orgs[orgName]; !ok {
-			answer.Orgs[orgName] = config.Org{}
+			answer.Orgs[orgName] = branchprotection.Org{}
 		}
 		org := answer.Orgs[orgName]
 		if repoName != "" {
 			if org.Repos == nil {
-				org.Repos = make(map[string]config.Repo)
+				org.Repos = make(map[string]branchprotection.Repo)
 			}
 			if _, ok := answer.Orgs[orgName].Repos[repoName]; !ok {
-				org.Repos[repoName] = config.Repo{}
+				org.Repos[repoName] = branchprotection.Repo{}
 			}
 			repo := answer.Orgs[orgName].Repos[repoName]
 			if branchName != "" {
 				if repo.Branches == nil {
-					repo.Branches = make(map[string]config.Branch)
+					repo.Branches = make(map[string]branchprotection.Branch)
 				}
 				if _, ok := repo.Branches[branchName]; !ok {
-					repo.Branches[branchName] = config.Branch{}
+					repo.Branches[branchName] = branchprotection.Branch{}
 				}
 				branch := repo.Branches[branchName]
 				err := buildPolicy(&branch.Policy, protectionPolicy)
@@ -560,7 +557,7 @@ func orgSlashRepo(org string, repo string) string {
 	return fmt.Sprintf("%s/%s", org, repo)
 }
 
-func buildJobBase(answer *config.JobBase, jobBase *jenkinsv1.JobBase) error {
+func buildJobBase(answer *job.Base, jobBase *jenkinsv1.JobBase) error {
 	if jobBase.Agent != nil {
 		answer.Agent = *jobBase.Agent
 	}
@@ -585,7 +582,7 @@ func buildJobBase(answer *config.JobBase, jobBase *jenkinsv1.JobBase) error {
 	return nil
 }
 
-func buildBrancher(answer *config.Brancher, brancher *jenkinsv1.Brancher) error {
+func buildBrancher(answer *job.Brancher, brancher *jenkinsv1.Brancher) error {
 	if brancher.SkipBranches != nil && brancher.SkipBranches.Items != nil {
 		answer.SkipBranches = brancher.SkipBranches.Items
 	}
@@ -595,7 +592,7 @@ func buildBrancher(answer *config.Brancher, brancher *jenkinsv1.Brancher) error 
 	return nil
 }
 
-func buildRegexChangeMatacher(answer *config.RegexpChangeMatcher,
+func buildRegexChangeMatacher(answer *job.RegexpChangeMatcher,
 	matcher *jenkinsv1.RegexpChangeMatcher) error {
 	if matcher.RunIfChanged != nil {
 		answer.RunIfChanged = *matcher.RunIfChanged
@@ -609,18 +606,12 @@ func buildPlank(answer *config.ProwConfig, attachments []*jenkinsv1.Attachment) 
 		if attachment.Name == "reportTemplate" {
 			answer.Plank.ReportTemplateString = attachment.URLs[0]
 		}
-		if attachment.Name == "jobURLPrefix" {
-			answer.Plank.JobURLPrefix = attachment.URLs[0]
-		}
-		if attachment.Name == "jobURLTemplate" {
-			answer.Plank.JobURLTemplateString = attachment.URLs[0]
-		}
 	}
 }
 
 func buildPeriodics(answer *config.JobConfig, periodics *jenkinsv1.Periodics) error {
 	if answer.Periodics == nil {
-		answer.Periodics = make([]config.Periodic, 0)
+		answer.Periodics = make([]job.Periodic, 0)
 	}
 	for _, schedulerPeriodic := range periodics.Items {
 		periodicAlreadyExists := false
@@ -631,14 +622,13 @@ func buildPeriodics(answer *config.JobConfig, periodics *jenkinsv1.Periodics) er
 			}
 		}
 		if !periodicAlreadyExists {
-			periodic := config.Periodic{
-				Cron:     *schedulerPeriodic.Cron,
-				Interval: *schedulerPeriodic.Interval,
+			periodic := job.Periodic{
+				Cron: *schedulerPeriodic.Cron,
 			}
 			if schedulerPeriodic.Tags.Items != nil && len(schedulerPeriodic.Tags.Items) > 0 {
 				periodic.Tags = schedulerPeriodic.Tags.Items
 			}
-			err := buildJobBase(&periodic.JobBase, schedulerPeriodic.JobBase)
+			err := buildJobBase(&periodic.Base, schedulerPeriodic.JobBase)
 			if err != nil {
 				return errors.Wrapf(err, "building periodic for %v", periodic)
 			}
@@ -648,7 +638,7 @@ func buildPeriodics(answer *config.JobConfig, periodics *jenkinsv1.Periodics) er
 	return nil
 }
 
-func buildMerger(answer *config.Keeper, merger *jenkinsv1.Merger, org string, repo string) error {
+func buildMerger(answer *keeper.Config, merger *jenkinsv1.Merger, org string, repo string) error {
 	if merger.SyncPeriod != nil {
 		answer.SyncPeriod = *merger.SyncPeriod
 	}
@@ -672,12 +662,12 @@ func buildMerger(answer *config.Keeper, merger *jenkinsv1.Merger, org string, re
 	}
 	if merger.MergeType != nil {
 		if answer.MergeType == nil {
-			answer.MergeType = make(map[string]config.PullRequestMergeType)
+			answer.MergeType = make(map[string]keeper.PullRequestMergeType)
 		}
-		answer.MergeType[fmt.Sprintf("%s/%s", org, repo)] = config.PullRequestMergeType(*merger.MergeType)
+		answer.MergeType[fmt.Sprintf("%s/%s", org, repo)] = keeper.PullRequestMergeType(*merger.MergeType)
 	}
 	if merger.ContextPolicy != nil {
-		err := buildContextPolicy(&answer.ContextOptions.KeeperContextPolicy, merger.ContextPolicy)
+		err := buildContextPolicy(&answer.ContextOptions.ContextPolicy, merger.ContextPolicy)
 		if err != nil {
 			return errors.Wrapf(err, "building ContextPolicy for %v", merger.ContextPolicy)
 		}
@@ -685,18 +675,18 @@ func buildMerger(answer *config.Keeper, merger *jenkinsv1.Merger, org string, re
 	return nil
 }
 
-func buildRepoContextPolicy(answer *config.KeeperRepoContextPolicy,
+func buildRepoContextPolicy(answer *keeper.RepoContextPolicy,
 	repoContextPolicy *jenkinsv1.RepoContextPolicy) error {
-	err := buildContextPolicy(&answer.KeeperContextPolicy, repoContextPolicy.ContextPolicy)
+	err := buildContextPolicy(&answer.ContextPolicy, repoContextPolicy.ContextPolicy)
 	if err != nil {
 		return errors.Wrapf(err, "building ContextPolicy for %v", repoContextPolicy)
 	}
 	if repoContextPolicy.Branches != nil {
 		for branch, policy := range repoContextPolicy.Branches.Items {
 			if answer.Branches == nil {
-				answer.Branches = make(map[string]config.KeeperContextPolicy)
+				answer.Branches = make(map[string]keeper.ContextPolicy)
 			}
-			tidePolicy := config.KeeperContextPolicy{}
+			tidePolicy := keeper.ContextPolicy{}
 			err := buildContextPolicy(&tidePolicy, policy)
 			if err != nil {
 				return errors.Wrapf(err, "building ContextPolicy for %v", policy)
@@ -707,7 +697,7 @@ func buildRepoContextPolicy(answer *config.KeeperRepoContextPolicy,
 	return nil
 }
 
-func buildContextPolicy(answer *config.KeeperContextPolicy,
+func buildContextPolicy(answer *keeper.ContextPolicy,
 	contextOptions *jenkinsv1.ContextPolicy) error {
 	if contextOptions != nil {
 		if contextOptions.SkipUnknownContexts != nil {
@@ -729,11 +719,11 @@ func buildContextPolicy(answer *config.KeeperContextPolicy,
 	return nil
 }
 
-func buildQuery(answer *config.Keeper, queries []*jenkinsv1.Query, org string, repo string) error {
+func buildQuery(answer *keeper.Config, queries []*jenkinsv1.Query, org string, repo string) error {
 	if answer.Queries == nil {
-		answer.Queries = config.KeeperQueries{}
+		answer.Queries = keeper.Queries{}
 	}
-	tideQuery := &config.KeeperQuery{
+	tideQuery := &keeper.Query{
 		Repos: []string{orgSlashRepo(org, repo)},
 	}
 	for _, query := range queries {
@@ -758,7 +748,7 @@ func buildQuery(answer *config.Keeper, queries []*jenkinsv1.Query, org string, r
 		mergedWithExisting := false
 		for index := range answer.Queries {
 			existingQuery := &answer.Queries[index]
-			if cmp.Equal(existingQuery, tideQuery, cmpopts.IgnoreFields(config.KeeperQuery{}, "Repos")) {
+			if cmp.Equal(existingQuery, tideQuery, cmpopts.IgnoreFields(keeper.Query{}, "Repos")) {
 				mergedWithExisting = true
 				for _, newRepo := range tideQuery.Repos {
 					if !utils.ContainsString(existingQuery.Repos, newRepo) {

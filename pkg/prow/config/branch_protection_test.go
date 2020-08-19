@@ -5,18 +5,18 @@ package config
 import (
 	"testing"
 
-	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config/branchprotection"
 	"github.com/stretchr/testify/assert"
 )
 
-func newBranchProtection() config.BranchProtection {
-	return config.BranchProtection{
-		Orgs: map[string]config.Org{
+func newBranchProtection() branchprotection.Config {
+	return branchprotection.Config{
+		Orgs: map[string]branchprotection.Org{
 			"org": {
-				Repos: map[string]config.Repo{
+				Repos: map[string]branchprotection.Repo{
 					"repo": {
-						Policy: config.Policy{},
-						Branches: map[string]config.Branch{
+						Policy: branchprotection.Policy{},
+						Branches: map[string]branchprotection.Branch{
 							"master": {},
 						}}}}},
 	}
