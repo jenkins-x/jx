@@ -20,9 +20,6 @@ branch-protection:
             contexts:
             - integration
   protect-tested-repos: true
-deck:
-  spyglass: {}
-gerrit: {}
 github:
   LinkURL: null
 plank: {}
@@ -80,7 +77,6 @@ presubmits:
 prowjob_namespace: jx
 push_gateway:
   serve_metrics: false
-sinker: {}
 tide:
   context_options:
     from-branch-protection: true

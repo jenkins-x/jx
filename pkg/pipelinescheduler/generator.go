@@ -15,6 +15,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/kube/naming"
 	"github.com/jenkins-x/jx/v2/pkg/prow"
+	"github.com/jenkins-x/lighthouse/pkg/config/branchprotection"
+	"github.com/jenkins-x/lighthouse/pkg/config/job"
+	"github.com/jenkins-x/lighthouse/pkg/config/keeper"
 
 	"github.com/google/uuid"
 	"github.com/jenkins-x/jx/v2/pkg/environments"
@@ -167,12 +170,12 @@ func CreateSchedulersFromProwConfig(configFileLocation string, pluginsFileLocati
 			return nil, nil, nil, errors.Errorf("Migrated Prow plugins do not match, not applying! \nDiff: \n%s", cmp.Diff(migratedPlugins, pluginConfig, pluginCmpOptions))
 		}
 		cnfgCmpOptions := cmp.Options{
-			cmpopts.IgnoreUnexported(config.Brancher{}),
-			cmpopts.IgnoreUnexported(config.RegexpChangeMatcher{}),
-			cmpopts.IgnoreUnexported(config.Presubmit{}),
-			cmpopts.IgnoreUnexported(config.Periodic{}),
+			cmpopts.IgnoreUnexported(job.Brancher{}),
+			cmpopts.IgnoreUnexported(job.RegexpChangeMatcher{}),
+			cmpopts.IgnoreUnexported(job.Presubmit{}),
+			cmpopts.IgnoreUnexported(job.Periodic{}),
 			sortSliceStringOpt,
-			cmpopts.SortSlices(func(i config.KeeperQuery, j config.KeeperQuery) bool {
+			cmpopts.SortSlices(func(i keeper.Query, j keeper.Query) bool {
 				sort.Strings(i.Repos)
 				sort.Strings(j.Repos)
 				iLabels := append(i.Labels, i.MissingLabels...)
@@ -191,8 +194,6 @@ func CreateSchedulersFromProwConfig(configFileLocation string, pluginsFileLocati
 
 //cleanupExistingProwConfig Removes config that we do not currently support
 func cleanupExistingProwConfig(prowConfig *config.Config, pluginConfig *plugins.Configuration, sourceRepoMap map[string]*jenkinsv1.SourceRepository) {
-	// Deck is not supported
-	prowConfig.Deck = config.Deck{}
 	// heart plugin is not supported
 	pluginConfig.Heart = plugins.Heart{}
 	queries := prowConfig.Keeper.Queries[:0]
@@ -262,12 +263,12 @@ func cleanupExistingProwConfig(prowConfig *config.Config, pluginConfig *plugins.
 	for org := range prowConfig.BranchProtection.Orgs {
 		protectionOrg := prowConfig.BranchProtection.Orgs[org]
 		if protectionOrg.Repos == nil {
-			protectionOrg.Repos = make(map[string]config.Repo)
+			protectionOrg.Repos = make(map[string]branchprotection.Repo)
 			replacedOrgPolicy := false
 			for existingRepo := range sourceRepoMap {
 				if strings.HasPrefix(existingRepo, org+"/") {
 					orgRepo := strings.Split(existingRepo, "/")
-					repoPolicy := config.Repo{
+					repoPolicy := branchprotection.Repo{
 						Policy: protectionOrg.Policy,
 					}
 					protectionOrg.Repos[orgRepo[1]] = repoPolicy
@@ -277,7 +278,7 @@ func cleanupExistingProwConfig(prowConfig *config.Config, pluginConfig *plugins.
 			}
 			if replacedOrgPolicy {
 				protectionOrg := prowConfig.BranchProtection.Orgs[org]
-				protectionOrg.Policy = config.Policy{}
+				protectionOrg.Policy = branchprotection.Policy{}
 				prowConfig.BranchProtection.Orgs[org] = protectionOrg
 			}
 		}

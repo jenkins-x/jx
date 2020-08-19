@@ -10,6 +10,8 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/kube"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config/branchprotection"
+	"github.com/jenkins-x/lighthouse/pkg/config/job"
 	"github.com/jenkins-x/lighthouse/pkg/plugins"
 
 	"github.com/pkg/errors"
@@ -138,8 +140,8 @@ func AddExternalPlugins(kubeClient kubernetes.Interface, repos []string, ns stri
 // should we get the existing CM and do a diff?
 // should we just be using git for config and use Prow to auto update via gitops?
 
-func (o *Options) createPreSubmitEnvironment() config.Presubmit {
-	ps := config.Presubmit{}
+func (o *Options) createPreSubmitEnvironment() job.Presubmit {
+	ps := job.Presubmit{}
 
 	ps.Name = prowconfig.PromotionBuild
 	ps.AlwaysRun = true
@@ -152,8 +154,8 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	return ps
 }
 
-func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
-	ps := config.Postsubmit{}
+func (o *Options) createPostSubmitEnvironment() job.Postsubmit {
+	ps := job.Postsubmit{}
 	ps.Name = "promotion"
 	ps.Agent = o.Agent
 	ps.Branches = []string{"^master$"}
@@ -161,8 +163,8 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	return ps
 }
 
-func (o *Options) createPostSubmitApplication() config.Postsubmit {
-	ps := config.Postsubmit{}
+func (o *Options) createPostSubmitApplication() job.Postsubmit {
+	ps := job.Postsubmit{}
 	ps.Branches = []string{"^master$"}
 	ps.Name = "release"
 	ps.Agent = o.Agent
@@ -170,8 +172,8 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	return ps
 }
 
-func (o *Options) createPreSubmitApplication() config.Presubmit {
-	ps := config.Presubmit{}
+func (o *Options) createPreSubmitApplication() job.Presubmit {
+	ps := job.Presubmit{}
 
 	ps.Context = prowconfig.ServerlessJenkins
 	ps.Name = prowconfig.ServerlessJenkins
@@ -189,8 +191,8 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 
 // AddProwConfig adds config to Prow
 func (o *Options) AddProwConfig() error {
-	var preSubmit config.Presubmit
-	var postSubmit config.Postsubmit
+	var preSubmit job.Presubmit
+	var postSubmit job.Postsubmit
 
 	switch o.Kind {
 	case prowconfig.Application:
@@ -228,10 +230,10 @@ func (o *Options) AddProwConfig() error {
 
 	for _, r := range o.Repos {
 		if prowConfig.Presubmits[r] == nil {
-			prowConfig.Presubmits[r] = make([]config.Presubmit, 0)
+			prowConfig.Presubmits[r] = make([]job.Presubmit, 0)
 		}
 		if prowConfig.Postsubmits[r] == nil {
-			prowConfig.Postsubmits[r] = make([]config.Postsubmit, 0)
+			prowConfig.Postsubmits[r] = make([]job.Postsubmit, 0)
 		}
 		if preSubmit.Name != "" {
 			found := false
@@ -329,9 +331,9 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 	prowConfig := &config.Config{}
 	// config doesn't exist, creating
 	if err != nil {
-		prowConfig.Presubmits = make(map[string][]config.Presubmit)
-		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-		prowConfig.BranchProtection = config.BranchProtection{}
+		prowConfig.Presubmits = make(map[string][]job.Presubmit)
+		prowConfig.Postsubmits = make(map[string][]job.Postsubmit)
+		prowConfig.BranchProtection = branchprotection.Config{}
 
 		// calculate the tide url from the ingress config
 		ingressConfigMap, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(kube.IngressConfigConfigmap, metav1.GetOptions{})
@@ -355,13 +357,13 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 			return prowConfig, create, errors.Wrap(err, "unmarshaling prow config")
 		}
 		if len(prowConfig.Presubmits) == 0 {
-			prowConfig.Presubmits = make(map[string][]config.Presubmit)
+			prowConfig.Presubmits = make(map[string][]job.Presubmit)
 		}
 		if len(prowConfig.Postsubmits) == 0 {
-			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
+			prowConfig.Postsubmits = make(map[string][]job.Postsubmit)
 		}
 		if prowConfig.BranchProtection.Orgs == nil {
-			prowConfig.BranchProtection.Orgs = make(map[string]config.Org, 0)
+			prowConfig.BranchProtection.Orgs = make(map[string]branchprotection.Org, 0)
 		}
 	}
 	return prowConfig, create, nil
@@ -614,8 +616,8 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 	return jobs, nil
 }
 
-func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit, error) {
-	p := config.Postsubmit{}
+func (o *Options) GetPostSubmitJob(org, repo, branch string) (job.Postsubmit, error) {
+	p := job.Postsubmit{}
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return p, errors.Wrapf(err, "getting the presubmit jobs from %q config map in namespace %q", ConfigMapName, o.NS)
@@ -630,11 +632,12 @@ func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit,
 	key := fmt.Sprintf("%s/%s", org, repo)
 	postsubmits := prowConfig.Postsubmits[key]
 
-	err = config.SetPostsubmitRegexes(postsubmits)
-	if err != nil {
-		return p, errors.Wrap(err, "compiling prow postsubmit regexes")
+	for _, ps := range postsubmits {
+		err = ps.SetRegexes()
+		if err != nil {
+			return p, err
+		}
 	}
-
 	for _, p := range postsubmits {
 		if p.Brancher.ShouldRun(branch) {
 			return p, nil
