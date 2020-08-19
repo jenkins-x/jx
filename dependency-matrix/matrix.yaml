@@ -71,3 +71,9 @@ dependencies:
   url: https://github.com/jenkins-x/jx-cli-base-image
   version: 0.0.3
   versionURL: ""
+- host: github.com
+  owner: jenkins-x
+  repo: jx-jenkins
+  url: https://github.com/jenkins-x/jx-jenkins
+  version: 0.0.18
+  versionURL: https://github.com/jenkins-x/jx-jenkins/releases/tag/v0.0.18
