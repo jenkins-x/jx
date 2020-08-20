@@ -46,7 +46,7 @@ pipelineConfig:
                 command: jx step changelog --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
               - name: upload-binaries
                 command: make goreleaser
-                image: gcr.io/jenkinsxio-labs/go-releaser:0.0.18
+                image: gcr.io/jenkinsxio/step-go-releaser
               - name: promote-release
                 command: ./promote.sh
                 image: gcr.io/jenkinsxio/jx-cli
