@@ -17,20 +17,21 @@ func main() {
 	fn := func(version string) ([]operations.ChangeFilesFn, error) {
 		return CreateRegexChangeFunctions(version,
 			RegexFiles{
-				Regex: `\s+image: gcr.io/jenkinsxio-labs-private/jx-cli:(.*)`,
+				Regex: `\s+image: gcr.io/jenkinsxio/jx-cli:(.*)`,
 				Files: []string{"jenkins-x-*.yml"},
 			},
 			RegexFiles{
 				Regex: `version: (.*)`,
 				Files: []string{
-					"docker/gcr.io/jenkinsxio-labs-private/jx-cli.yml",
+					"docker/gcr.io/jenkinsxio/jx-cli.yml",
 					"packages/jx-cli.yml",
 				},
 			},
 			RegexFiles{
-				Regex: `JX_DEFAULT_IMAGE: gcr.io/jenkinsxio-labs-private/jx-cli:(.*)`,
+				Regex: `JX_DEFAULT_IMAGE: gcr.io/jenkinsxio/jx-cli:(.*)`,
 				Files: []string{
 					"apps/jenkins-x/lighthouse/values.yaml.gotmpl",
+					"charts/jenkins-x/lighthouse/values.yaml.gotmpl",
 				},
 			},
 		)
