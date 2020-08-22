@@ -27,6 +27,7 @@ type UninstallOptions struct {
 	Context          string
 	Force            bool // Force uninstallation - programmatic use only - do not expose to the user
 	KeepEnvironments bool
+	KeepNamespaces   bool
 }
 
 var (
@@ -61,6 +62,7 @@ func NewCmdUninstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The team namespace to uninstall. Defaults to the current namespace.")
 	cmd.Flags().StringVarP(&options.Context, "context", "", "", "The kube context to uninstall JX from. This will be compared with the current context to prevent accidental uninstallation from the wrong cluster")
 	cmd.Flags().BoolVarP(&options.KeepEnvironments, "keep-environments", "", false, "Don't delete environments. Uninstall Jenkins X only.")
+	cmd.Flags().BoolVarP(&options.KeepNamespaces, "keep-namespaces", "", false, "Don't delete namespaces.")
 	return cmd
 }
 
@@ -88,7 +90,8 @@ func (o *UninstallOptions) Run() error {
 				help += "\n " + envNamespace
 			}
 
-			if answer, err := util.Confirm("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?", false,
+			if answer, err := util.Confirm("Uninstall JX - this command will remove all JX components and "+
+				"delete all namespaces (if keep-namespaces is set to false) created by Jenkins X. Do you wish to continue?", false,
 				help, o.GetIOFileHandles()); !answer {
 				return err
 			}
@@ -144,9 +147,11 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to delete the environments in namespace %s: %s", namespace, err))
 	}
-	err = o.cleanupNamespaces(namespace, envNames, envMap)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to cleanup namespaces in namespace %s: %s", namespace, err))
+	if !o.KeepNamespaces {
+		err = o.cleanupNamespaces(namespace, envNames, envMap)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to cleanup namespaces in namespace %s: %s", namespace, err))
+		}
 	}
 	if len(errs) > 0 {
 		return errorutil.CombineErrors(errs...)
