@@ -116,7 +116,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
-		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?")
+		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces (if keep-namespaces is set to false) created by Jenkins X. Do you wish to continue?")
 		console.SendLine("Y")
 		console.ExpectString("This action will permanently delete Jenkins X from the Kubernetes context current-context. Please type in the name of the context to confirm:")
 		console.SendLine("target-context")
@@ -159,7 +159,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	//noinspection GoUnhandledErrorResult
 	go func() {
 		defer close(donec)
-		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces created by Jenkins X. Do you wish to continue?")
+		console.ExpectString("Uninstall JX - this command will remove all JX components and delete all namespaces (if keep-namespaces is set to false) created by Jenkins X. Do you wish to continue?")
 		console.SendLine("Y")
 		console.ExpectString("This action will permanently delete Jenkins X from the Kubernetes context correct-context-to-delete. Please type in the name of the context to confirm:")
 		console.SendLine("correct-context-to-delete")
