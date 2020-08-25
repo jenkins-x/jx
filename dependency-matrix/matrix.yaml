@@ -9,5 +9,5 @@ dependencies:
   owner: jenkins-x
   repo: lighthouse
   url: https://github.com/jenkins-x/lighthouse
-  version: 0.0.766
+  version: 0.0.767
   versionURL: ""
