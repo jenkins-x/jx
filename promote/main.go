@@ -18,7 +18,7 @@ func main() {
 		return CreateRegexChangeFunctions(version,
 			RegexFiles{
 				Regex: `\s+image: gcr.io/jenkinsxio/jx-cli:(.*)`,
-				Files: []string{"jenkins-x-*.yml"},
+				Files: []string{"jenkins-x-*.yml", "git-operator/job.yaml"},
 			},
 			RegexFiles{
 				Regex: `version: (.*)`,
