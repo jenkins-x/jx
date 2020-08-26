@@ -285,41 +285,33 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	// attempt to find binary, starting at longest possible name with given cmdArgs
 	for len(remainingArgs) > 0 {
 		commandName := fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-"))
-		path, err := pluginHandler.Lookup(commandName, pluginBinDir)
-		if err != nil || path == "" {
-			// lets see if we have a local binary on the PATH
-			path = FindPluginBinary(pluginBinDir, commandName)
-			if path == "" {
-				// lets use the downloaded plugin instead
-				for i := range plugins.Plugins {
-					p := plugins.Plugins[i]
-					if p.Spec.Name == commandName {
-						path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
-						if err != nil {
-							return errors.Wrapf(err, "failed to install binary plugin %s version %s to %s", commandName, p.Spec.Version, pluginBinDir)
-						}
-						if path != "" {
-							break
-						}
-					}
+
+		// lets try the correct plugin versions first
+		path := ""
+		var err error
+		for i := range plugins.Plugins {
+			p := plugins.Plugins[i]
+			if p.Spec.Name == commandName {
+				path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
+				if err != nil {
+					return errors.Wrapf(err, "failed to install binary plugin %s version %s to %s", commandName, p.Spec.Version, pluginBinDir)
+				}
+				if path != "" {
+					break
 				}
 			}
-			if path != "" {
-				foundBinaryPath = path
-				break
-			}
-
-			/* Usually "executable file not found in $PATH", spams output of jx help subcommand:
-			if err != nil {
-				log.Logger().Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
-			}
-			*/
-			remainingArgs = remainingArgs[:len(remainingArgs)-1]
-			continue
 		}
 
-		foundBinaryPath = path
-		break
+		// lets see if there's a local build of the plugin on the PATH for developers...
+		localPath, err := pluginHandler.Lookup(commandName, pluginBinDir)
+		if err == nil && localPath != "" {
+			path = localPath
+		}
+		if path != "" {
+			foundBinaryPath = path
+			break
+		}
+		remainingArgs = remainingArgs[:len(remainingArgs)-1]
 	}
 
 	if foundBinaryPath == "" {
