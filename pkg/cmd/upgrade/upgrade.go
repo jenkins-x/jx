@@ -27,6 +27,7 @@ var (
 // UpgradeOptions the options for upgrading a cluster
 type Options struct {
 	CommandRunner cmdrunner.CommandRunner
+	OnlyMandatory bool
 }
 
 // NewCmdUpgrade creates a command object for the command
@@ -43,6 +44,8 @@ func NewCmdUpgrade() (*cobra.Command, *Options) {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&o.OnlyMandatory, "mandatory", "m", false, "if set lets ignore optional plugins")
+
 	return cmd, o
 }
 
@@ -58,6 +61,9 @@ func (o *Options) Run() error {
 	}
 	for k := range plugins.Plugins {
 		p := plugins.Plugins[k]
+		if o.OnlyMandatory && p.Name == "jenkins" {
+			continue
+		}
 		log.Logger().Infof("checking binary jx plugin %s version %s is installed", termcolor.ColorInfo(p.Name), termcolor.ColorInfo(p.Spec.Version))
 		fileName, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
 		if err != nil {
