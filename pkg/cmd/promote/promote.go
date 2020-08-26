@@ -101,7 +101,7 @@ var (
 
 	promote_example = templates.Examples(`
 		# Promote a version of the current application to staging
-        # discovering the application name from the source code
+		# discovering the application name from the source code
 		jx promote --version 1.2.3 --env staging
 
 		# Promote a version of the myapp application to production

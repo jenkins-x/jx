@@ -23,19 +23,19 @@ var (
 		# Edit the deploy kind for your current project and prompts you to pick one of the available kinds
 		jx edit deploy
 
-        # to switch to use Knative Serve deployments
+		# to switch to use Knative Serve deployments
 		jx edit deploy knative
 
-        # to switch to normal kubernetes deployments
+		# to switch to normal kubernetes deployments
 		jx edit deploy default
 
-        # to switch to use canary deployments (requires flagger and its dependencies)
+		# to switch to use canary deployments (requires flagger and its dependencies)
 		jx edit deploy --canary
 
-        # to disable canary deployments and don't ask any more questions
+		# to disable canary deployments and don't ask any more questions
 		jx edit deploy --canary=false -b
 
-        # to disable canary deployments and confirm if you want to change the deployment kind and HPA
+		# to disable canary deployments and confirm if you want to change the deployment kind and HPA
 		jx edit deploy --canary=false
 
 		# Edit the default deploy kind for your team and be prompted for answers

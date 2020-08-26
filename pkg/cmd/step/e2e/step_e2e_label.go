@@ -30,7 +30,7 @@ var (
 		# Mark a cluster to not be deleted by the gc
 		jx step e2e label --keep clusterName
 
-        # Mark a cluster to be deleted by the gc
+		# Mark a cluster to be deleted by the gc
 		jx step e2e label --delete clusterName
 
 `)

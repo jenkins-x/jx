@@ -31,7 +31,7 @@ var (
 
 	create_git_token_example = templates.Examples(`
 		# Add a new API Token for a user for the local Git server
-        # prompting the user to find and enter the API Token
+		# prompting the user to find and enter the API Token
 		jx create git token -n local someUserName
 
 		# Add a new API Token for a user for the local Git server 

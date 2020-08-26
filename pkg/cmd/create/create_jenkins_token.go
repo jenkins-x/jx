@@ -44,7 +44,7 @@ var (
 
 	createJEnkinsUserExample = templates.Examples(`
 		# Add a new API Token for a user for the current Jenkins server
-        # prompting the user to find and enter the API Token
+		# prompting the user to find and enter the API Token
 		jx create jenkins token someUserName
 
 		# Add a new API Token for a user for the current Jenkins server

@@ -70,7 +70,7 @@ var (
 		jx boot
 
 		# if we have already booted and just want to apply some environment changes without
-        # re-applying ingress and so forth we can start at the environment step:
+		# re-applying ingress and so forth we can start at the environment step:
 		jx boot --start-step install-env
 `)
 )

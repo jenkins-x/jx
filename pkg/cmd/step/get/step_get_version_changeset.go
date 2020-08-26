@@ -42,8 +42,8 @@ var (
 		# This pipeline step generates environment variables from the differences of versions between jenkins-x-version PR21 and the master branch
 		jx step get version-changeset --pr 21
 
-        # This pipeline step generates environment variables from the differences of versions between jenkins-x-version PR21 and a branch called stuff
-        jx step get version-changeset --stable-branch stuff --pr 21
+		# This pipeline step generates environment variables from the differences of versions between jenkins-x-version PR21 and a branch called stuff
+		jx step get version-changeset --stable-branch stuff --pr 21
 `)
 )
 

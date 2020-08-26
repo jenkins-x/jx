@@ -66,7 +66,7 @@ var (
 `)
 
 	createClusterEKSExample = templates.Examples(`
-        # to create a new Kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
+		# to create a new Kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
 		jx create cluster eks
 
 		# to specify the zones

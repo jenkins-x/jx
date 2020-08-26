@@ -116,13 +116,13 @@ var (
 		# Import a Git repository from a URL
 		jx import --url https://github.com/jenkins-x/spring-boot-web-example.git
 
-        # Select a number of repositories from a GitHub organisation
+		# Select a number of repositories from a GitHub organisation
 		jx import --github --org myname 
 
-        # Import all repositories from a GitHub organisation selecting ones to not import
+		# Import all repositories from a GitHub organisation selecting ones to not import
 		jx import --github --org myname --all 
 
-        # Import all repositories from a GitHub organisation which contain the text foo
+		# Import all repositories from a GitHub organisation which contain the text foo
 		jx import --github --org myname --all --filter foo 
 		`)
 

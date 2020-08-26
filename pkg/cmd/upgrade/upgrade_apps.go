@@ -26,8 +26,8 @@ var (
 		# Upgrade all apps 
 		jx upgrade apps
  
-        # Upgrade a specific app
-        jx upgrade app cheese
+		# Upgrade a specific app
+		jx upgrade app cheese
 	`)
 )
 

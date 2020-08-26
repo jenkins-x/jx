@@ -30,7 +30,7 @@ var (
 		# Sets the profile for the jx install to cloudbees
 		jx profile cloudbees
 
-        # Set the profile for the jx install to open source
+		# Set the profile for the jx install to open source
 		jx profile oss
 	`)
 )

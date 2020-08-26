@@ -29,10 +29,10 @@ var (
 		# Edit the build pack configuration for your team, picking the build pack you wish to use from the available
 		jx edit buildpack
 
-        # to switch to classic workloads for your team
+		# to switch to classic workloads for your team
 		jx edit buildpack -n classic-workloads
 
-        # to switch to kubernetes workloads for your team
+		# to switch to kubernetes workloads for your team
 		jx edit buildpack -n kubernetes-workloads
 
 		For more documentation see: [https://jenkins-x.io/architecture/build-packs/](https://jenkins-x.io/architecture/build-packs/)

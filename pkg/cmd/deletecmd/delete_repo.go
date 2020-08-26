@@ -31,8 +31,8 @@ var (
 		# Selects the repositories to delete from the given GitHub organisation
 		jx delete repo --github --org myname 
 
-        # Selects all the repositories in organisation myname that contain 'foo'
-        # you get a chance to select which ones not to delete
+		# Selects all the repositories in organisation myname that contain 'foo'
+		# you get a chance to select which ones not to delete
 		jx delete repo --github --org myname --all --filter foo 
 	`)
 )

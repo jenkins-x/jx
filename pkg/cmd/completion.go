@@ -270,12 +270,12 @@ __jx_filedir() {
 	done
 }
 __jx_quote() {
-    if [[ $1 == \'* || $1 == \"* ]]; then
-        # Leave out first character
-        printf %q "${1:1}"
-    else
-    	printf %q "$1"
-    fi
+	if [[ $1 == \'* || $1 == \"* ]]; then
+		# Leave out first character
+		printf %q "${1:1}"
+	else
+		printf %q "$1"
+	fi
 }
 autoload -U +X bashcompinit && bashcompinit
 # use word boundary patterns for BSD or GNU sed
