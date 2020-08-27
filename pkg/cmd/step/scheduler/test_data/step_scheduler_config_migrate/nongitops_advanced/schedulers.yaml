@@ -11,12 +11,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -38,7 +32,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -78,7 +72,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -116,7 +110,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -253,12 +247,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -280,7 +268,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -320,7 +308,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -358,7 +346,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -491,12 +479,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -522,7 +504,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -562,7 +544,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -600,7 +582,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -737,12 +719,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -768,7 +744,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -808,7 +784,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -846,7 +822,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -983,12 +959,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -1010,7 +980,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -1050,7 +1020,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -1088,7 +1058,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -1221,12 +1191,6 @@ items:
     namespace: jx
   spec:
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -1235,7 +1199,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -1275,7 +1239,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -1313,7 +1277,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -1362,12 +1326,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -1389,7 +1347,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -1429,7 +1387,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -1467,7 +1425,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -1604,12 +1562,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -1631,7 +1583,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -1671,7 +1623,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -1709,7 +1661,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -1846,12 +1798,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -1873,7 +1819,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -1913,7 +1859,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -1951,7 +1897,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -2087,12 +2033,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -2114,7 +2054,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -2154,7 +2094,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -2192,7 +2132,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -2329,12 +2269,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -2356,7 +2290,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -2396,7 +2330,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -2434,7 +2368,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -2571,12 +2505,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -2598,7 +2526,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -2638,7 +2566,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -2676,7 +2604,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -2813,12 +2741,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -2840,7 +2762,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -2880,7 +2802,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -2918,7 +2840,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -3055,12 +2977,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -3082,7 +2998,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -3122,7 +3038,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -3160,7 +3076,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -3297,12 +3213,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -3324,7 +3234,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -3364,7 +3274,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -3402,7 +3312,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -3539,12 +3449,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -3566,7 +3470,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -3606,7 +3510,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -3644,7 +3548,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -3781,12 +3685,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -3808,7 +3706,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -3848,7 +3746,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -3886,7 +3784,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -4023,12 +3921,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -4050,7 +3942,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -4090,7 +3982,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -4128,7 +4020,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -4265,12 +4157,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -4292,7 +4178,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -4332,7 +4218,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -4370,7 +4256,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -4507,12 +4393,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -4534,7 +4414,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -4574,7 +4454,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -4612,7 +4492,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -4749,12 +4629,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -4776,7 +4650,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -4816,7 +4690,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -4854,7 +4728,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -4991,12 +4865,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -5016,7 +4884,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -5056,7 +4924,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -5094,7 +4962,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -5231,12 +5099,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -5258,7 +5120,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -5298,7 +5160,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -5336,7 +5198,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -5473,12 +5335,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -5500,7 +5356,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -5540,7 +5396,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -5578,7 +5434,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -5715,12 +5571,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -5742,7 +5592,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -5782,7 +5632,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -5820,7 +5670,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -5957,12 +5807,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -5984,7 +5828,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -6024,7 +5868,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -6062,7 +5906,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -6199,12 +6043,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -6226,7 +6064,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -6266,7 +6104,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -6304,7 +6142,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -6441,12 +6279,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -6468,7 +6300,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -6508,7 +6340,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -6546,7 +6378,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -6683,12 +6515,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -6710,7 +6536,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -6750,7 +6576,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -6788,7 +6614,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -6925,12 +6751,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -6952,7 +6772,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -6992,7 +6812,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -7030,7 +6850,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -7167,12 +6987,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -7194,7 +7008,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -7234,7 +7048,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -7272,7 +7086,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -7409,12 +7223,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -7436,7 +7244,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -7476,7 +7284,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -7514,7 +7322,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -7651,12 +7459,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -7678,7 +7480,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -7718,7 +7520,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -7756,7 +7558,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -7893,12 +7695,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -7920,7 +7716,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -7960,7 +7756,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -7998,7 +7794,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -8135,12 +7931,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -8160,7 +7950,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -8200,7 +7990,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -8238,7 +8028,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -8375,12 +8165,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -8400,7 +8184,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -8440,7 +8224,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -8478,7 +8262,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -8615,12 +8399,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -8640,7 +8418,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -8680,7 +8458,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -8718,7 +8496,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -8855,12 +8633,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -8880,7 +8652,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -8920,7 +8692,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -8958,7 +8730,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -9082,12 +8854,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -9107,7 +8873,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -9147,7 +8913,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -9185,7 +8951,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -9309,12 +9075,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -9334,7 +9094,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -9374,7 +9134,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -9412,7 +9172,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -9545,12 +9305,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -9570,7 +9324,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -9610,7 +9364,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -9648,7 +9402,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -9785,12 +9539,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -9810,7 +9558,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -9850,7 +9598,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -9888,7 +9636,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -10025,12 +9773,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -10050,7 +9792,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -10090,7 +9832,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -10128,7 +9870,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -10265,12 +10007,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -10290,7 +10026,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -10330,7 +10066,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -10368,7 +10104,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -10505,12 +10241,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -10530,7 +10260,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -10570,7 +10300,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -10608,7 +10338,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -10745,12 +10475,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -10770,7 +10494,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -10810,7 +10534,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -10848,7 +10572,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -10985,12 +10709,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -11010,7 +10728,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -11050,7 +10768,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -11088,7 +10806,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -11221,12 +10939,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -11246,7 +10958,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -11286,7 +10998,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -11324,7 +11036,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -11461,12 +11173,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -11486,7 +11192,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -11526,7 +11232,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -11564,7 +11270,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -11701,12 +11407,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -11730,7 +11430,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -11770,7 +11470,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -11808,7 +11508,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -12069,12 +11769,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -12094,7 +11788,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -12134,7 +11828,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -12172,7 +11866,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -12309,12 +12003,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -12334,7 +12022,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -12374,7 +12062,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -12412,7 +12100,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -12549,12 +12237,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -12588,7 +12270,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -12628,7 +12310,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -12666,7 +12348,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -13028,12 +12710,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -13053,7 +12729,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -13093,7 +12769,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -13131,7 +12807,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -13264,12 +12940,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -13289,7 +12959,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -13329,7 +12999,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -13367,7 +13037,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -13504,12 +13174,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -13529,7 +13193,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -13569,7 +13233,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -13607,7 +13271,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten
@@ -13744,12 +13408,6 @@ items:
       lgtmActsAsApprove: true
       requireSelfApproval: true
     attachments:
-    - name: jobURLPrefix
-      urls:
-      - https://dashboard.infra.jrawlings.co.uk/teams
-    - name: jobURLTemplate
-      urls:
-      - '{{if eq .Spec.Type "presubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}/{{.Status.BuildID}}{{else if eq .Spec.Type "postsubmit"}}https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/{{.Spec.Refs.BaseRef}}/{{.Status.BuildID}}{{end}}'
     - name: reportTemplate
       urls:
       - '{{if eq .Spec.Type "presubmit"}}[View all Builds for this Pull Request](https://dashboard.infra.jrawlings.co.uk/teams/{{.Spec.Namespace}}/projects/{{.Spec.Refs.Org}}/{{.Spec.Refs.Repo}}/PR-{{(index .Spec.Refs.Pulls 0).Number}}) {{else if eq .Spec.Type "batch"}} Run `jx get build log --owner {{.Spec.Refs.Org}} --repo {{.Spec.Refs.Repo}} --branch batch` whilst connected to the cluster. UI support coming soon. {{end}}'
@@ -13769,7 +13427,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-stale
@@ -13809,7 +13467,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-close
@@ -13847,7 +13505,7 @@ items:
       - agent: ""
         cluster: ""
         cron: ""
-        interval: 1h
+        interval: null
         labels: {}
         maxConcurrency: 0
         name: periodic-jx-rotten

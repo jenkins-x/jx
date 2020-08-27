@@ -6,14 +6,15 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config/branchprotection"
 	"github.com/pkg/errors"
 )
 
 // AddRepoToBranchProtection adds a repository to the Branch Protection section of a prow config
-func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, context string, kind Kind) error {
+func AddRepoToBranchProtection(bp *branchprotection.Config, repoSpec string, context string, kind Kind) error {
 	bp.ProtectTested = true
 	if bp.Orgs == nil {
-		bp.Orgs = make(map[string]config.Org, 0)
+		bp.Orgs = make(map[string]branchprotection.Org, 0)
 	}
 	url, err := gits.ParseGitURL(repoSpec)
 	if err != nil {
@@ -21,17 +22,17 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	}
 	requiredOrg, requiredRepo := url.Organisation, url.Name
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
-		bp.Orgs[requiredOrg] = config.Org{}
+		bp.Orgs[requiredOrg] = branchprotection.Org{}
 	}
 	if bp.Orgs[requiredOrg].Repos == nil {
 		org := bp.Orgs[requiredOrg]
-		org.Repos = make(map[string]config.Repo, 0)
+		org.Repos = make(map[string]branchprotection.Repo, 0)
 		bp.Orgs[requiredOrg] = org
 	}
 	if _, ok := bp.Orgs[requiredOrg].Repos[requiredRepo]; !ok {
-		bp.Orgs[requiredOrg].Repos[requiredRepo] = config.Repo{
-			Policy: config.Policy{
-				RequiredStatusChecks: &config.ContextPolicy{},
+		bp.Orgs[requiredOrg].Repos[requiredRepo] = branchprotection.Repo{
+			Policy: branchprotection.Policy{
+				RequiredStatusChecks: &branchprotection.ContextPolicy{},
 			},
 		}
 
@@ -61,7 +62,7 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 }
 
 // RemoveRepoFromBranchProtection removes a repository to the Branch Protection section of a prow config
-func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string) error {
+func RemoveRepoFromBranchProtection(bp *branchprotection.Config, repoSpec string) error {
 	if bp.Orgs == nil {
 		return errors.New("no orgs in BranchProtection object")
 	}
@@ -86,17 +87,17 @@ func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string
 func GetAllBranchProtectionContexts(org string, repo string, prowConfig *config.Config) ([]string, error) {
 	prowOrg, ok := prowConfig.BranchProtection.Orgs[org]
 	if !ok {
-		prowOrg = config.Org{}
+		prowOrg = branchprotection.Org{}
 	}
 	if prowOrg.Repos == nil {
-		prowOrg.Repos = make(map[string]config.Repo, 0)
+		prowOrg.Repos = make(map[string]branchprotection.Repo, 0)
 	}
 	prowRepo, ok := prowOrg.Repos[repo]
 	if !ok {
-		prowRepo = config.Repo{}
+		prowRepo = branchprotection.Repo{}
 	}
 	if prowRepo.RequiredStatusChecks == nil {
-		prowRepo.RequiredStatusChecks = &config.ContextPolicy{}
+		prowRepo.RequiredStatusChecks = &branchprotection.ContextPolicy{}
 	}
 	return prowRepo.RequiredStatusChecks.Contexts, nil
 }

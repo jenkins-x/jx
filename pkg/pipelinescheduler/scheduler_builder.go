@@ -9,6 +9,9 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/gits"
 	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/jenkins-x/lighthouse/pkg/config"
+	"github.com/jenkins-x/lighthouse/pkg/config/branchprotection"
+	"github.com/jenkins-x/lighthouse/pkg/config/job"
+	"github.com/jenkins-x/lighthouse/pkg/config/keeper"
 	"github.com/jenkins-x/lighthouse/pkg/plugins"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,14 +124,6 @@ func buildDefaultScheduler(prowConfig *config.Config) *jenkinsv1.Scheduler {
 
 func buildSchedulerAttachments(configuration *config.Config) []*jenkinsv1.Attachment {
 	attachments := make([]*jenkinsv1.Attachment, 0)
-	jobURLPrefix := configuration.Plank.JobURLPrefix
-	if jobURLPrefix != "" {
-		attachments = buildSchedulerAttachment("jobURLPrefix", jobURLPrefix, attachments)
-	}
-	jobURLTemplate := configuration.Plank.JobURLTemplateString
-	if jobURLTemplate != "" {
-		attachments = buildSchedulerAttachment("jobURLTemplate", jobURLTemplate, attachments)
-	}
 	reportTemplate := configuration.Plank.ReportTemplateString
 	if reportTemplate != "" {
 		attachments = buildSchedulerAttachment("reportTemplate", reportTemplate, attachments)
@@ -156,9 +151,8 @@ func buildSchedulerPeriodics(configuration *config.Config) *jenkinsv1.Periodics 
 		for i := range periodics {
 			periodic := periodics[i]
 			schedulerPeriodic := &jenkinsv1.Periodic{
-				JobBase:  buildSchedulerJobBase(&periodic.JobBase),
-				Interval: &periodic.Interval,
-				Cron:     &periodic.Cron,
+				JobBase: buildSchedulerJobBase(&periodic.Base),
+				Cron:    &periodic.Cron,
 				Tags: &jenkinsv1.ReplaceableSliceOfStrings{
 					Items: make([]string, 0),
 				},
@@ -203,9 +197,7 @@ func buildSchedulerConfigUpdater(repo string, pluginConfig *plugins.Configuratio
 					configMapSpec[location] = spec
 				}
 				return &jenkinsv1.ConfigUpdater{
-					PluginFile: pluginConfig.ConfigUpdater.PluginFile,
-					ConfigFile: pluginConfig.ConfigUpdater.ConfigFile,
-					Map:        configMapSpec,
+					Map: configMapSpec,
 				}
 			}
 		}
@@ -252,7 +244,7 @@ func buildSchedulerMerger(repo string, prowConfig *config.Config) *jenkinsv1.Mer
 	return merger
 }
 
-func buildSchedulerContextPolicy(orgRepo string, tideConfig *config.Keeper) *jenkinsv1.ContextPolicy {
+func buildSchedulerContextPolicy(orgRepo string, tideConfig *keeper.Config) *jenkinsv1.ContextPolicy {
 	orgRepoArr := strings.Split(orgRepo, "/")
 	orgContextPolicy, orgContextPolicyFound := tideConfig.ContextOptions.Orgs[orgRepoArr[0]]
 	if orgContextPolicyFound {
@@ -285,7 +277,7 @@ func buildSchedulerContextPolicy(orgRepo string, tideConfig *config.Keeper) *jen
 	return &contextPolicy
 }
 
-func buildSchedulerRepoContextPolicy(orgRepo string, tideConfig *config.Keeper) *jenkinsv1.RepoContextPolicy {
+func buildSchedulerRepoContextPolicy(orgRepo string, tideConfig *keeper.Config) *jenkinsv1.RepoContextPolicy {
 	orgRepoArr := strings.Split(orgRepo, "/")
 	orgContextPolicy, orgContextPolicyFound := tideConfig.ContextOptions.Orgs[orgRepoArr[0]]
 	if orgContextPolicyFound {
@@ -316,7 +308,7 @@ func buildSchedulerRepoContextPolicy(orgRepo string, tideConfig *config.Keeper) 
 	return nil
 }
 
-func buildSchedulerQuery(orgRepo string, tideQueries *config.KeeperQueries) []*jenkinsv1.Query {
+func buildSchedulerQuery(orgRepo string, tideQueries *keeper.Queries) []*jenkinsv1.Query {
 	queries := make([]*jenkinsv1.Query, 0)
 	if orgRepo != "" && strings.Contains(orgRepo, "/") {
 		for _, tideQuery := range *tideQueries {
@@ -474,7 +466,7 @@ func buildSchedulerProtectionPolicies(repo string, prowConfig *config.Config) *j
 	}
 }
 
-func buildSchedulerRequiredPullRequestReviews(requiredPullRequestReviews *config.ReviewPolicy) *jenkinsv1.ReviewPolicy {
+func buildSchedulerRequiredPullRequestReviews(requiredPullRequestReviews *branchprotection.ReviewPolicy) *jenkinsv1.ReviewPolicy {
 	if requiredPullRequestReviews != nil {
 		return &jenkinsv1.ReviewPolicy{
 			DismissalRestrictions: buildSchedulerRestrictions(requiredPullRequestReviews.DismissalRestrictions),
@@ -486,7 +478,7 @@ func buildSchedulerRequiredPullRequestReviews(requiredPullRequestReviews *config
 	return nil
 }
 
-func buildSchedulerRequiredStatusChecks(requiredStatusChecks *config.ContextPolicy) *jenkinsv1.BranchProtectionContextPolicy {
+func buildSchedulerRequiredStatusChecks(requiredStatusChecks *branchprotection.ContextPolicy) *jenkinsv1.BranchProtectionContextPolicy {
 	if requiredStatusChecks != nil {
 		return &jenkinsv1.BranchProtectionContextPolicy{
 			Contexts: &jenkinsv1.ReplaceableSliceOfStrings{
@@ -498,7 +490,7 @@ func buildSchedulerRequiredStatusChecks(requiredStatusChecks *config.ContextPoli
 	return nil
 }
 
-func buildSchedulerRestrictions(restrictions *config.Restrictions) *jenkinsv1.Restrictions {
+func buildSchedulerRestrictions(restrictions *branchprotection.Restrictions) *jenkinsv1.Restrictions {
 	if restrictions != nil {
 		return &jenkinsv1.Restrictions{
 			Users: &jenkinsv1.ReplaceableSliceOfStrings{
@@ -532,7 +524,7 @@ func buildSchedulerPostsubmits(repo string, prowConfig *config.Config) *jenkinsv
 			Items: postsubmit.Branches,
 		}
 		schedulerPostsubmit := &jenkinsv1.Postsubmit{
-			JobBase: buildSchedulerJobBase(&postsubmit.JobBase),
+			JobBase: buildSchedulerJobBase(&postsubmit.Base),
 			Brancher: &jenkinsv1.Brancher{
 				SkipBranches: skipBranches,
 				Branches:     branches,
@@ -548,7 +540,7 @@ func buildSchedulerPostsubmits(repo string, prowConfig *config.Config) *jenkinsv
 	return schedulerPostsubmits
 }
 
-func buildSchedulerJobBase(jobBase *config.JobBase) *jenkinsv1.JobBase {
+func buildSchedulerJobBase(jobBase *job.Base) *jenkinsv1.JobBase {
 	labels := &jenkinsv1.ReplaceableMapOfStringString{
 		Items: jobBase.Labels,
 	}
@@ -578,7 +570,7 @@ func buildSchedulerPresubmits(repo string, prowConfig *config.Config) *jenkinsv1
 		mergeType := prowConfig.Keeper.MergeType[repo]
 		mt := string(mergeType)
 		schedulerPresubmit := &jenkinsv1.Presubmit{
-			JobBase: buildSchedulerJobBase(&presubmit.JobBase),
+			JobBase: buildSchedulerJobBase(&presubmit.Base),
 			Brancher: &jenkinsv1.Brancher{
 				SkipBranches: skipBranches,
 				Branches:     branches,
