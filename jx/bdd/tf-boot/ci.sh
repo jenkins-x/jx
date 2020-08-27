@@ -174,6 +174,7 @@ EOF
   # adding cluster labels to ensure proper garbage collection of test cluster
   create_time=$(date '+%a-%b-%d-%Y-%H-%M-%S' | tr '[:upper:]' '[:lower:]')
   gcloud container clusters update "$cluster_name" --zone=europe-west1-c --update-labels "branch=${branch},cluster=tf-boot,create-time=$create_time"
+  gcloud container clusters get-credentials --zone=europe-west1-c "$cluster_name"
 
   popd
 }
