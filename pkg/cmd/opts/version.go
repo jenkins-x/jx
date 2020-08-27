@@ -73,6 +73,7 @@ func (o *CommonOptions) GetPackageVersions(ns string, helmTLS bool) (map[string]
 	if err != nil {
 		log.Logger().Warnf("Failed to get kubectl version: %s", err)
 	} else {
+		log.Logger().Warnf("OUTPUT IS: %s", output)
 		for i, line := range strings.Split(output, "\n") {
 			fields := strings.Fields(line)
 			if len(fields) > 1 {
