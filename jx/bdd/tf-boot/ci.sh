@@ -232,6 +232,7 @@ EOF
 ###############################################################################
 function jx_boot() {
   pushd boot-source
+  jx diagnose
   jx -b boot
   kubectl get nodes
   popd
