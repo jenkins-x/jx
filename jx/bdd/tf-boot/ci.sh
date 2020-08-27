@@ -232,6 +232,8 @@ EOF
 ###############################################################################
 function jx_boot() {
   pushd boot-source
+  which kubectl
+  kubectl version --short
   jx diagnose
   jx -b boot
   kubectl get nodes
