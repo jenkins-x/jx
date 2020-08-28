@@ -311,10 +311,9 @@ func (o *StepCreateTaskOptions) Run() error {
 
 	if o.KanikoFlags == "" {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
-		if err != nil {
-			return fmt.Errorf("could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
+		if err == nil {
+			o.KanikoFlags = data["kaniko.flags"]
 		}
-		o.KanikoFlags = data["kaniko.flags"]
 	}
 	exists, err = o.effectiveProjectConfigExists()
 	if err != nil {
