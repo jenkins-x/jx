@@ -45,6 +45,7 @@ type VaultCreationParam struct {
 	FileHandles          util.IOFileHandles
 	GKE                  *GKEParam
 	AWS                  *AWSParam
+	Azure                *AzureParam
 }
 
 // GKEParam encapsulates the parameters needed to create a Vault instance on GKE.
@@ -71,6 +72,16 @@ type AWSParam struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	AutoCreate      bool
+}
+
+// AzureParam encapsulates the parameters needed to create a Vault instance on AWS.
+type AzureParam struct {
+	TenantID           string
+	StorageAccountKey  string
+	StorageAccountName string
+	ContainerName      string
+	VaultName          string
+	KeyName            string
 }
 
 // VaultCreator defines the interface to create and update Vault instances
@@ -244,6 +255,8 @@ func (v *defaultVaultCreator) setCloudProviderSpecificSettings(vaultCRD *v1alpha
 			cloudProviderConfig, err = v.vaultGKEConfig(vaultCRD, param)
 		case cloud.AWS, cloud.EKS:
 			cloudProviderConfig, err = v.vaultAWSConfig(vaultCRD, param)
+		case cloud.AKS:
+			cloudProviderConfig, err = v.vaultAzureConfig(vaultCRD, param)
 		default:
 			err = errors.Errorf("vault is not supported on cloud provider %s", param.KubeProvider)
 		}
@@ -487,4 +500,21 @@ func (v *defaultVaultCreator) applyDefaultRegionIfEmpty(awsParam *AWSParam, defa
 			awsParam.S3Region = defaultRegion
 		}
 	}
+}
+
+func (v *defaultVaultCreator) vaultAzureConfig(_ *v1alpha1.Vault, param VaultCreationParam) (vault.CloudProviderConfig, error) {
+
+	vaultConfig := vault.AzureConfig{
+		AzureUnsealConfig: v1alpha1.AzureUnsealConfig{
+			KeyVaultName: param.Azure.VaultName,
+		},
+		StorageAccountName: param.Azure.StorageAccountName,
+		StorageAccountKey:  param.Azure.StorageAccountKey,
+		ContainerName:      param.Azure.ContainerName,
+		TenantID:           param.Azure.TenantID,
+		VaultName:          param.Azure.VaultName,
+		KeyName:            param.Azure.KeyName,
+	}
+
+	return vault.PrepareAzureVaultCRD(&vaultConfig)
 }
