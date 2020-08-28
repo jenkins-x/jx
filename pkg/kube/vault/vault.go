@@ -73,6 +73,17 @@ type AWSConfig struct {
 	ProvidedIAMUsername string
 }
 
+// AzureConfig keeps the vault configuration for Azure
+type AzureConfig struct {
+	v1alpha1.AzureUnsealConfig
+	StorageAccountName string
+	StorageAccountKey  string
+	ContainerName      string
+	TenantID           string
+	VaultName          string
+	KeyName            string
+}
+
 // DynamoDBConfig AWS DynamoDB config for Vault backend
 type DynamoDBConfig struct {
 	HaEnabled       string `json:"ha_enabled"`
@@ -80,6 +91,13 @@ type DynamoDBConfig struct {
 	Table           string `json:"table"`
 	AccessKeyID     string `json:"access_key"`
 	SecretAccessKey string `json:"secret_key"`
+}
+
+// AzureStorageConfig Azure Storage config for Vault backend
+type AzureStorageConfig struct {
+	AccountName   string `json:"accountName"`
+	AccountKey    string `json:"accountKey"`
+	ContainerName string `json:"container"`
 }
 
 // VaultAuths list of vault authentications
@@ -127,8 +145,9 @@ type Telemetry struct {
 
 // Storage configuration for Vault storage
 type Storage struct {
-	GCS      *GCSConfig      `json:"gcs,omitempty"`
-	DynamoDB *DynamoDBConfig `json:"dynamodb,omitempty"`
+	GCS          *GCSConfig          `json:"gcs,omitempty"`
+	DynamoDB     *DynamoDBConfig     `json:"dynamodb,omitempty"`
+	AzureStorage *AzureStorageConfig `json:"azure,omitempty"`
 }
 
 // SecretEngine configuration for secret engine
@@ -139,8 +158,9 @@ type SecretEngine struct {
 
 // Seal configuration for Vault auto-unseal
 type Seal struct {
-	GcpCkms *GCPSealConfig `json:"gcpckms,omitempty"`
-	AWSKms  *AWSSealConfig `json:"awskms,omitempty"`
+	GcpCkms       *GCPSealConfig   `json:"gcpckms,omitempty"`
+	AWSKms        *AWSSealConfig   `json:"awskms,omitempty"`
+	AzureKeyVault *AzureSealConfig `json:"azurekeyvault,omitempty"`
 }
 
 // GCPSealConfig Google Cloud KMS config for vault auto-unseal
@@ -159,6 +179,13 @@ type AWSSealConfig struct {
 	SecretKey string `json:"secret_key,omitempty"`
 	KmsKeyID  string `json:"kms_key_id,omitempty"`
 	Endpoint  string `json:"endpoint,omitempty"`
+}
+
+// AzureSealConfig Azure Key Vault config for vault auto-unseal
+type AzureSealConfig struct {
+	TenantID  string `json:"tenant_id,omitempty"`
+	VaultName string `json:"vault_name,omitempty"`
+	KeyName   string `json:"key_name,omitempty"`
 }
 
 // CloudProviderConfig is a wrapper around the cloud provider specific elements of the Vault CRD configuration
@@ -266,6 +293,39 @@ func PrepareAWSVaultCRD(awsServiceAccountSecretName string, awsConfig *AWSConfig
 		Path:       awsServiceAccountPath,
 		SecretName: awsServiceAccountSecretName,
 	}
+	return CloudProviderConfig{storageConfig, sealConfig, unsealConfig, credentialsConfig}, nil
+}
+
+// PrepareAzureVaultCRD creates a new vault backed by Azure Key Vault and Azure Storage
+func PrepareAzureVaultCRD(azureConfig *AzureConfig) (CloudProviderConfig, error) {
+	storage := Storage{
+		AzureStorage: &AzureStorageConfig{
+			AccountName:   azureConfig.StorageAccountName,
+			AccountKey:    azureConfig.StorageAccountKey,
+			ContainerName: azureConfig.ContainerName,
+		},
+	}
+	storageConfig, err := util.ToObjectMap(storage)
+	if err != nil {
+		return CloudProviderConfig{}, errors.Wrap(err, "error creating storage config")
+	}
+
+	seal := Seal{
+		AzureKeyVault: &AzureSealConfig{
+			TenantID:  azureConfig.TenantID,
+			VaultName: azureConfig.VaultName,
+			KeyName:   azureConfig.KeyName,
+		},
+	}
+	sealConfig, err := util.ToObjectMap(seal)
+	if err != nil {
+		return CloudProviderConfig{}, errors.Wrap(err, "error creating seal config")
+	}
+
+	unsealConfig := v1alpha1.UnsealConfig{
+		Azure: &azureConfig.AzureUnsealConfig,
+	}
+	credentialsConfig := v1alpha1.CredentialsConfig{}
 	return CloudProviderConfig{storageConfig, sealConfig, unsealConfig, credentialsConfig}, nil
 }
 

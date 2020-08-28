@@ -394,6 +394,9 @@ type VaultConfig struct {
 	// AWSConfig describes the AWS specific configuration needed for the Vault Operator.
 	AWSConfig *VaultAWSConfig `json:"aws,omitempty"`
 
+	// AzureConfig describes the Azure specific configuration needed for the Vault Operator.
+	AzureConfig *VaultAzureConfig `json:"azure,omitempty"`
+
 	// URL specifies the URL of an Vault instance to use for secret storage.
 	// Needs to be specified together with the Service Account and namespace to use for connecting to Vault.
 	// This cannot be used in conjunction with the Name attribute.
@@ -430,6 +433,15 @@ type VaultAWSUnsealConfig struct {
 	S3Bucket  string `json:"s3Bucket,omitempty"`
 	S3Prefix  string `json:"s3Prefix,omitempty"`
 	S3Region  string `json:"s3Region,omitempty"`
+}
+
+// VaultAzureConfig contains all the Vault configuration needed by Vault to be deployed in Azure
+type VaultAzureConfig struct {
+	TenantID           string `json:"tenantId,omitempty"`
+	VaultName          string `json:"vaultName,omitempty"`
+	KeyName            string `json:"keyName,omitempty"`
+	StorageAccountName string `json:"storageAccountName,omitempty"`
+	ContainerName      string `json:"containerName,omitempty"`
 }
 
 // UnmarshalJSON method handles the rename of EnvironmentGitPrivate to EnvironmentGitPublic.

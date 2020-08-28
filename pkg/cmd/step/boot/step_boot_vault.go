@@ -298,14 +298,18 @@ func (o *StepBootVaultOptions) setupInClusterVault(requirements *config.Requirem
 			RecreateBucket: requirements.Vault.RecreateBucket,
 		}
 		vaultCreateParam.GKE = gkeParam
-	}
-
-	if provider == cloud.EKS {
+	} else if provider == cloud.EKS {
 		awsParam, err := o.createAWSParam(requirements)
 		if err != nil {
 			return errors.Wrap(err, "unable to create Vault creation parameter from requirements")
 		}
 		vaultCreateParam.AWS = &awsParam
+	} else if provider == cloud.AKS {
+		azureParam, err := o.createAzureParam(requirements)
+		if err != nil {
+			return errors.Wrap(err, "unable to create Vault creation parameter from requirements")
+		}
+		vaultCreateParam.Azure = &azureParam
 	}
 
 	vaultCreator := create.NewVaultCreator()
@@ -375,6 +379,26 @@ func (o *StepBootVaultOptions) createAWSParam(requirements *config.RequirementsC
 	}
 
 	return awsParam, nil
+}
+
+func (o *StepBootVaultOptions) createAzureParam(requirements *config.RequirementsConfig) (create.AzureParam, error) {
+	if requirements.Vault.AzureConfig == nil {
+		return create.AzureParam{}, errors.New("missing Azure configuration for Vault in requirements")
+	}
+
+	azureConfig := requirements.Vault.AzureConfig
+	storageAccessKey := os.Getenv("VAULT_AZURE_STORAGE_ACCESS_KEY")
+
+	azureParam := create.AzureParam{
+		TenantID:           azureConfig.TenantID,
+		StorageAccountKey:  storageAccessKey,
+		StorageAccountName: azureConfig.StorageAccountName,
+		ContainerName:      azureConfig.ContainerName,
+		KeyName:            azureConfig.KeyName,
+		VaultName:          azureConfig.VaultName,
+	}
+
+	return azureParam, nil
 }
 
 func (o *StepBootVaultOptions) storeInternalVaultConfig(kubeClient kubernetes.Interface, vaultConfig vault.Vault, ns string) error {
