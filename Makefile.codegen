@@ -49,6 +49,14 @@ generate-docs: build-codegen ## Generate the docs
 install-refdocs:
 	$(GO) get github.com/jenkins-x/gen-crd-api-reference-docs
 
+generate-refdocs: generate-config-refdocs
+
+generate-config-refdocs:
+	${GOPATH}/bin/gen-crd-api-reference-docs -config "docs/configdocs/config.json" \
+	-template-dir docs/configdocs/templates \
+    -api-dir "./pkg/config" \
+    -out-file docs/config.md
+
 stash:
 	# Making sure repo has no outstanding changes
 	git stash
