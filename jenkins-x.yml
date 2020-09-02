@@ -32,6 +32,15 @@ pipelineConfig:
           - agent:
               image: gcr.io/jenkinsxio/builder-go
             name: chart
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 3
+                    memory: 3072Mi
+                  requests:
+                    cpu: 2
+                    memory: 2048Mi
             steps:
               - name: release-binary
                 command: make release
