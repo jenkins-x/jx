@@ -63,7 +63,7 @@ require (
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
 	github.com/jenkins-x/jx-api v0.0.13
 	github.com/jenkins-x/jx-logging v0.0.10
-	github.com/jenkins-x/lighthouse v0.0.777
+	github.com/jenkins-x/lighthouse v0.0.783
 	github.com/jetstack/cert-manager v0.9.1
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
