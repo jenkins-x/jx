@@ -20,6 +20,15 @@ pipelineConfig:
           - agent:
               image: golang:1.13
             name: cli
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 3
+                    memory: 3072Mi
+                  requests:
+                    cpu: 2
+                    memory: 2048Mi
             steps:
               - name: lint
                 command: make lint
