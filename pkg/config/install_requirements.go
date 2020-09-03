@@ -527,6 +527,14 @@ type RequirementsValues struct {
 	RequirementsConfig *RequirementsConfig `json:"jxRequirements,omitempty"`
 }
 
+// UserNameEmailConfig contains the user name and email of a user (e.g. pipeline user)
+type UserNameEmailConfig struct {
+	// Username the username of the user
+	Username string `json:"username,omitempty"`
+	// Email the email address of the user
+	Email string `json:"email,omitempty"`
+}
+
 // RequirementsConfig contains the logical installation requirements in the `jx-requirements.yml` file when
 // installing, configuring or upgrading Jenkins X via `jx boot`
 type RequirementsConfig struct {
@@ -552,6 +560,8 @@ type RequirementsConfig struct {
 	Kaniko bool `json:"kaniko,omitempty"`
 	// Ingress contains ingress specific requirements
 	Ingress IngressConfig `json:"ingress"`
+	// PipelineUser the user name and email used for running pipelines
+	PipelineUser *UserNameEmailConfig `json:"pipelineUser,omitempty"`
 	// Repository specifies what kind of artifact repository you wish to use for storing artifacts (jars, tarballs, npm modules etc)
 	Repository RepositoryType `json:"repository,omitempty" envconfig:"JX_REQUIREMENT_REPOSITORY"`
 	// SecretStorage how should we store secrets for the cluster
