@@ -33,7 +33,6 @@ VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-versio
 # Full build flags used when building binaries. Not used for test compilation/execution.
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/cmd/version.Version=$(VERSION)\
-		-X github.com/jenkins-x/jx-cli/pkg/cmd/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.Branch='$(BRANCH)'\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.BuildDate='$(BUILD_DATE)'\
