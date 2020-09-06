@@ -27,8 +27,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-verify
   url: https://github.com/jenkins-x/jx-verify
-  version: 0.0.24
-  versionURL: https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.24
+  version: 0.0.26
+  versionURL: https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.26
 - host: github.com
   owner: jenkins-x
   repo: jx-pipeline
