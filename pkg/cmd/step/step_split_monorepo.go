@@ -48,6 +48,7 @@ type StepSplitMonorepoOptions struct {
 	OutputDir     string
 	KubernetesDir string
 	NoGit         bool
+	PrivateGit    bool
 }
 
 // NewCmdStepSplitMonorepo Creates a new Command object
@@ -77,6 +78,7 @@ func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.OutputDir, opts.OptionOutputDir, "d", "generated", "The output directory where new projects are created")
 	cmd.Flags().StringVarP(&options.KubernetesDir, "kubernetes-folder", "", defaultKubernetesDir, "The folder containing all the Kubernetes YAML for each app")
 	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't try to clone/create the separate repositories in github")
+	cmd.Flags().BoolVarP(&options.PrivateGit, "private-git", "", false, "If enabled then make clone/create to a private github repository")
 	return cmd
 }
 
@@ -188,7 +190,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 
 				if !o.NoGit {
 					if createRepo {
-						repo, err = gitProvider.CreateRepository(organisation, name, false)
+						repo, err = gitProvider.CreateRepository(organisation, name, o.PrivateGit)
 						if err != nil {
 							return err
 						}
