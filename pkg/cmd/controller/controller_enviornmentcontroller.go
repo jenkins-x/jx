@@ -74,6 +74,21 @@ type ControllerEnvironmentOptions struct {
 	secret                []byte
 }
 
+type gitlabPushHook struct {
+	ObjectKind   string `json:"object_kind"`
+	EventName    string `json:"event_name"`
+	Before       string `json:"before"`
+	After        string `json:"after"`
+	Ref          string `json:"ref"`
+	CheckoutSha  string `json:"checkout_sha"`
+	UserID       int    `json:"user_id"`
+	UserName     string `json:"user_name"`
+	UserUsername string `json:"user_username"`
+	UserEmail    string `json:"user_email"`
+	UserAvatar   string `json:"user_avatar"`
+	ProjectID    int    `json:"project_id"`
+}
+
 var (
 	controllerEnvironmentsLong = templates.LongDesc(`A controller which takes a webhook and updates the environment via GitOps for remote clusters`)
 
@@ -106,10 +121,10 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().IntVarP(&options.Port, optionPort, "", 8080, "The TCP port to listen on.")
 	cmd.Flags().StringVarP(&options.BindAddress, optionBind, "", "",
 		"The interface address to bind to (by default, will listen on all interfaces/addresses).")
-	cmd.Flags().StringVarP(&options.Path, "path", "", "/hook",
+	cmd.Flags().StringVarP(&options.Path, "path", "", "/hook/",
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
-	cmd.Flags().BoolVarP(&options.RequireHeaders, "require-headers", "", true, "If enabled we reject webhooks which do not have the github headers: 'X-GitHub-Event' and 'X-GitHub-Delivery'")
+	cmd.Flags().BoolVarP(&options.RequireHeaders, "require-headers", "", true, "If enabled we reject webhooks which do not have the git service headers: 'X-GitHub-Event' and 'X-GitHub-Delivery' for GitHub service or 'X-Gitlab-Event' and 'X-Gitlab-Token' for gitlab service, for example")
 	cmd.Flags().BoolVarP(&options.NoRegisterWebHook, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
 	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source URL of the environment git repository")
 	cmd.Flags().StringVarP(&options.GitServerURL, "git-server-url", "", "", "The git server URL. If not specified defaults to $GIT_SERVER_URL")
@@ -243,7 +258,14 @@ func (o *ControllerEnvironmentOptions) Run() error {
 			mux.Handle(p, http.HandlerFunc(o.getIndex))
 		}
 	}
-	mux.Handle(o.Path, http.HandlerFunc(o.handleWebHookRequests))
+
+	if o.GitKind == "github" {
+		mux.Handle(o.Path, http.HandlerFunc(o.handleGitHubWebHookRequests))
+	} else if o.GitKind == "gitlab" {
+		mux.Handle(o.Path, http.HandlerFunc(o.handleGitlabWebHookRequests))
+	} else {
+		return errors.Wrapf(nil, "gitkind don't support now")
+	}
 
 	log.Logger().Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
@@ -468,14 +490,14 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 	return nil
 }
 
-// handle request for pipeline runs
-func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWriter, r *http.Request) {
+// handle request for pipeline runs for GitHub kind
+func (o *ControllerEnvironmentOptions) handleGitHubWebHookRequests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		// liveness probe etc
 		o.getIndex(w, r)
 		return
 	}
-	eventType, eventGUID, data, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
+	eventType, eventGUID, data, valid, _ := ValidateGitHubWebhook(w, r, o.secret, o.RequireHeaders)
 	log.Logger().Infof("webhook handler invoked event type %s UID %s valid %s method %s", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	if !valid {
 		return
@@ -502,6 +524,45 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 	}
 
 	log.Logger().Infof("starting pipeline from event type %s UID %s valid %s method %s", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
+	w.Write([]byte("OK")) //nolint:errcheck
+
+	go o.startPipelineRun(w, r)
+}
+
+// handle request for pipeline runs for Gitlab kind
+func (o *ControllerEnvironmentOptions) handleGitlabWebHookRequests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		// liveness probe etc
+		o.getIndex(w, r)
+		return
+	}
+	eventType, data, valid, _ := ValidateGitlabWebhook(w, r, o.secret, o.RequireHeaders)
+	log.Logger().Infof("webhook handler invoked event type %s valid %s method %s", eventType, strconv.FormatBool(valid), r.Method)
+	if !valid {
+		return
+	}
+	if eventType != "push" {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType)) //nolint:errcheck
+		return
+	}
+	if len(data) == 0 {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " as no payload")) //nolint:errcheck
+		return
+	}
+
+	// lets return 200 so we don't keep getting retries from Gitlab :)
+
+	hook := gitlabPushHook{}
+	if err := json.Unmarshal(data, &hook); err != nil {
+		responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Could not unmarshal the PushHook")
+		return
+	}
+	if hook.Ref != o.PushRef {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " on refs: " + hook.Ref)) //nolint:errcheck
+		return
+	}
+
+	log.Logger().Infof("starting pipeline from event type %s valid %s method %s", eventType, strconv.FormatBool(valid), r.Method)
 	w.Write([]byte("OK")) //nolint:errcheck
 
 	go o.startPipelineRun(w, r)
@@ -554,12 +615,12 @@ func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret
 	return nil
 }
 
-// ValidateWebhook ensures that the provided request conforms to the
+// ValidateGitHubWebhook ensures that the provided request conforms to the
 // format of a Github webhook and the payload can be validated with
 // the provided hmac secret. It returns the event type, the event guid,
 // the payload of the request, whether the webhook is valid or not,
 // and finally the resultant HTTP status code
-func ValidateWebhook(w http.ResponseWriter, r *http.Request, hmacSecret []byte, requireGitHubHeaders bool) (string, string, []byte, bool, int) {
+func ValidateGitHubWebhook(w http.ResponseWriter, r *http.Request, hmacSecret []byte, requireGitHeaders bool) (string, string, []byte, bool, int) {
 	defer r.Body.Close() //nolint:errcheck
 
 	// Our health check uses GET, so just kick back a 200.
@@ -574,7 +635,7 @@ func ValidateWebhook(w http.ResponseWriter, r *http.Request, hmacSecret []byte, 
 	}
 	eventType := r.Header.Get("X-GitHub-Event")
 	eventGUID := r.Header.Get("X-GitHub-Delivery")
-	if requireGitHubHeaders {
+	if requireGitHeaders {
 		if eventType == "" {
 			responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Missing X-GitHub-Event Header")
 			return "", "", nil, false, http.StatusBadRequest
@@ -604,15 +665,68 @@ func ValidateWebhook(w http.ResponseWriter, r *http.Request, hmacSecret []byte, 
 		return "", "", nil, false, http.StatusInternalServerError
 	}
 	// Validate the payload with our HMAC secret.
-	if !ValidatePayload(payload, sig, hmacSecret) {
+	if !ValidateGitHubPayload(payload, sig, hmacSecret) {
 		responseHTTPError(w, http.StatusForbidden, "403 Forbidden: Invalid X-Hub-Signature")
 		return "", "", nil, false, http.StatusForbidden
 	}
 	return eventType, eventGUID, payload, true, http.StatusOK
 }
 
-// ValidatePayload ensures that the request payload signature matches the key.
-func ValidatePayload(payload []byte, sig string, key []byte) bool {
+// ValidateGitlabWebhook ensures that the provided request conforms to the
+// format of a Gitlab webhook and the payload can be validated. It returns
+// the event type, the event guid, the payload of the request, whether the
+// webhook is valid or not, and finally the resultant HTTP status code
+func ValidateGitlabWebhook(w http.ResponseWriter, r *http.Request, hmacSecret []byte, requireGitHeaders bool) (string, []byte, bool, int) {
+	defer r.Body.Close() //nolint:errcheck
+
+	// Our health check uses GET, so just kick back a 200.
+	if r.Method == http.MethodGet {
+		return "", nil, false, http.StatusOK
+	}
+
+	// Header checks: It must be a POST with an event type and a signature.
+	if r.Method != http.MethodPost {
+		responseHTTPError(w, http.StatusMethodNotAllowed, "405 Method not allowed")
+		return "", nil, false, http.StatusMethodNotAllowed
+	}
+	eventType := r.Header.Get("X-Gitlab-Event")
+	if requireGitHeaders {
+		if eventType == "" {
+			responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Missing X-Gitlab-Event Header")
+			return "", nil, false, http.StatusBadRequest
+		}
+		if eventType == "Push Hook" {
+			eventType = "push"
+		}
+	} else {
+		if eventType == "" || eventType == "Push Hook" {
+			eventType = "push"
+		}
+	}
+	eventToken := r.Header.Get("X-Gitlab-Token")
+	if eventToken == "" {
+		responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Missing X-Gitlab-Token Header")
+		return "", nil, false, http.StatusBadRequest
+	}
+	if eventToken != string(hmacSecret) {
+		responseHTTPError(w, http.StatusBadRequest, "403 Forbidden: Invalid X-Gitlab-Token Header")
+		return "", nil, false, http.StatusBadRequest
+	}
+	contentType := r.Header.Get("content-type")
+	if contentType != "application/json" {
+		responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Hook only accepts content-type: application/json - please reconfigure this hook on GitHub")
+		return "", nil, false, http.StatusBadRequest
+	}
+	payload, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		responseHTTPError(w, http.StatusInternalServerError, "500 Internal Server Error: Failed to read request body")
+		return "", nil, false, http.StatusInternalServerError
+	}
+	return eventType, payload, true, http.StatusOK
+}
+
+// ValidateGitHubPayload ensures that the request payload signature matches the key.
+func ValidateGitHubPayload(payload []byte, sig string, key []byte) bool {
 	if !strings.HasPrefix(sig, "sha1=") {
 		return false
 	}
