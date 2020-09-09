@@ -10,7 +10,7 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline) |  | [0.0.14](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.14) | 
 [jenkins-x/jx-application](https://github.com/jenkins-x/jx-application) |  | [0.0.10](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.10) | 
 [jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops) |  | [0.0.278](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.278) | 
-[jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview) |  | [0.0.46](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.46) | 
+[jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview) |  | [0.0.48](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.48) | 
 [jenkins-x/jx-test](https://github.com/jenkins-x/jx-test) |  | [0.0.18](https://github.com/jenkins-x/jx-test/releases/tag/v0.0.18) | 
 [jenkins-x/jxl-base-image](https://github.com/jenkins-x/jxl-base-image) |  | [0.0.61]() | 
 [jenkins-x/jx-cli-base-image](https://github.com/jenkins-x/jx-cli-base-image) |  | [0.0.21]() | 
