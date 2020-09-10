@@ -58,7 +58,17 @@ var (
 		jx ns cheese
 
 		# change the current namespace to 'brie' creating it if necessary
-		jx ns --create brie`)
+	    jx ns --create brie
+
+		# switch to the namespace of the staging environment
+		jx ns --env staging
+
+		# switch back to the dev environment namespace
+		jx ns --e dev
+
+		# interactively select the Environment to switch to
+		jx ns --pick
+`)
 
 	info = termcolor.ColorInfo
 )
