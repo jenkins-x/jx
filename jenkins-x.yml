@@ -56,7 +56,7 @@ pipelineConfig:
                 image: golang:1.13
               - name: build-and-push-image
                 image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
-                command: /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/jenkinsxio/jx-cli:$VERSION --cache-repo=gcr.io/jx-labs-infra/cache
+                command: /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/jenkinsxio/jx-cli:$VERSION  --destination=gcr.io/jenkinsxio/jx-cli:latest --cache-repo=gcr.io/jx-labs-infra/cache
                 env:
                   - name: NO_GOOGLE_APPLICATION_CREDENTIALS
                     value: "true"
