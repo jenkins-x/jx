@@ -10,7 +10,7 @@ import (
 func TestUpgrade(t *testing.T) {
 	t.Parallel()
 
-	_, o := upgrade.NewCmdUpgrade()
+	_, o := upgrade.NewCmdUpgradePlugins()
 
 	err := o.Run()
 	require.NoError(t, err, "failed to run upgrade command")
