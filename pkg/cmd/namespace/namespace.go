@@ -8,6 +8,9 @@ import (
 	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/pkg/input"
 	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-helpers/pkg/kube/jxenv"
+	"github.com/jenkins-x/jx-helpers/pkg/options"
 	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/spf13/cobra"
@@ -16,6 +19,7 @@ import (
 
 	"github.com/jenkins-x/jx-helpers/pkg/kube"
 
+	jxc "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +35,10 @@ import (
 type Options struct {
 	KubeClient kubernetes.Interface
 	Input      input.Interface
+	JXClient   jxc.Interface
 	Args       []string
+	Env        string
+	PickEnv    bool
 	Create     bool
 	QuiteMode  bool
 	BatchMode  bool
@@ -52,13 +59,15 @@ var (
 
 		# change the current namespace to 'brie' creating it if necessary
 		jx ns --create brie`)
+
+	info = termcolor.ColorInfo
 )
 
 func NewCmdNamespace() (*cobra.Command, *Options) {
 	options := &Options{}
 	cmd := &cobra.Command{
 		Use:     "namespace",
-		Aliases: []string{"ns"},
+		Aliases: []string{"ns", "ctx"},
 		Short:   "View or change the current namespace context in the current Kubernetes cluster",
 		Long:    cmdLong,
 		Example: cmdExample,
@@ -72,6 +81,8 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 	cmd.Flags().BoolVarP(&options.Create, "create", "c", false, "Creates the specified namespace if it does not exist")
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Enables batch mode")
 	cmd.Flags().BoolVarP(&options.QuiteMode, "quiet", "q", false, "Do not fail if the namespace does not exist")
+	cmd.Flags().BoolVarP(&options.PickEnv, "pick", "v", false, "Pick the Environment to switch to")
+	cmd.Flags().StringVarP(&options.Env, "env", "e", "", "The Environment name to switch to the namepsace")
 	return cmd, options
 }
 
@@ -93,7 +104,21 @@ func (o *Options) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "loading Kubernetes configuration")
 	}
-	ns := namespace(o)
+
+	ns := ""
+	if o.Env != "" || o.PickEnv {
+		ns, err = o.findNamespaceFromEnv(currentNS, o.Env)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find Jenkins X environment: %s", o.Env)
+		}
+		if ns == "" {
+			return nil
+		}
+	}
+	if ns == "" {
+		ns = namespace(o)
+	}
+
 	if ns == "" && !o.BatchMode {
 		ns, err = pickNamespace(o, client, currentNS)
 		if err != nil {
@@ -125,6 +150,66 @@ func (o *Options) Run() error {
 		}
 	}
 	return nil
+}
+
+func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
+	var err error
+
+	o.JXClient, ns, err = jxclient.LazyCreateJXClientAndNamespace(o.JXClient, ns)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create jx client")
+	}
+
+	names, err := o.GetEnvironmentNames(ns)
+	if err != nil {
+		return "", err
+	}
+
+	if len(names) == 0 {
+		// lets find the dev namespace to use that to find environments
+		devNS, _, err := jxenv.GetDevNamespace(o.KubeClient, ns)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to find current dev namespace from %s", ns)
+		}
+		if devNS != ns {
+			log.Logger().Infof("using the team namespace %s to find Environments", info(devNS))
+			ns = devNS
+			names, err = o.GetEnvironmentNames(ns)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	if name == "" {
+		name, err = o.pickName(names, "", "Pick environment:", "pick the kubernetes namespace for the current kubernetes cluster")
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to pick environment")
+		}
+		if name == "" {
+			return "", nil
+		}
+	}
+
+	env, err := o.JXClient.JenkinsV1().Environments(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", options.InvalidArg(name, names)
+		}
+		return "", errors.Wrapf(err, "failed to load Environment %s in namespace %s", name, ns)
+	}
+	return env.Spec.Namespace, nil
+}
+
+// GetEnvironmentNames returns the environemnt names in te given namespace
+func (o *Options) GetEnvironmentNames(ns string) ([]string, error) {
+	names, err := jxenv.GetEnvironmentNames(o.JXClient, ns)
+	if err != nil && apierrors.IsNotFound(err) {
+		err = nil
+	}
+	if err != nil {
+		return names, errors.Wrapf(err, "failed to find Environment names in namespace %s", ns)
+	}
+	return names, err
 }
 
 func namespace(o *Options) string {
@@ -205,7 +290,7 @@ func pickNamespace(o *Options, client kubernetes.Interface, defaultNamespace str
 		return "", errors.Wrap(err, "retrieving namespace the names of the namespaces")
 	}
 
-	selectedNamespace, err := pick(o, names, defaultNamespace)
+	selectedNamespace, err := o.pickName(names, defaultNamespace, "Change namespace:", "pick the kubernetes namespace for the current kubernetes cluster")
 	if err != nil {
 		return "", errors.Wrap(err, "picking the namespace")
 	}
@@ -226,7 +311,7 @@ func getNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	return names, nil
 }
 
-func pick(o *Options, names []string, defaultNamespace string) (string, error) {
+func (o *Options) pickName(names []string, defaultValue string, message string, help string) (string, error) {
 	if len(names) == 0 {
 		return "", nil
 	}
@@ -236,6 +321,6 @@ func pick(o *Options, names []string, defaultNamespace string) (string, error) {
 	if o.Input == nil {
 		o.Input = survey.NewInput()
 	}
-	name, err := o.Input.PickNameWithDefault(names, "Change namespace:", defaultNamespace, "pick the kubernetes namespace for the current kubernetes cluster")
+	name, err := o.Input.PickNameWithDefault(names, message, defaultValue, help)
 	return name, err
 }
