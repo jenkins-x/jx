@@ -52,7 +52,7 @@ type RegexFiles struct {
 
 // CreateRegexChangeFunctions creates a number of regular expression change functions
 func CreateRegexChangeFunctions(version string, rs ...RegexFiles) ([]operations.ChangeFilesFn, error) {
-	modifyFns := []operations.ChangeFilesFn{}
+	var modifyFns []operations.ChangeFilesFn
 	for _, r := range rs {
 		fn, err := operations.CreatePullRequestRegexFn(version, r.Regex, r.Files...)
 		if err != nil {
