@@ -246,29 +246,13 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 	}
 	ctx := kube.CurrentContext(config)
 
-	if ctx == nil && IsInCluster() {
-		log.Logger().Infof("no context inside pod")
-		po := clientcmd.NewDefaultPathOptions()
-		if po == nil {
-			return nil, fmt.Errorf("Could not find any default path options for the kubeconfig file usually found at ~/.kube/config")
-		}
-		config, err = po.GetStartingConfig()
-		if err != nil {
-			return nil, fmt.Errorf("Could not load the kube config file %s due to %s", po.GetDefaultFilename(), err)
-		}
-		ctx = kube.CurrentContext(config)
-
-		if ctx == nil {
-			log.Logger().Infof("still not found a context in the namespace")
-		} else {
-			log.Logger().Infof("found in cluster context")
-		}
-	}
-
 	if ctx == nil {
-		log.Logger().Warnf("there is no context defined in your Kubernetes configuration - we may be inside a test case or pod?\n")
-		return ctx, nil
+		ctx = &api.Context{}
+		name := "pod"
+		config.Contexts[name] = ctx
+		config.CurrentContext = name
 	}
+
 	if ctx.Namespace == ns {
 		return ctx, nil
 	}
