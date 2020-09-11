@@ -74,7 +74,7 @@ var (
 )
 
 func NewCmdNamespace() (*cobra.Command, *Options) {
-	options := &Options{}
+	o := &Options{}
 	cmd := &cobra.Command{
 		Use:     "namespace",
 		Aliases: []string{"ns", "ctx"},
@@ -82,18 +82,18 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 		Long:    cmdLong,
 		Example: cmdExample,
 		Run: func(cmd *cobra.Command, args []string) {
-			options.Args = args
-			err := options.Run()
+			o.Args = args
+			err := o.Run()
 			helper.CheckErr(err)
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Create, "create", "c", false, "Creates the specified namespace if it does not exist")
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Enables batch mode")
-	cmd.Flags().BoolVarP(&options.QuiteMode, "quiet", "q", false, "Do not fail if the namespace does not exist")
-	cmd.Flags().BoolVarP(&options.PickEnv, "pick", "v", false, "Pick the Environment to switch to")
-	cmd.Flags().StringVarP(&options.Env, "env", "e", "", "The Environment name to switch to the namepsace")
-	return cmd, options
+	cmd.Flags().BoolVarP(&o.Create, "create", "c", false, "Creates the specified namespace if it does not exist")
+	cmd.Flags().BoolVarP(&o.BatchMode, "batch-mode", "b", false, "Enables batch mode")
+	cmd.Flags().BoolVarP(&o.QuiteMode, "quiet", "q", false, "Do not fail if the namespace does not exist")
+	cmd.Flags().BoolVarP(&o.PickEnv, "pick", "v", false, "Pick the Environment to switch to")
+	cmd.Flags().StringVarP(&o.Env, "env", "e", "", "The Environment name to switch to the namepsace")
+	return cmd, o
 }
 
 func (o *Options) Run() error {
@@ -136,7 +136,6 @@ func (o *Options) Run() error {
 		}
 	}
 
-	info := termcolor.ColorInfo
 	if ns != "" && ns != currentNS {
 		ctx, err := changeNamespace(client, cfg, pathOptions, ns, o.Create, o.QuiteMode)
 		if err != nil {
@@ -164,7 +163,6 @@ func (o *Options) Run() error {
 
 func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 	var err error
-
 	o.JXClient, ns, err = jxclient.LazyCreateJXClientAndNamespace(o.JXClient, ns)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create jx client")
@@ -177,7 +175,8 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 
 	if len(names) == 0 {
 		// lets find the dev namespace to use that to find environments
-		devNS, _, err := jxenv.GetDevNamespace(o.KubeClient, ns)
+		devNS := ""
+		devNS, _, err = jxenv.GetDevNamespace(o.KubeClient, ns)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to find current dev namespace from %s", ns)
 		}
@@ -210,7 +209,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 	return env.Spec.Namespace, nil
 }
 
-// GetEnvironmentNames returns the environemnt names in te given namespace
+// GetEnvironmentNames returns the environment names in te given namespace
 func (o *Options) GetEnvironmentNames(ns string) ([]string, error) {
 	names, err := jxenv.GetEnvironmentNames(o.JXClient, ns)
 	if err != nil && apierrors.IsNotFound(err) {
@@ -321,7 +320,7 @@ func getNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	return names, nil
 }
 
-func (o *Options) pickName(names []string, defaultValue string, message string, help string) (string, error) {
+func (o *Options) pickName(names []string, defaultValue, message, help string) (string, error) {
 	if len(names) == 0 {
 		return "", nil
 	}

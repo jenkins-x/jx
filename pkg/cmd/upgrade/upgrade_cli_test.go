@@ -72,7 +72,7 @@ func TestVersionCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
 }
 
 func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testing.T) {
-	prVersions := []semver.PRVersion{}
+	var prVersions []semver.PRVersion
 	prVersions = append(prVersions, semver.PRVersion{VersionStr: "dev"})
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
 	version.Map["version"] = "1.2.3"
