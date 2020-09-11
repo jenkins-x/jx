@@ -31,7 +31,7 @@ pipelineConfig:
                     memory: 2048Mi
             steps:
               - name: build-and-push-image
-                command: /kaniko/executor $KANIKO_FLAGS --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/jx-cli:$VERSION --cache-repo=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/cache
+                command: /kaniko/executor $KANIKO_FLAGS --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-cli:$VERSION --cache-repo=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/cache
                 image: gcr.io/kaniko-project/executor
                 env:
                 - name: NO_GOOGLE_APPLICATION_CREDENTIALS
