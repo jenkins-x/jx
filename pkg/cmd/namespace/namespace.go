@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/pkg/log"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/rest"
 
 	"github.com/pkg/errors"
 
@@ -243,16 +244,21 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 			return nil, errors.Wrapf(err, "getting namespace %q", ns)
 		}
 	}
-	newConfig := *config
 	ctx := kube.CurrentContext(config)
+
 	if ctx == nil {
-		log.Logger().Warnf("there is no context defined in your Kubernetes configuration - we may be inside a test case or pod?\n")
-		return ctx, nil
+		ctx = &api.Context{}
+		name := "pod"
+		config.Contexts[name] = ctx
+		config.CurrentContext = name
 	}
+
 	if ctx.Namespace == ns {
 		return ctx, nil
 	}
 	ctx.Namespace = ns
+
+	newConfig := *config
 	err = clientcmd.ModifyConfig(pathOptions, newConfig, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update the kube config %s", err)
@@ -332,4 +338,10 @@ func (o *Options) pickName(names []string, defaultValue, message, help string) (
 	}
 	name, err := o.Input.PickNameWithDefault(names, message, defaultValue, help)
 	return name, err
+}
+
+// IsInCluster tells if we are running incluster
+func IsInCluster() bool {
+	_, err := rest.InClusterConfig()
+	return err == nil
 }
