@@ -271,7 +271,7 @@ func (h *localPluginHandler) Execute(executablePath string, cmdArgs, environment
 }
 
 func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, pluginBinDir string) error {
-	remainingArgs := []string{} // all "non-flag" arguments
+	var remainingArgs []string // all "non-flag" arguments
 
 	for idx := range cmdArgs {
 		if strings.HasPrefix(cmdArgs[idx], "-") {
