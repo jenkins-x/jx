@@ -391,9 +391,11 @@ func (o *StepNextVersionOptions) SetVersion() error {
 
 	lines := strings.Split(string(b), "\n")
 
+	replaced := false
 	for i, line := range lines {
-		if strings.Contains(line, matchField) {
+		if !replaced && strings.Contains(line, matchField) {
 			lines[i] = regex.ReplaceAllString(line, o.NewVersion)
+			replaced = true
 		} else {
 			lines[i] = line
 		}
