@@ -73,6 +73,10 @@ const (
 	optionPostPreviewJobTimeout  = "post-preview-job-timeout"
 	optionPostPreviewJobPollTime = "post-preview-poll-time"
 	optionPreviewHealthTimeout   = "preview-health-timeout"
+
+	// annotationPullRequestCommentSent is the name of the annotation written on the Environment
+	// when a comment has been sent to the Pull Request - at the end of the preview deployment.
+	annotationPullRequestCommentSent = "jenkins.io/pull-request-comment-sent"
 )
 
 // PreviewOptions the options for viewing running PRs
@@ -98,6 +102,7 @@ type PreviewOptions struct {
 	GitProvider     gits.GitProvider
 	GitInfo         *gits.GitRepository
 	NoComment       bool
+	SingleComment   bool
 
 	// calculated fields
 	PostPreviewJobTimeoutDuration time.Duration
@@ -161,6 +166,7 @@ func (o *PreviewOptions) AddPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
 	cmd.Flags().StringVarP(&o.PreviewHealthTimeout, optionPreviewHealthTimeout, "", "5m", "The amount of time to wait for the preview application to become healthy")
 	cmd.Flags().BoolVarP(&o.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
+	cmd.Flags().BoolVarP(&o.SingleComment, "single-comment", "", false, "Comment only once on the Pull Request after preview is created - instead of one comment after each update of the preview.")
 	cmd.Flags().BoolVarP(&o.SkipAvailabilityCheck, "skip-availability-check", "", false, "Disables the mandatory availability check.")
 }
 
@@ -633,26 +639,47 @@ func (o *PreviewOptions) Run() error {
 		log.Logger().Infof("Preview application is now available at: %s\n", util.ColorInfo(url))
 	}
 
-	stepPRCommentOptions := pr.StepPRCommentOptions{
-		Flags: pr.StepPRCommentFlags{
-			Owner:      o.GitInfo.Organisation,
-			Repository: o.GitInfo.Name,
-			Comment:    comment,
-			PR:         o.PullRequestName,
-		},
-		StepPROptions: pr.StepPROptions{
-			StepOptions: step.StepOptions{
-				CommonOptions: o.CommonOptions,
+	shouldSentPullRequestComment := true
+	if o.NoComment {
+		shouldSentPullRequestComment = false
+	}
+	if _, ok := env.Annotations[annotationPullRequestCommentSent]; ok && o.SingleComment {
+		shouldSentPullRequestComment = false
+	}
+	if shouldSentPullRequestComment {
+		stepPRCommentOptions := pr.StepPRCommentOptions{
+			Flags: pr.StepPRCommentFlags{
+				Owner:      o.GitInfo.Organisation,
+				Repository: o.GitInfo.Name,
+				Comment:    comment,
+				PR:         o.PullRequestName,
 			},
-		},
-	}
-	stepPRCommentOptions.BatchMode = true
-	if !o.NoComment {
+			StepPROptions: pr.StepPROptions{
+				StepOptions: step.StepOptions{
+					CommonOptions: o.CommonOptions,
+				},
+			},
+		}
+		stepPRCommentOptions.BatchMode = true
 		err = stepPRCommentOptions.Run()
+		if err != nil {
+			log.Logger().Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s", o.GitInfo.Organisation, o.GitInfo.Name, err)
+		} else {
+			env, err = environmentsResource.Get(o.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if env.Annotations == nil {
+				env.Annotations = map[string]string{}
+			}
+			env.Annotations[annotationPullRequestCommentSent] = time.Now().Format(time.RFC3339)
+			_, err = environmentsResource.PatchUpdate(env)
+			if err != nil {
+				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
+			}
+		}
 	}
-	if err != nil {
-		log.Logger().Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s", o.GitInfo.Organisation, o.GitInfo.Name, err)
-	}
+
 	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build, o.Application)
 }
 
