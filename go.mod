@@ -1,7 +1,7 @@
 module github.com/jenkins-x/jx/v2
 
 require (
-	code.gitea.io/sdk/gitea v0.12.0
+	code.gitea.io/sdk/gitea v0.13.0
 	github.com/Azure/draft v0.15.0
 	github.com/Comcast/kuberhealthy v1.0.2
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
