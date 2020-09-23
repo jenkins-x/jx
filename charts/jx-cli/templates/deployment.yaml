@@ -4,19 +4,19 @@ kind: Deployment
 metadata:
   name: {{ template "jx.fullname" . }}
   labels:
-    app: {{ template "jx.name" . }}
+    app: {{ template "jx.fullname" . }}
     chart: {{ template "jx.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   selector:
     matchLabels:
-      app: {{ template "jx.name" . }}
+      app: {{ template "jx.fullname" . }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ template "jx.name" . }}
+        app: {{ template "jx.fullname" . }}
         release: {{ .Release.Name }}
 {{- if .Values.podAnnotations }}
       annotations:
