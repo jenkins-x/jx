@@ -1,0 +1,10 @@
+{{- if .Values.clusterrole.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "jx.name" . }}-{{ .Release.Namespace }}
+{{ if .Values.clusterrole.rules -}}
+rules:
+{{ toYaml .Values.clusterrole.rules | indent 0 }}
+{{- end }}
+{{- end }}
