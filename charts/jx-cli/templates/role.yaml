@@ -1,0 +1,26 @@
+{{- if .Values.role.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "jx.name" . }}
+{{ if .Values.role.rules -}}
+rules:
+{{ toYaml .Values.role.rules | indent 0 }}
+{{- end }}
+
+{{- if .Values.role.additionalNamespaces }}
+{{- $ctx := . -}}
+{{- range .Values.role.additionalNamespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "jx.name" $ctx }}
+  namespace: {{ . }}
+{{ if $.Values.role.rules -}}
+rules:
+{{ toYaml $.Values.role.rules | indent 0 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
