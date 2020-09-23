@@ -4,7 +4,7 @@ kind: CronJob
 metadata:
   name: {{ template "jx.fullname" . }}
   labels:
-    app: {{ template "jx.name" . }}
+    app: {{ template "jx.fullname" . }}
     chart: {{ template "jx.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
@@ -18,7 +18,7 @@ spec:
       template:
         metadata:
           labels:
-            app: {{ template "jx.name" . }}
+            app: {{ template "jx.fullname" . }}
             release: {{ .Release.Name }}
     {{- if .Values.podAnnotations }}
           annotations:

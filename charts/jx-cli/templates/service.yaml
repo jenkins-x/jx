@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "jx.name" . }}
+  name: {{ template "jx.fullname" . }}
   labels:
-    app: {{ template "jx.name" . }}
+    app: {{ template "jx.fullname" . }}
     chart: {{ template "jx.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
@@ -20,6 +20,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: {{ template "jx.name" . }}
+    app: {{ template "jx.fullname" . }}
     release: {{ .Release.Name }}
 {{- end }}
