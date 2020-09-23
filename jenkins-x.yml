@@ -30,22 +30,17 @@ pipelineConfig:
                     cpu: 2
                     memory: 2048Mi
             steps:
-#              - name: linux
-#                command: make linux
-#                image: golangci/golangci-lint
-#              - name: build-and-push-image
-#                command: /kaniko/executor $KANIKO_FLAGS --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-cli:$VERSION --cache-repo=gcr.io/$DOCKER_REGISTRY_ORG/cache
-#                image: gcr.io/kaniko-project/executor
-#                env:
-#                - name: NO_GOOGLE_APPLICATION_CREDENTIALS
-#                  value: "true"
-#                - name: GOOGLE_APPLICATION_CREDENTIALS
-#                  value: ""
               - name: lint
                 command: make lint
                 image: golangci/golangci-lint
               - name: test
                 command: make test
+              - name: charts
+                image: gcr.io/jenkinsxio/jx-cli
+                command: make
+                args:
+                - build
+                dir: /workspace/source/charts/jx-cli
     release:
       pipeline:
         stages:
@@ -76,6 +71,12 @@ pipelineConfig:
               - name: upload-binaries
                 command: make goreleaser
                 image: gcr.io/jenkinsxio/step-go-releaser
+              - name: release-charts
+                image: gcr.io/jenkinsxio/jx-cli
+                command: make
+                args:
+                - release
+                dir: /workspace/source/charts/jx-cli
               - name: promote-release
                 command: ./promote.sh
                 image: gcr.io/jenkinsxio/jx-cli
