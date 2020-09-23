@@ -1,0 +1,80 @@
+{{- if .Values.deployment.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "jx.fullname" . }}
+  labels:
+    app: {{ template "jx.name" . }}
+    chart: {{ template "jx.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "jx.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "jx.name" . }}
+        release: {{ .Release.Name }}
+{{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.restartPolicy }}
+      restartPolicy: {{ .Values.restartPolicy }}
+{{- end }}
+{{- if .Values.serviceaccount.customName }}
+      serviceAccountName: {{ .Values.serviceaccount.customName }}
+{{- else if .Values.serviceaccount.enabled }}
+      serviceAccountName: {{ template "jx.fullname" . }}
+{{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{ if .Values.command -}}
+          command: {{ .Values.command }}
+          {{- end }}
+          {{ if .Values.args -}}
+          args:
+{{ toYaml .Values.args | indent 10 }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.internalPort }}
+              protocol: TCP
+{{- if .Values.probe.path }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: http
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: http
+{{- end }}
+{{- if .Values.env }}
+          env:
+{{- range $pkey, $pval := .Values.env }}
+          - name: {{ $pkey }}
+            value: {{ $pval }}
+{{- end }}
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{- end }}

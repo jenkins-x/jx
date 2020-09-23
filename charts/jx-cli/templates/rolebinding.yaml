@@ -1,0 +1,46 @@
+{{- if .Values.role.enabled -}}
+{{- if .Values.serviceaccount.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "jx.name" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "jx.name" . }}
+subjects:
+- kind: ServiceAccount
+{{- if .Values.serviceaccount.customName }}
+  name: {{ .Values.serviceaccount.customName }}
+{{- else }}
+  name: {{ template "jx.fullname" . }}
+{{- end }}
+  namespace: {{ .Release.Namespace }}
+
+{{- if .Values.role.additionalNamespaces }}
+{{- $ctx := . -}}
+{{- range .Values.role.additionalNamespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "jx.name" $ctx }}
+  namespace: {{ . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "jx.name" $ctx }}
+subjects:
+  - kind: ServiceAccount
+{{- if $.Values.serviceaccount.customName }}
+    name: {{ $.Values.serviceaccount.customName }}
+{{- else }}
+    name: {{ template "jx.fullname" $ctx }}
+{{- end }}
+    namespace: {{ $.Release.Namespace }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
