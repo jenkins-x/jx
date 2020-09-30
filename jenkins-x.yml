@@ -79,4 +79,5 @@ pipelineConfig:
                 dir: /workspace/source/charts/jx-cli
               - name: promote-release
                 image: gcr.io/jenkinsxio/jx-updatebot:latest
+                command: jx-updatebot pr
                 dir: /workspace/source
