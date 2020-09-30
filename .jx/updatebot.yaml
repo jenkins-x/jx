@@ -1,0 +1,22 @@
+apiVersion: updatebot.jenkins-x.io/v1alpha1
+kind: UpdateConfig
+spec:
+  rules:
+    - urls:
+        - https://github.com/jenkins-x/jxr-versions
+      changes:
+        - regex:
+            pattern: "\\s+image: gcr.io/jenkinsxio/jx-cli:(.*)"
+            files:
+              - "jenkins-x-*.yml"
+              - "git-operator/job.yaml"
+        - regex:
+            pattern: "version: (.*)"
+            files:
+              - "docker/gcr.io/jenkinsxio/jx-cli.yml"
+              - "packages/jx-cli.yml"
+        - regex:
+            pattern: "JX_DEFAULT_IMAGE: gcr.io/jenkinsxio/jx-cli:(.*)"
+            files:
+              - "apps/jenkins-x/lighthouse/values.yaml.gotmpl"
+              - "charts/jenkins-x/lighthouse/values.yaml.gotmpl"
