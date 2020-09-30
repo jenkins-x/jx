@@ -3,12 +3,12 @@ module github.com/jenkins-x/jx-cli
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/jenkins-x/jx-api v0.0.20
-	github.com/jenkins-x/jx-helpers v1.0.62
+	github.com/jenkins-x/jx-api v0.0.24
+	github.com/jenkins-x/jx-helpers v1.0.85
 	github.com/jenkins-x/jx-kube-client v0.0.8
 	github.com/jenkins-x/jx-logging v0.0.11
-	github.com/jenkins-x/jx/v2 v2.1.145
-	github.com/jenkins-x/lighthouse v0.0.818 // indirect
+	github.com/jenkins-x/jx/v2 v2.1.150
+	github.com/jenkins-x/lighthouse v0.0.835 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rhysd/go-github-selfupdate v1.2.2
