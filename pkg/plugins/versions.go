@@ -6,13 +6,13 @@ import (
 
 const (
 	// AdminVersion the version of the jx admin plugin
-	AdminVersion = "0.0.125"
+	AdminVersion = "0.0.127"
 
 	// ApplicationVersion the version of the jx application plugin
 	ApplicationVersion = "0.0.10"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.0.354"
+	GitOpsVersion = "0.0.356"
 
 	// JenkinsVersion the version of the jx jenkins plugin
 	JenkinsVersion = "0.0.22"
