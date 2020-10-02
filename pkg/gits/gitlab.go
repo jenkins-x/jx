@@ -199,7 +199,7 @@ func (g *GitlabProvider) projectId(org, username, name string) (string, error) {
 	}
 
 	for _, repo := range repos {
-		if repo.Name == name {
+		if repo.Path == name {
 			return strconv.Itoa(repo.ID), nil
 		}
 	}
