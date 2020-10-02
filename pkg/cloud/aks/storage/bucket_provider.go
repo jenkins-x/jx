@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -15,7 +14,6 @@ import (
 )
 
 var (
-	azureContainerURIRegExp   = regexp.MustCompile(`https://(?P<first>\w+)\.blob\.core\.windows\.net/(?P<second>\w+)`)
 	defaultBucketWriteTimeout = 20 * time.Second
 )
 
