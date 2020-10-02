@@ -3,14 +3,15 @@ package storage
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/url"
+	"time"
+
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/jenkins-x/jx/v2/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/v2/pkg/config"
-	"io"
-	"net/url"
-	"time"
 )
 
 var (
