@@ -2,7 +2,10 @@ module github.com/jenkins-x/jx/v2
 
 require (
 	code.gitea.io/sdk/gitea v0.13.0
+	github.com/Azure/azure-storage-blob-go v0.0.0-20190123011202-457680cc0804
 	github.com/Azure/draft v0.15.0
+	github.com/Azure/go-autorest/autorest v0.9.3
+	github.com/Azure/go-autorest/autorest/adal v0.8.1
 	github.com/Comcast/kuberhealthy v1.0.2
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
 	github.com/Jeffail/gabs v1.1.1
