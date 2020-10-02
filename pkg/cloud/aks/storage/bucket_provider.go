@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -9,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/v2/pkg/config"
 	"io"
 	"net/url"
-	"regexp"
 	"time"
 )
 
