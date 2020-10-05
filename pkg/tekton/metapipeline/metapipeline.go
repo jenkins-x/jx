@@ -148,7 +148,7 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							"cpu":    resource.MustParse("0.8"),
-							"memory": resource.MustParse("512Mi"),
+							"memory": resource.MustParse("1024Mi"),
 						},
 						Requests: corev1.ResourceList{
 							"cpu":    resource.MustParse("0.4"),
