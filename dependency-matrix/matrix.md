@@ -15,3 +15,4 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jxl-base-image](https://github.com/jenkins-x/jxl-base-image) |  | [0.0.61]() | 
 [jenkins-x/jx-cli-base-image](https://github.com/jenkins-x/jx-cli-base-image) |  | [0.0.27]() | 
 [jenkins-x/jx-jenkins](https://github.com/jenkins-x/jx-jenkins) |  | [0.0.18](https://github.com/jenkins-x/jx-jenkins/releases/tag/v0.0.18) | 
+[jenkins-x-plugins/jx-scm](https://github.com/jenkins-x-plugins/jx-scm) |  | [0.0.2](https://github.com/jenkins-x-plugins/jx-scm/releases/tag/v0.0.2) | 
