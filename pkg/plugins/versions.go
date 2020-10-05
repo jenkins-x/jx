@@ -12,7 +12,7 @@ const (
 	ApplicationVersion = "0.0.10"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.0.374"
+	GitOpsVersion = "0.0.376"
 
 	// JenkinsVersion the version of the jx jenkins plugin
 	JenkinsVersion = "0.0.22"
