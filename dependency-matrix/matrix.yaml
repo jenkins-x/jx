@@ -83,3 +83,9 @@ dependencies:
   url: https://github.com/jenkins-x-plugins/jx-scm
   version: 0.0.2
   versionURL: https://github.com/jenkins-x-plugins/jx-scm/releases/tag/v0.0.2
+- host: github.com
+  owner: jenkins-x-plugins
+  repo: jx-health
+  url: https://github.com/jenkins-x-plugins/jx-health
+  version: 0.0.14
+  versionURL: https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.14
