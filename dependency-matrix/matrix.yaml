@@ -9,8 +9,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-secret
   url: https://github.com/jenkins-x/jx-secret
-  version: 0.0.152
-  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.152
+  version: 0.0.154
+  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.154
 - host: github.com
   owner: jenkins-x
   repo: jx-promote
@@ -87,5 +87,5 @@ dependencies:
   owner: jenkins-x-plugins
   repo: jx-health
   url: https://github.com/jenkins-x-plugins/jx-health
-  version: 0.0.28
-  versionURL: https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.28
+  version: 0.0.30
+  versionURL: https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.30
