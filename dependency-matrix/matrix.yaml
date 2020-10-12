@@ -33,8 +33,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-pipeline
   url: https://github.com/jenkins-x/jx-pipeline
-  version: 0.0.44
-  versionURL: https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.44
+  version: 0.0.46
+  versionURL: https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.46
 - host: github.com
   owner: jenkins-x
   repo: jx-application
