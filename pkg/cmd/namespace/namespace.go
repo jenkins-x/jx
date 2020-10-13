@@ -1,26 +1,27 @@
 package namespace
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/helper"
-	"github.com/jenkins-x/jx-helpers/pkg/cobras/templates"
-	"github.com/jenkins-x/jx-helpers/pkg/input"
-	"github.com/jenkins-x/jx-helpers/pkg/input/survey"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/jxclient"
-	"github.com/jenkins-x/jx-helpers/pkg/kube/jxenv"
-	"github.com/jenkins-x/jx-helpers/pkg/options"
-	"github.com/jenkins-x/jx-kube-client/pkg/kubeclient"
-	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/input"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/input/survey"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxenv"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/options"
+	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx-helpers/pkg/kube"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
 
-	jxc "github.com/jenkins-x/jx-api/pkg/client/clientset/versioned"
+	jxc "github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +29,7 @@ import (
 
 	"sort"
 
-	"github.com/jenkins-x/jx-helpers/pkg/termcolor"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -200,7 +201,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 		}
 	}
 
-	env, err := o.JXClient.JenkinsV1().Environments(ns).Get(name, metav1.GetOptions{})
+	env, err := o.JXClient.JenkinsV1().Environments(ns).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return "", options.InvalidArg(name, names)
@@ -232,7 +233,7 @@ func namespace(o *Options) string {
 }
 
 func changeNamespace(client kubernetes.Interface, config *api.Config, pathOptions clientcmd.ConfigAccess, ns string, create, quietMode bool) (*api.Context, error) {
-	_, err := client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	_, err := client.CoreV1().Namespaces().Get(context.TODO(), ns, metav1.GetOptions{})
 	if err != nil {
 		switch err.(type) {
 		case *apierrors.StatusError:
@@ -292,7 +293,7 @@ func createNamespace(client kubernetes.Interface, ns string) error {
 			Name: ns,
 		},
 	}
-	_, err := client.CoreV1().Namespaces().Create(&namespace)
+	_, err := client.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "unable to create namespace %s", ns)
 	}
@@ -315,7 +316,7 @@ func pickNamespace(o *Options, client kubernetes.Interface, defaultNamespace str
 // getNamespaceNames returns the sorted list of environment names
 func getNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	var names []string
-	list, err := client.CoreV1().Namespaces().List(metav1.ListOptions{})
+	list, err := client.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return names, fmt.Errorf("loading namespaces %s", err)
 	}
