@@ -10,20 +10,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	jenkinsxOrganisation        = "jenkins-x"
+	jenkinsxPluginsOrganisation = "jenkins-x-plugins"
+)
+
 // GetJXPlugin returns the path to the locally installed jx plugin
 func GetJXPlugin(name, version string) (string, error) {
 	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
 		return "", err
 	}
-	plugin := CreateJXPlugin(name, version)
+	plugin := CreateJXPlugin(jenkinsxOrganisation, name, version)
 	return extensions.EnsurePluginInstalled(plugin, pluginBinDir)
 }
 
 // CreateJXPlugin creates the jx plugin
-func CreateJXPlugin(name, version string) jenkinsv1.Plugin {
+func CreateJXPlugin(org, name, version string) jenkinsv1.Plugin {
 	binaries := extensions.CreateBinaries(func(p extensions.Platform) string {
-		return fmt.Sprintf("https://github.com/jenkins-x/jx-%s/releases/download/v%s/jx-%s-%s-%s.%s", name, version, name, strings.ToLower(p.Goos), strings.ToLower(p.Goarch), p.Extension())
+		return fmt.Sprintf("https://github.com/%s/jx-%s/releases/download/v%s/jx-%s-%s-%s.%s", org, name, version, name, strings.ToLower(p.Goos), strings.ToLower(p.Goarch), p.Extension())
 	})
 
 	plugin := jenkinsv1.Plugin{
