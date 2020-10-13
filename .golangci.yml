@@ -51,11 +51,11 @@ linters-settings:
     settings:
       printf:
         funcs:
-          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Debugf
-          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Infof
-          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Warnf
-          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Errorf
-          - (github.com/jenkins-x/jx-logging/pkg/log/Logger()).Fatalf
+          - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Debugf
+          - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Infof
+          - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Warnf
+          - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Errorf
+          - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Fatalf
   lll:
     line-length: 140
   maligned:
