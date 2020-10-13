@@ -9,16 +9,16 @@ pipelineConfig:
       - name: make-linux
         step:
           sh: make linux
-          image: golang:1.13
+          image: golang:1.15
       - name: make-test
         step:
           sh: make test
-          image: golang:1.13
+          image: golang:1.15
     pullRequest:
       pipeline:
         stages:
           - agent:
-              image: golang:1.13
+              image: golang:1.15
             name: cli
             options:
               containerOptions:
@@ -59,7 +59,7 @@ pipelineConfig:
             steps:
               - name: release-binary
                 command: make release
-                image: golang:1.13
+                image: golang:1.15
               - name: build-and-push-image
                 image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
                 command: /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/jenkinsxio/jx-cli:$VERSION  --destination=gcr.io/jenkinsxio/jx-cli:latest --cache-repo=gcr.io/jx-labs-infra/cache
