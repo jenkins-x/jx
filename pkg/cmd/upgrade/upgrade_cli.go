@@ -92,7 +92,7 @@ func (o *CLIOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to determine version of currently install jx release")
 	}
-	//var currentVersion semver.Version
+
 	log.Logger().Debugf("Current version of jx: %s", termcolor.ColorInfo(currentVersion))
 
 	if o.needsUpgrade(currentVersion, candidateInstallVersion) {
@@ -156,7 +156,6 @@ func (o *CLIOptions) needsUpgrade(currentVersion, latestVersion semver.Version) 
 // ShouldUpdate checks if CLI version should be updated
 func (o *CLIOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 	log.Logger().Debugf("Checking if should upgrade %s", newVersion)
-	//todo
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
 		return false, err
