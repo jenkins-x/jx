@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	jenkinsv1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
 )
 
 const (
@@ -13,6 +13,9 @@ const (
 
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.384"
+
+	// HealthVersion the version of the jx health plugin
+	HealthVersion = "0.0.49"
 
 	// JenkinsVersion the version of the jx jenkins plugin
 	JenkinsVersion = "0.0.22"
@@ -42,16 +45,17 @@ const (
 var (
 	// Plugins default plugins
 	Plugins = []jenkinsv1.Plugin{
-		CreateJXPlugin("admin", AdminVersion),
-		CreateJXPlugin("application", ApplicationVersion),
-		CreateJXPlugin("gitops", GitOpsVersion),
-		CreateJXPlugin("jenkins", JenkinsVersion),
-		CreateJXPlugin("pipeline", PipelineVersion),
-		CreateJXPlugin("preview", PreviewVersion),
-		CreateJXPlugin("project", ProjectVersion),
-		CreateJXPlugin("promote", PromoteVersion),
-		CreateJXPlugin("secret", SecretVersion),
-		CreateJXPlugin("test", TestVersion),
-		CreateJXPlugin("verify", VerifyVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "admin", AdminVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "application", ApplicationVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "gitops", GitOpsVersion),
+		CreateJXPlugin(jenkinsxPluginsOrganisation, "health", HealthVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "jenkins", JenkinsVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "pipeline", PipelineVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "preview", PreviewVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "project", ProjectVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "promote", PromoteVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "secret", SecretVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "test", TestVersion),
+		CreateJXPlugin(jenkinsxOrganisation, "verify", VerifyVersion),
 	}
 )

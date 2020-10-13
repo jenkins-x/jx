@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jenkins-x/jx/v2/pkg/version"
+	"github.com/jenkins-x/jx-cli/pkg/version"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -44,6 +44,7 @@ func TestNeedsUpgrade(t *testing.T) {
 	}
 }
 
+//
 func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	version.Map["version"] = "1.4.0"
