@@ -7,7 +7,6 @@ require (
 	github.com/jenkins-x/jx-helpers/v3 v3.0.8
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
 	github.com/jenkins-x/jx-logging/v3 v3.0.2
-	github.com/jenkins-x/jx/v2 v2.1.151
 	github.com/pkg/errors v0.9.1
 	github.com/rhysd/go-github-selfupdate v1.2.2
 	github.com/spf13/cobra v1.0.0
@@ -20,9 +19,6 @@ require (
 )
 
 replace (
-	github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults v0.0.0-20191212164220-b327d7f2b681
-
-	github.com/banzaicloud/bank-vaults/pkg/sdk => github.com/banzaicloud/bank-vaults/pkg/sdk v0.0.0-20191212164220-b327d7f2b681
 	github.com/jenkins-x/lighthouse => github.com/rawlingsj/lighthouse v0.0.0-20201005083317-4d21277f7992
 	k8s.io/client-go => k8s.io/client-go v0.19.2
 
