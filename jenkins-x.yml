@@ -66,7 +66,7 @@ pipelineConfig:
                 env:
                   - name: NO_GOOGLE_APPLICATION_CREDENTIALS
                     value: "true"
-              - name: build-and-push-image
+              - name: build-and-push-image2
                 image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
                 command: /kaniko/executor --cache=true --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-bdd --destination=gcr.io/jenkinsxio/jx-bdd:$VERSION  --destination=gcr.io/jenkinsxio/jx-bdd:latest --cache-repo=gcr.io/jx-labs-infra/cache
                 env:
