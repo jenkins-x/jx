@@ -1,4 +1,5 @@
 buildPack: go-cli
+buildPackGitURL: https://github.com/jenkins-x/jxr-packs-kubernetes
 dockerRegistryOwner: jenkinsxio
 pipelineConfig:
   pipelines:
