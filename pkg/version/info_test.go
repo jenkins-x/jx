@@ -5,8 +5,9 @@ package version_test
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx-cli/pkg/version"
+
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/v2/pkg/version"
 	"github.com/stretchr/testify/assert"
 )
 
