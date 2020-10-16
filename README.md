@@ -25,15 +25,17 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 * [jx admin](https://github.com/jenkins-x/jx-admin/blob/master/docs/cmd/jx-admin.md) for administration commands (creating a new environment, booting it up with the operator)
 * [jx application](https://github.com/jenkins-x/jx-application/blob/master/docs/cmd/jx-application.md) for viewing applications in your environments
 * [jx gitops](https://github.com/jenkins-x/jx-gitops/blob/master/docs/cmd/jx-gitops.md) a set of commands used inside pipelines for modifying helm charts, kpt files, using kustomise or modifying kubernetes resources for GitOps
+* [jx health](https://github.com/jenkins-x-plugins/jx-health/blob/master/docs/cmd/jx-health.md) for visualising and reporting on cluster health
 * [jx jenkins](https://github.com/jenkins-x/jx-jenkins/blob/master/docs/cmd/jx-jenkins.md) a set of commands for working with [Jenkins](https://jenkins.io/) servers in kubernetes
 * [jx pipeline](https://github.com/jenkins-x/jx-pipeline/blob/master/docs/cmd/jx-pipeline.md#jx-pipeline) a command for working with Jenkins X and Tekton Pipelines
-* [jx preview](https://github.com/jenkins-x/jx-preview/blob/master/docs/cmd/preview.md#preview) a command for creating Preview Environments
+* [jx preview](https://github.com/jenkins-x/jx-preview/blob/master/docs/cmd/jx-preview.md#preview) a command for creating Preview Environments
 * [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-promote.md#jx-promote) a command for promoting a new version of an application to an Environment
 * [jx project](https://github.com/jenkins-x/jx-project/blob/master/docs/cmd/project.md) a set of commands for importing projects or creating new projects from quickstarts or wizards
 * [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
 * [jx test](https://github.com/jenkins-x/jx-test/blob/master/docs/cmd/jx-test.md) a set of commands for managing tests on kubernetes/clouds
 * [jx verify](https://github.com/jenkins-x/jx-verify/blob/master/docs/cmd/jx-verify.md) a set of commands for verifying Jenkins X installations
 
+[check out all of the other plugins available](https://github.com/jenkins-x-plugins)
 
 ## Components
 
