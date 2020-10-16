@@ -56,9 +56,9 @@ dependencies:
 - host: github.com
   owner: jenkins-x
   repo: jx-test
-  url: https://github.com/jenkins-x/jx-test
-  version: 0.0.18
-  versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.18
+  url: https://github.com/jenkins-x/jx-test.git
+  version: 0.0.21
+  versionURL: https://github.com/jenkins-x/jx-test/releases/tag/v0.0.21
 - host: github.com
   owner: jenkins-x
   repo: jxl-base-image
