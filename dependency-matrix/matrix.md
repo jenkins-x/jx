@@ -2,8 +2,8 @@
 
 Dependency | Sources | Version | Mismatched versions
 ---------- | ------- | ------- | -------------------
-[jenkins-x/jx-admin](https://github.com/jenkins-x/jx-admin.git) |  | [0.0.131](https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.131) | 
-[jenkins-x/jx-secret](https://github.com/jenkins-x/jx-secret) |  | [0.0.170](https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.170) | 
+[jenkins-x/jx-admin](https://github.com/jenkins-x/jx-admin) |  | [0.0.129](https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.129) | 
+[jenkins-x/jx-secret](https://github.com/jenkins-x/jx-secret.git) |  | [0.0.171](https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.171) | 
 [jenkins-x/jx-promote](https://github.com/jenkins-x/jx-promote.git) |  | [0.0.135](https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.135) | 
 [jenkins-x/jx-project](https://github.com/jenkins-x/jx-project) |  | [0.0.133](https://github.com/jenkins-x/jx-project/releases/tag/v0.0.133) | 
 [jenkins-x/jx-verify](https://github.com/jenkins-x/jx-verify) |  | [0.0.26](https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.26) | 
