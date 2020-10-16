@@ -1,0 +1,11 @@
+apiVersion: kpt.dev/v1alpha1
+kind: Kptfile
+metadata:
+    name: jenkins-x
+upstream:
+    type: git
+    git:
+        commit: da1e9ea2a05fb5076261457a3d3be0747f14ef8e
+        repo: https://github.com/jenkins-x/jx3-pipeline-catalog
+        directory: /packs/go-plugin/.lighthouse/jenkins-x
+        ref: master
