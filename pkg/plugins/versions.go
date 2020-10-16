@@ -30,7 +30,7 @@ const (
 	ProjectVersion = "0.0.133"
 
 	// PromoteVersion the version of the jx promote plugin
-	PromoteVersion = "0.0.134"
+	PromoteVersion = "0.0.135"
 
 	// SecretVersion the version of the jx secret plugin
 	SecretVersion = "0.0.170"
