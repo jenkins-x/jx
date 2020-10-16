@@ -1,0 +1,272 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  labels:
+    jenkins.io/pipelineType: build
+  name: jx-go-plugin-pr
+spec:
+  pipelineSpec:
+    params:
+    - description: the unique build number
+      name: BUILD_ID
+      type: string
+    - description: the name of the job which is the trigger context name
+      name: JOB_NAME
+      type: string
+    - description: the specification of the job
+      name: JOB_SPEC
+      type: string
+    - description: 'the kind of job: postsubmit or presubmit'
+      name: JOB_TYPE
+      type: string
+    - default: master
+      description: the base git reference of the pull request
+      name: PULL_BASE_REF
+      type: string
+    - description: the git sha of the base of the pull request
+      name: PULL_BASE_SHA
+      type: string
+    - default: ""
+      description: git pull request number
+      name: PULL_NUMBER
+      type: string
+    - default: ""
+      description: git pull request ref in the form 'refs/pull/$PULL_NUMBER/head'
+      name: PULL_PULL_REF
+      type: string
+    - default: master
+      description: git revision to checkout (branch, tag, sha, ref…)
+      name: PULL_PULL_SHA
+      type: string
+    - description: git pull reference strings of base and latest in the form 'master:$PULL_BASE_SHA,$PULL_NUMBER:$PULL_PULL_SHA:refs/pull/$PULL_NUMBER/head'
+      name: PULL_REFS
+      type: string
+    - description: git repository name
+      name: REPO_NAME
+      type: string
+    - description: git repository owner (user or organisation)
+      name: REPO_OWNER
+      type: string
+    - description: git url to clone
+      name: REPO_URL
+      type: string
+    tasks:
+    - name: from-build-pack
+      params:
+      - name: BUILD_ID
+        value: $(params.BUILD_ID)
+      - name: JOB_NAME
+        value: $(params.JOB_NAME)
+      - name: JOB_SPEC
+        value: $(params.JOB_SPEC)
+      - name: JOB_TYPE
+        value: $(params.JOB_TYPE)
+      - name: PULL_BASE_REF
+        value: $(params.PULL_BASE_REF)
+      - name: PULL_BASE_SHA
+        value: $(params.PULL_BASE_SHA)
+      - name: PULL_NUMBER
+        value: $(params.PULL_NUMBER)
+      - name: PULL_PULL_REF
+        value: $(params.PULL_PULL_REF)
+      - name: PULL_PULL_SHA
+        value: $(params.PULL_PULL_SHA)
+      - name: PULL_REFS
+        value: $(params.PULL_REFS)
+      - name: REPO_NAME
+        value: $(params.REPO_NAME)
+      - name: REPO_OWNER
+        value: $(params.REPO_OWNER)
+      - name: REPO_URL
+        value: $(params.REPO_URL)
+      resources: {}
+      taskSpec:
+        params:
+        - description: git url to clone
+          name: REPO_URL
+          type: string
+        - default: master
+          description: git revision to checkout (branch, tag, sha, ref…)
+          name: PULL_PULL_SHA
+          type: string
+        - default: source
+          description: subdirectory inside of /workspace to clone the git repo
+          name: subdirectory
+          type: string
+        - description: the unique build number
+          name: BUILD_ID
+          type: string
+        - description: the name of the job which is the trigger context name
+          name: JOB_NAME
+          type: string
+        - description: the specification of the job
+          name: JOB_SPEC
+          type: string
+        - description: 'the kind of job: postsubmit or presubmit'
+          name: JOB_TYPE
+          type: string
+        - default: master
+          description: the base git reference of the pull request
+          name: PULL_BASE_REF
+          type: string
+        - description: the git sha of the base of the pull request
+          name: PULL_BASE_SHA
+          type: string
+        - default: ""
+          description: git pull request number
+          name: PULL_NUMBER
+          type: string
+        - default: ""
+          description: git pull request ref in the form 'refs/pull/$PULL_NUMBER/head'
+          name: PULL_PULL_REF
+          type: string
+        - description: git pull reference strings of base and latest in the form 'master:$PULL_BASE_SHA,$PULL_NUMBER:$PULL_PULL_SHA:refs/pull/$PULL_NUMBER/head'
+          name: PULL_REFS
+          type: string
+        - description: git repository name
+          name: REPO_NAME
+          type: string
+        - description: git repository owner (user or organisation)
+          name: REPO_OWNER
+          type: string
+        stepTemplate:
+          env:
+          - name: BUILD_ID
+            value: $(params.BUILD_ID)
+          - name: JOB_NAME
+            value: $(params.JOB_NAME)
+          - name: JOB_SPEC
+            value: $(params.JOB_SPEC)
+          - name: JOB_TYPE
+            value: $(params.JOB_TYPE)
+          - name: PULL_BASE_REF
+            value: $(params.PULL_BASE_REF)
+          - name: PULL_BASE_SHA
+            value: $(params.PULL_BASE_SHA)
+          - name: PULL_NUMBER
+            value: $(params.PULL_NUMBER)
+          - name: PULL_PULL_REF
+            value: $(params.PULL_PULL_REF)
+          - name: PULL_PULL_SHA
+            value: $(params.PULL_PULL_SHA)
+          - name: PULL_REFS
+            value: $(params.PULL_REFS)
+          - name: REPO_NAME
+            value: $(params.REPO_NAME)
+          - name: REPO_OWNER
+            value: $(params.REPO_OWNER)
+          - name: REPO_URL
+            value: $(params.REPO_URL)
+          name: ""
+          resources:
+            requests:
+              cpu: 400m
+              memory: 600Mi
+          volumeMounts:
+          - mountPath: /etc/podinfo
+            name: podinfo
+            readOnly: true
+          workingDir: /workspace/source
+        steps:
+        - args:
+          - -c
+          - 'mkdir -p $HOME; git config --global --add user.name ${GIT_AUTHOR_NAME:-jenkins-x-bot};
+            git config --global --add user.email ${GIT_AUTHOR_EMAIL:-jenkins-x@googlegroups.com};
+            git config --global credential.helper store; git clone $(params.REPO_URL)
+            /workspace/$(params.subdirectory); echo cloned url: $(params.REPO_URL)
+            to dir: /workspace/$(params.subdirectory); cd /workspace/$(params.subdirectory);
+            git checkout $(params.PULL_PULL_SHA); echo checked out revision: $(params.PULL_PULL_SHA)
+            to dir: /workspace/$(params.subdirectory); ls -al'
+          command:
+          - /bin/sh
+          image: gcr.io/jenkinsxio/builder-jx:2.1.32-662
+          name: git-clone
+          resources: {}
+          workingDir: /workspace
+        - args:
+          - gitops
+          - git
+          - setup
+          - --namespace
+          - jx-git-operator
+          command:
+          - jx
+          image: gcr.io/jenkinsxio/jx-cli:latest
+          name: git-setup
+          resources: {}
+          workingDir: /workspace
+        - args:
+          - '[ -d /builder/home ] || mkdir -p /builder && ln -s /tekton/home /builder/home'
+          command:
+          - /bin/sh
+          - -c
+          image: gcr.io/jenkinsxio/builder-jx:2.1.142-761
+          name: setup-builder-home
+          resources: {}
+        - args:
+          - step
+          - git
+          - merge
+          - --verbose
+          - --baseSHA
+          - $(params.PULL_BASE_SHA)
+          - --sha
+          - $(params.PULL_PULL_SHA)
+          - --baseBranch
+          - $(params.PULL_BASE_REF)
+          command:
+          - jx
+          image: gcr.io/jenkinsxio/builder-jx:2.1.142-761
+          name: git-merge
+          resources: {}
+        - args:
+          - gitops
+          - variables
+          command:
+          - jx
+          image: gcr.io/jenkinsxio/jx-cli:latest
+          name: jx-variables
+          resources: {}
+        - args:
+          - make linux
+          command:
+          - /bin/sh
+          - -c
+          image: golang:1.15
+          name: build-make-linux
+          resources: {}
+        - args:
+          - make test
+          command:
+          - /bin/sh
+          - -c
+          image: golang:1.15
+          name: build-make-test
+          resources: {}
+        - args:
+          - source .jx/variables.sh && cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson
+            /kaniko/.docker/config.json && /kaniko/executor $KANIKO_FLAGS --cache=true
+            --cache-dir=/workspace --context=/workspace/source --dockerfile=/workspace/source/${DOCKERFILE_PATH:-Dockerfile}
+            --destination=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
+            --cache-repo=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/cache
+          command:
+          - /busybox/sh
+          - -c
+          image: gcr.io/kaniko-project/executor:debug-v0.24.0
+          name: build-container-build
+          resources: {}
+        volumes:
+        - emptyDir: {}
+          name: workspace-volume
+        - downwardAPI:
+            items:
+            - fieldRef:
+                fieldPath: metadata.labels
+              path: labels
+          name: podinfo
+  podTemplate:
+    ImagePullSecrets: null
+    hostNetwork: false
+    schedulerName: ""
+  serviceAccountName: tekton-bot
+  timeout: 240h0m0s
