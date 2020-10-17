@@ -312,12 +312,7 @@ spec:
           image: gcr.io/jenkinsxio/step-go-releaser:0.0.14
           name: upload-binaries
           resources: {}
-        - args:
-          - source .jx/variables.sh && ./promote.sh
-          command:
-          - /bin/bash
-          - -c
-          image: gcr.io/jenkinsxio/builder-go:2.1.142-761
+        - image: gcr.io/jenkinsxio/jx-updatebot:latest
           name: promote-release
           resources: {}
         volumes:
