@@ -18,7 +18,7 @@ const (
 	HealthVersion = "0.0.51"
 
 	// JenkinsVersion the version of the jx jenkins plugin
-	JenkinsVersion = "0.0.28"
+	JenkinsVersion = "0.0.29"
 
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.56"

@@ -75,8 +75,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-jenkins
   url: https://github.com/jenkins-x/jx-jenkins.git
-  version: 0.0.28
-  versionURL: https://github.com/jenkins-x/jx-jenkins/releases/tag/v0.0.28
+  version: 0.0.29
+  versionURL: https://github.com/jenkins-x/jx-jenkins/releases/tag/v0.0.29
 - host: github.com
   owner: jenkins-x-plugins
   repo: jx-scm
