@@ -276,6 +276,17 @@ spec:
           name: build-and-push-image
           resources: {}
         - args:
+          - source .jx/variables.sh && cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson
+            /kaniko/.docker/config.json && /kaniko/executor --cache=true --cache-dir=/workspace
+            --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-bdd
+            --destination=gcr.io/jenkinsxio/jx-bdd:$VERSION --destination=gcr.io/jenkinsxio/jx-bdd:latest --cache-repo=gcr.io/jx-labs-infra/cache
+          command:
+          - /busybox/sh
+          - -c
+          image: gcr.io/kaniko-project/executor:debug-9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+          name: build-and-push-image2
+          resources: {}
+        - args:
           - 'if [ -d "/workspace/source/charts/$REPO_NAME" ]; then cd /workspace/source/charts/$REPO_NAME
             && helm-docs; else echo no charts; fi'
           command:
