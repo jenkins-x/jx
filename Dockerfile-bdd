@@ -2,6 +2,8 @@ FROM gcr.io/jenkinsxio/bdd-jx:latest
 
 COPY ./build/linux/jx /usr/bin/jx
 
+RUN rm /usr/local/bin/bddjx 
+
 #ENV HOME /home
 ENV JX3_HOME /home/.jx3
 
