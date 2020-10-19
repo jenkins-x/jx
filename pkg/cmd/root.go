@@ -106,7 +106,7 @@ func Main(args []string) *cobra.Command {
 	getCmd.AddCommand(
 		getBuildCmd,
 		aliasCommand(cmd, doCmd, "activities", []string{"pipeline", "activities"}, "act", "activity"),
-		aliasCommand(cmd, doCmd, "application", []string{"application"}, "app", "apps", "applications"),
+		aliasCommand(cmd, doCmd, "application", []string{"application", "get"}, "app", "apps", "applications"),
 		aliasCommand(cmd, doCmd, "pipelines", []string{"pipeline", "get"}, "pipeline"),
 		aliasCommand(cmd, doCmd, "previews", []string{"preview", "get"}, "preview"),
 	)
