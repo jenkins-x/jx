@@ -16,4 +16,4 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-cli-base-image](https://github.com/jenkins-x/jx-cli-base-image) |  | [0.0.33]() | 
 [jenkins-x/jx-jenkins](https://github.com/jenkins-x/jx-jenkins.git) |  | [0.0.29](https://github.com/jenkins-x/jx-jenkins/releases/tag/v0.0.29) | 
 [jenkins-x-plugins/jx-scm](https://github.com/jenkins-x-plugins/jx-scm) |  | [0.0.2](https://github.com/jenkins-x-plugins/jx-scm/releases/tag/v0.0.2) | 
-[jenkins-x-plugins/jx-health](https://github.com/jenkins-x-plugins/jx-health.git) |  | [0.0.53](https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.53) | 
+[jenkins-x-plugins/jx-health](https://github.com/jenkins-x-plugins/jx-health.git) |  | [0.0.54](https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.54) | 
