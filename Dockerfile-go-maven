@@ -1,0 +1,8 @@
+FROM gcr.io/jenkinsxio/jx-go-maven-base-image:0.0.2
+
+COPY ./build/linux/jx /usr/bin/jx
+
+#ENV HOME /home
+ENV JX3_HOME /home/.jx3
+
+RUN jx upgrade plugins --mandatory
