@@ -51,8 +51,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-preview
   url: https://github.com/jenkins-x/jx-preview.git
-  version: 0.0.113
-  versionURL: https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.113
+  version: 0.0.114
+  versionURL: https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.114
 - host: github.com
   owner: jenkins-x
   repo: jx-test
