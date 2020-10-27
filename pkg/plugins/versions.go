@@ -12,7 +12,7 @@ const (
 	ApplicationVersion = "0.0.17"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.0.404"
+	GitOpsVersion = "0.0.405"
 
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.55"
@@ -30,7 +30,7 @@ const (
 	ProjectVersion = "0.0.138"
 
 	// PromoteVersion the version of the jx promote plugin
-	PromoteVersion = "0.0.135"
+	PromoteVersion = "0.0.136"
 
 	// SecretVersion the version of the jx secret plugin
 	SecretVersion = "0.0.172"

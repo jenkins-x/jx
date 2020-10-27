@@ -15,8 +15,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-promote
   url: https://github.com/jenkins-x/jx-promote.git
-  version: 0.0.135
-  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.135
+  version: 0.0.136
+  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.136
 - host: github.com
   owner: jenkins-x
   repo: jx-project
@@ -45,8 +45,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-gitops
   url: https://github.com/jenkins-x/jx-gitops.git
-  version: 0.0.404
-  versionURL: https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.404
+  version: 0.0.405
+  versionURL: https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.405
 - host: github.com
   owner: jenkins-x
   repo: jx-preview
