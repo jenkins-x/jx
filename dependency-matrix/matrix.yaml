@@ -68,8 +68,8 @@ dependencies:
 - host: github.com
   owner: jenkins-x
   repo: jx-cli-base-image
-  url: https://github.com/jenkins-x/jx-cli-base-image
-  version: 0.0.33
+  url: https://github.com/jenkins-x/jx-cli-base-image.git
+  version: 0.0.35
   versionURL: ""
 - host: github.com
   owner: jenkins-x
