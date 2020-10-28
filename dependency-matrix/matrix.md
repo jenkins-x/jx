@@ -13,7 +13,7 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview.git) |  | [0.0.114](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.114) | 
 [jenkins-x/jx-test](https://github.com/jenkins-x/jx-test.git) |  | [0.0.21](https://github.com/jenkins-x/jx-test/releases/tag/v0.0.21) | 
 [jenkins-x/jxl-base-image](https://github.com/jenkins-x/jxl-base-image) |  | [0.0.61]() | 
-[jenkins-x/jx-cli-base-image](https://github.com/jenkins-x/jx-cli-base-image.git) |  | [0.0.35]() | 
+[jenkins-x/jx-cli-base-image](https://github.com/jenkins-x/jx-cli-base-image.git) |  | [0.0.36]() | 
 [jenkins-x/jx-jenkins](https://github.com/jenkins-x/jx-jenkins.git) |  | [0.0.29](https://github.com/jenkins-x/jx-jenkins/releases/tag/v0.0.29) | 
 [jenkins-x-plugins/jx-scm](https://github.com/jenkins-x-plugins/jx-scm) |  | [0.0.2](https://github.com/jenkins-x-plugins/jx-scm/releases/tag/v0.0.2) | 
 [jenkins-x-plugins/jx-health](https://github.com/jenkins-x-plugins/jx-health.git) |  | [0.0.55](https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.55) | 
