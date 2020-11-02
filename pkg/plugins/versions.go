@@ -21,13 +21,13 @@ const (
 	JenkinsVersion = "0.0.29"
 
 	// PipelineVersion the version of the jx pipeline plugin
-	PipelineVersion = "0.0.60"
+	PipelineVersion = "0.0.61"
 
 	// PreviewVersion the version of the jx preview plugin
 	PreviewVersion = "0.0.114"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.140"
+	ProjectVersion = "0.0.141"
 
 	// PromoteVersion the version of the jx promote plugin
 	PromoteVersion = "0.0.136"
