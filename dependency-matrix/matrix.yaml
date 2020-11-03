@@ -15,14 +15,14 @@ dependencies:
   owner: jenkins-x
   repo: jx-promote
   url: https://github.com/jenkins-x/jx-promote.git
-  version: 0.0.137
-  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.137
+  version: 0.0.138
+  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.138
 - host: github.com
   owner: jenkins-x
   repo: jx-project
   url: https://github.com/jenkins-x/jx-project.git
-  version: 0.0.142
-  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.142
+  version: 0.0.143
+  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.143
 - host: github.com
   owner: jenkins-x
   repo: jx-verify
