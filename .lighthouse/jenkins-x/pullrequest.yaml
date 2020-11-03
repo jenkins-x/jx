@@ -179,7 +179,7 @@ spec:
             to dir: /workspace/$(params.subdirectory); ls -al'
           command:
           - /bin/sh
-          image: gcr.io/jenkinsxio/builder-jx:2.1.32-662
+          image: gcr.io/jenkinsxio/builder-jx:2.1.142-761
           name: git-clone
           resources: {}
           workingDir: /workspace
@@ -252,7 +252,7 @@ spec:
           command:
           - /busybox/sh
           - -c
-          image: gcr.io/kaniko-project/executor:debug-v0.24.0
+          image: gcr.io/kaniko-project/executor:debug-1d1298564878f2a57d8f77b4269c66c6e2d9bb6b
           name: build-container-build
           resources: {}
         volumes:
