@@ -20,6 +20,12 @@ const (
 	// JenkinsVersion the version of the jx jenkins plugin
 	JenkinsVersion = "0.0.29"
 
+	// OctantVersion the default version of octant to use
+	OctantVersion = "0.16.1"
+
+	// OctantJXVersion the default version of octant-jx plugin to use
+	OctantJXVersion = "0.0.31"
+
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.61"
 
