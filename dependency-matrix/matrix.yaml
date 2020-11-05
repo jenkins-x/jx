@@ -45,14 +45,14 @@ dependencies:
   owner: jenkins-x
   repo: jx-gitops
   url: https://github.com/jenkins-x/jx-gitops.git
-  version: 0.0.412
-  versionURL: https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.412
+  version: 0.0.413
+  versionURL: https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.413
 - host: github.com
   owner: jenkins-x
   repo: jx-preview
   url: https://github.com/jenkins-x/jx-preview.git
-  version: 0.0.116
-  versionURL: https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.116
+  version: 0.0.117
+  versionURL: https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.117
 - host: github.com
   owner: jenkins-x
   repo: jx-test
