@@ -27,7 +27,7 @@ const (
 	OctantJXVersion = "0.0.31"
 
 	// PipelineVersion the version of the jx pipeline plugin
-	PipelineVersion = "0.0.61"
+	PipelineVersion = "0.0.62"
 
 	// PreviewVersion the version of the jx preview plugin
 	PreviewVersion = "0.0.117"
