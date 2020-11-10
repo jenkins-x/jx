@@ -83,11 +83,14 @@ func (o *PluginOptions) Run() error {
 
 		// TODO we could use metadata on the plugin for this?
 		switch p.Name {
-		case "admin", "secret":
+		case "admin", "gitops", "secret":
 			if p.Name == "secret" {
 				c := &cmdrunner.Command{
 					Name: fileName,
 					Args: []string{"plugins", "upgrade"},
+				}
+				if o.Boot && p.Name == "gitops" {
+					c.Args = append(c.Args, "--path", "/usr/bin")
 				}
 				_, err = o.CommandRunner(c)
 				if err != nil {
