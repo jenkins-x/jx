@@ -19,6 +19,7 @@ To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues)
 
 * [view open issues in jx-cli and its plugins](https://github.com/issues?q=is%3Aopen+is%3Aissue+repo%3Ajenkins-x%2Fjx-cli+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
 * [view open pull requests in jx-cli and its plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr+-label%3Adependencies+repo%3Ajenkins-x%2Fjx-cli+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
+* [view open pull requests in jenkins-x-plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr++archived%3Afalse+user%3Ajenkins-x-plugins+)
 
 ## Plugins
 
