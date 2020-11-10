@@ -1,0 +1,43 @@
+FROM golang:1.15-alpine as builder
+
+ARG REVISION
+
+RUN mkdir -p /jx-cli/
+
+WORKDIR /jx-cli
+
+COPY . .
+
+RUN go mod download
+
+RUN CGO_ENABLED=0 go build -ldflags "-s -w \
+    -X github.com/jenkins-x/jx-cli/pkg/version.REVISION=${REVISION}" \
+    -a -o bin/jx cmd/main.go
+
+FROM alpine
+
+ARG BUILD_DATE
+ARG VERSION
+ARG REVISION
+
+LABEL maintainer="jenkins-x"
+
+RUN addgroup -S app \
+    && adduser -S -g app app \
+    && apk --no-cache add \
+    ca-certificates curl netcat-openbsd
+
+WORKDIR /home/app
+
+COPY --from=builder /jx-cli/bin/jx /usr/bin/jx
+
+RUN mkdir -p /home/.jx3
+RUN chown -R app:app /usr/bin/jx /home/.jx3
+
+USER app
+
+ENV HOME /home
+ENV JX3_HOME /home/.jx3
+
+RUN jx upgrade plugins --mandatory
+
