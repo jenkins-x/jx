@@ -22,12 +22,19 @@ var (
 		# upgrades your plugin binaries
 		jx upgrade plugins
 	`)
+
+	bootPlugins = map[string]bool{
+		"gitops": true,
+		"secret": true,
+		"verify": true,
+	}
 )
 
 // UpgradeOptions the options for upgrading a cluster
 type PluginOptions struct {
 	CommandRunner cmdrunner.CommandRunner
 	OnlyMandatory bool
+	Boot          bool
 }
 
 // NewCmdUpgrade creates a command object for the command
@@ -45,6 +52,7 @@ func NewCmdUpgradePlugins() (*cobra.Command, *PluginOptions) {
 		},
 	}
 	cmd.Flags().BoolVarP(&o.OnlyMandatory, "mandatory", "m", false, "if set lets ignore optional plugins")
+	cmd.Flags().BoolVarP(&o.Boot, "boot", "", false, "only install plugins required for boot")
 
 	return cmd, o
 }
@@ -61,6 +69,9 @@ func (o *PluginOptions) Run() error {
 	}
 	for k := range plugins.Plugins {
 		p := plugins.Plugins[k]
+		if o.Boot && !bootPlugins[p.Name] {
+			continue
+		}
 		if o.OnlyMandatory && p.Name == "jenkins" {
 			continue
 		}
