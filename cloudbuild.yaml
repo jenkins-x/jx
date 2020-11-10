@@ -15,7 +15,6 @@ steps:
   args: ['buildx', 'build', '--platform', '$_DOCKER_BUILDX_PLATFORMS', '-t', 'gcr.io/$PROJECT_ID/jx3:latest', '-f', 'Dockerfile-jx3', '--push', '.']
   id: 'build-multi-architecture-container-image'
 options:
-  machineType: 'N1_HIGHCPU_8'
   env:
     - 'DOCKER_CLI_EXPERIMENTAL=enabled'
 substitutions:

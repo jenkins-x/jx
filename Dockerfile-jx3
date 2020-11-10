@@ -1,4 +1,4 @@
-FROM golang:1.15-alpine as builder
+FROM golang:1.15 as builder
 
 ARG REVISION
 
@@ -25,7 +25,7 @@ LABEL maintainer="jenkins-x"
 RUN addgroup -S app \
     && adduser -S -g app app \
     && apk --no-cache add \
-    ca-certificates curl netcat-openbsd
+    ca-certificates curl git netcat-openbsd
 
 WORKDIR /home/app
 
