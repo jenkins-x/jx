@@ -39,5 +39,5 @@ USER app
 ENV HOME /home
 ENV JX3_HOME /home/.jx3
 
-RUN jx upgrade plugins --mandatory
+RUN jx upgrade plugins --boot
 
