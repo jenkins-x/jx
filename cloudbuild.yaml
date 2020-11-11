@@ -12,7 +12,7 @@ steps:
   args: ['buildx', 'inspect', '--bootstrap']
   id: 'show-target-build-platforms'
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['buildx', 'build', '--platform', '$_DOCKER_BUILDX_PLATFORMS', '-t', 'gcr.io/$PROJECT_ID/jx-boot:latest', '-f', 'Dockerfile-boot', '--push', '.']
+  args: ['buildx', 'build', '--platform', '$_DOCKER_BUILDX_PLATFORMS', '-t', 'gcr.io/$PROJECT_ID/jx-boot:$_VERSION', '-f', 'Dockerfile-boot', '--push', '.']
   id: 'build-multi-architecture-container-image'
 options:
   env:
