@@ -36,7 +36,7 @@ ENV JX3_HOME /home/.jx3
 
 RUN mkdir -p /home/.jx3
 RUN jx upgrade plugins --boot --path /usr/bin
-RUN chown -R app:app /usr/bin/jx /home/.jx3
+RUN chown -R app:app /usr/bin/jx /home
 
 USER app
 
