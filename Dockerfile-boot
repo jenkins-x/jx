@@ -25,19 +25,20 @@ LABEL maintainer="jenkins-x"
 RUN addgroup -S app \
     && adduser -S -g app app \
     && apk --no-cache add \
-    ca-certificates curl git netcat-openbsd
+    ca-certificates curl git make netcat-openbsd
 
 WORKDIR /home/app
 
 COPY --from=builder /jx-cli/bin/jx /usr/bin/jx
 
+ENV HOME /home
+ENV JX3_HOME /home/.jx3
+
 RUN mkdir -p /home/.jx3
+RUN jx upgrade plugins --boot --path /usr/bin
 RUN chown -R app:app /usr/bin/jx /home/.jx3
 
 USER app
 
-ENV HOME /home
-ENV JX3_HOME /home/.jx3
 
-RUN jx upgrade plugins --boot --path /usr/bin
 
