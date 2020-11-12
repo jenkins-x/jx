@@ -93,5 +93,5 @@ dependencies:
   owner: jenkins-x
   repo: octant-jx
   url: https://github.com/jenkins-x/octant-jx.git
-  version: 0.0.32
-  versionURL: https://github.com/jenkins-x/octant-jx/releases/tag/v0.0.32
+  version: 0.0.33
+  versionURL: https://github.com/jenkins-x/octant-jx/releases/tag/v0.0.33

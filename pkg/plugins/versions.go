@@ -24,7 +24,7 @@ const (
 	OctantVersion = "0.16.1"
 
 	// OctantJXVersion the default version of octant-jx plugin to use
-	OctantJXVersion = "0.0.32"
+	OctantJXVersion = "0.0.33"
 
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.64"
