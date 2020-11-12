@@ -6,7 +6,7 @@ import (
 
 const (
 	// AdminVersion the version of the jx admin plugin
-	AdminVersion = "0.0.136"
+	AdminVersion = "0.0.137"
 
 	// ApplicationVersion the version of the jx application plugin
 	ApplicationVersion = "0.0.17"
@@ -24,13 +24,13 @@ const (
 	OctantVersion = "0.16.1"
 
 	// OctantJXVersion the default version of octant-jx plugin to use
-	OctantJXVersion = "0.0.32"
+	OctantJXVersion = "0.0.33"
 
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.64"
 
 	// PreviewVersion the version of the jx preview plugin
-	PreviewVersion = "0.0.118"
+	PreviewVersion = "0.0.119"
 
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.0.149"
