@@ -64,7 +64,7 @@ spec:
             cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-bdd --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-bdd:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-bdd:latest
         - image: gcr.io/kaniko-project/executor:debug-v1.3.0
-          name: build-and-push-image-bdd
+          name: build-and-push-image-go
           resources: {}
           script: |
             #!/busybox/sh
@@ -72,7 +72,7 @@ spec:
             cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-go --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go:latest
         - image: gcr.io/kaniko-project/executor:debug-v1.3.0
-          name: build-and-push-image-bdd
+          name: build-and-push-image-go-maven
           resources: {}
           script: |
             #!/busybox/sh
@@ -80,7 +80,7 @@ spec:
             cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-go-maven --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go-maven:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go-maven:latest
         - image: google/cloud-sdk:slim
-          name: build-and-push-image
+          name: build-and-push-image-multi
           resources: {}
           script: |
             #!/bin/bash
