@@ -11,6 +11,11 @@ spec:
               - "jenkins-x-*.yml"
               - "git-operator/job.yaml"
         - regex:
+            pattern: "\\s+image: gcr.io/jenkinsxio/jx-boot:(.*)"
+            files:
+              - "jenkins-x-*.yml"
+              - "git-operator/job.yaml"
+        - regex:
             pattern: "version: (.*)"
             files:
               - "docker/gcr.io/jenkinsxio/jx-cli.yml"
