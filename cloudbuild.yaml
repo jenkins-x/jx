@@ -1,0 +1,22 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['run', '--privileged', 'linuxkit/binfmt:v0.7']
+  id: 'initialize-qemu'
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['buildx', 'create', '--name', 'mybuilder']
+  id: 'create-builder'
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['buildx', 'use', 'mybuilder']
+  id: 'select-builder'
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['buildx', 'inspect', '--bootstrap']
+  id: 'show-target-build-platforms'
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['buildx', 'build', '--platform', '$_DOCKER_BUILDX_PLATFORMS', '-t', 'gcr.io/$PROJECT_ID/jx-boot:$_VERSION', '-f', 'Dockerfile-boot', '--push', '.']
+  id: 'build-multi-architecture-container-image'
+options:
+  env:
+    - 'DOCKER_CLI_EXPERIMENTAL=enabled'
+substitutions:
+  _DOCKER_BUILDX_PLATFORMS: 'linux/amd64,linux/arm/v7'
+timeout: 3600s

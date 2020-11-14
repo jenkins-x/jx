@@ -22,12 +22,20 @@ var (
 		# upgrades your plugin binaries
 		jx upgrade plugins
 	`)
+
+	bootPlugins = map[string]bool{
+		"gitops": true,
+		"secret": true,
+		"verify": true,
+	}
 )
 
 // UpgradeOptions the options for upgrading a cluster
 type PluginOptions struct {
 	CommandRunner cmdrunner.CommandRunner
 	OnlyMandatory bool
+	Boot          bool
+	Path          string
 }
 
 // NewCmdUpgrade creates a command object for the command
@@ -45,6 +53,8 @@ func NewCmdUpgradePlugins() (*cobra.Command, *PluginOptions) {
 		},
 	}
 	cmd.Flags().BoolVarP(&o.OnlyMandatory, "mandatory", "m", false, "if set lets ignore optional plugins")
+	cmd.Flags().BoolVarP(&o.Boot, "boot", "", false, "only install plugins required for boot")
+	cmd.Flags().StringVarP(&o.Path, "path", "", "/usr/bin", "creates a symlink to the binary plugins in this bin path dir")
 
 	return cmd, o
 }
@@ -61,6 +71,9 @@ func (o *PluginOptions) Run() error {
 	}
 	for k := range plugins.Plugins {
 		p := plugins.Plugins[k]
+		if o.Boot && !bootPlugins[p.Name] {
+			continue
+		}
 		if o.OnlyMandatory && p.Name == "jenkins" {
 			continue
 		}
@@ -70,18 +83,29 @@ func (o *PluginOptions) Run() error {
 			return errors.Wrapf(err, "failed to ensure plugin is installed %s", p.Name)
 		}
 
-		// TODO we could use metadata on the plugin for this?
-		switch p.Name {
-		case "admin", "secret":
-			if p.Name == "secret" {
+		if o.Boot {
+			if p.Name == "gitops" {
 				c := &cmdrunner.Command{
 					Name: fileName,
-					Args: []string{"plugins", "upgrade"},
+					Args: []string{"plugin", "upgrade", "--path", o.Path},
 				}
 				_, err = o.CommandRunner(c)
 				if err != nil {
-					return errors.Wrapf(err, "failed to upgrade plugin %s", p.Name)
+					return errors.Wrapf(err, "failed to upgrade gitops plugin %s", p.Name)
 				}
+			}
+			continue
+		}
+
+		// TODO we could use metadata on the plugin for this?
+		if p.Name == "secret" {
+			c := &cmdrunner.Command{
+				Name: fileName,
+				Args: []string{"plugins", "upgrade"},
+			}
+			_, err = o.CommandRunner(c)
+			if err != nil {
+				return errors.Wrapf(err, "failed to upgrade plugin %s", p.Name)
 			}
 		}
 	}
