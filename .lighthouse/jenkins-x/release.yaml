@@ -94,14 +94,6 @@ spec:
             if [ -d "/workspace/source/charts/$REPO_NAME" ]; then cd /workspace/source/charts/$REPO_NAME
             helm-docs; else echo no charts; fi
         - image: gcr.io/jenkinsxio/jx-cli:3.0.705
-        - args:
-          - 'if [ -d "/workspace/source/charts/$REPO_NAME" ]; then source .jx/variables.sh
-            && cd /workspace/source/charts/$REPO_NAME && make release; else echo no
-            charts; fi'
-          command:
-          - /bin/bash
-          - -c
-          image: gcr.io/jenkinsxio/jx-cli:latest
           name: release-chart
           resources: {}
           script: |
