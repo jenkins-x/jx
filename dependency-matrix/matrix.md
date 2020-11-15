@@ -3,13 +3,13 @@
 Dependency | Sources | Version | Mismatched versions
 ---------- | ------- | ------- | -------------------
 [jenkins-x/jx-admin](https://github.com/jenkins-x/jx-admin.git) |  | [0.0.138](https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.138) | 
-[jenkins-x/jx-secret](https://github.com/jenkins-x/jx-secret.git) |  | [0.0.174](https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.174) | 
+[jenkins-x/jx-secret](https://github.com/jenkins-x/jx-secret.git) |  | [0.0.175](https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.175) | 
 [jenkins-x/jx-promote](https://github.com/jenkins-x/jx-promote.git) |  | [0.0.143](https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.143) | 
 [jenkins-x/jx-project](https://github.com/jenkins-x/jx-project.git) |  | [0.0.151](https://github.com/jenkins-x/jx-project/releases/tag/v0.0.151) | 
 [jenkins-x/jx-verify](https://github.com/jenkins-x/jx-verify.git) |  | [0.0.32](https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.32) | 
 [jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline.git) |  | [0.0.64](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.64) | 
 [jenkins-x/jx-application](https://github.com/jenkins-x/jx-application.git) |  | [0.0.17](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.17) | 
-[jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops.git) |  | [0.0.430](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.430) | 
+[jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops.git) |  | [0.0.431](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.431) | 
 [jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview.git) |  | [0.0.119](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.119) | 
 [jenkins-x/jx-test](https://github.com/jenkins-x/jx-test.git) |  | [0.0.21](https://github.com/jenkins-x/jx-test/releases/tag/v0.0.21) | 
 [jenkins-x/jxl-base-image](https://github.com/jenkins-x/jxl-base-image) |  | [0.0.61]() | 
