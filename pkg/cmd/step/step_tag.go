@@ -300,10 +300,11 @@ func (o *StepTagOptions) findChartsDir() (string, error) {
 		if appName != "" && paths[len(paths)-2] == appName {
 			r -= 1
 		}
+		log.Logger().Debugf("ranked %s at %d", file, r)
 		return r
 	}
 	less := func(i, j int) bool {
-		return rank(files[i]) < rank(files[j]) || files[i] < files[j]
+		return rank(files[i]) < rank(files[j])
 	}
 	sort.Slice(files, less)
 	// check the most likely file
