@@ -19,7 +19,7 @@ for a note about Go cross-compiling support.
 
 ### Configuring Go
 
-The jx's binary eCLI is  built on your machine in your GO Path. 
+The jx's binary CLI is built on your machine in your GO Path. 
 
 On macOS, Go can be installed with [Homebrew][]:
 
@@ -41,38 +41,38 @@ $ GOOS=linux GOARCH=amd64 ./make.bash --no-clean
 
 ## Fork the Repository
 
-Begin at Github by forking jx, then clone your fork locally. Since jx is a Go package, it
-should be located at `$GOPATH/src/github.com/jenkins-x/jx`.
+Begin at GitHub by forking jx-cli, then clone your fork locally. Since jx-cli is a Go package, it
+should be located at `$GOPATH/src/github.com/jenkins-x/jx-cli`.
 
 ```shell
 $ mkdir -p $GOPATH/src/github.com/jenkins-x
 $ cd $GOPATH/src/github.com/jenkins-x
-$ git clone git@github.com:<username>/jx.git
-$ cd jx
+$ git clone git@github.com:<username>/jx-cli.git
+$ cd jx-cli
 ```
 
-Add the conventional [upstream][] `git` remote in order to fetch changes from jx's main master
+Add the conventional [upstream][] `git` remote in order to fetch changes from jx-cli's main master
 branch and to create pull requests:
 
 ```shell
-$ git remote add upstream https://github.com/jenkins-x/jx.git
+$ git remote add upstream https://github.com/jenkins-x/jx-cli.git
 ```
 
 ## Build Your Changes
 
-With the prerequisites installed and your fork of jx cloned, you can make changes to local jx
+With the prerequisites installed and your fork of jx-cli cloned, you can make changes to local jx-cli
 source code.
 
-Run `make` to build the `jx`  binaries:
+Run `make` to build the `jx-cli`  binaries:
 
 ```shell
 
-$ make build      # runs dep and builds `jx`  inside the build/
+$ make build      # runs dep and builds `jx-cli`  inside the build/
 ```
 
 ## Testing
 
-The jx test suite is divided into three sections:
+The jx-cli test suite is divided into three sections:
  - The standard unit test suite
  - Slow unit tests
  - Integration tests
