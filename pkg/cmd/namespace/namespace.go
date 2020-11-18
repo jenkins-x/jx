@@ -280,7 +280,9 @@ func handleStatusError(err error, client kubernetes.Interface, ns string, create
 			if err != nil {
 				return err
 			}
+			return nil
 		}
+		return err
 	} else {
 		return err
 	}
