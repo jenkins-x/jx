@@ -9,7 +9,7 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-verify](https://github.com/jenkins-x/jx-verify.git) |  | [0.0.32](https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.32) | 
 [jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline.git) |  | [0.0.68](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.68) | 
 [jenkins-x/jx-application](https://github.com/jenkins-x/jx-application.git) |  | [0.0.17](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.17) | 
-[jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops.git) |  | [0.0.440](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.440) | 
+[jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops.git) |  | [0.0.441](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.441) | 
 [jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview.git) |  | [0.0.122](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.122) | 
 [jenkins-x/jx-test](https://github.com/jenkins-x/jx-test.git) |  | [0.0.21](https://github.com/jenkins-x/jx-test/releases/tag/v0.0.21) | 
 [jenkins-x/jxl-base-image](https://github.com/jenkins-x/jxl-base-image) |  | [0.0.61]() | 
