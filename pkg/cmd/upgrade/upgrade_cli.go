@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/jenkins-x/jx-api/v3/pkg/util"
+	"github.com/jenkins-x/jx-api/v4/pkg/util"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 
 	"github.com/jenkins-x/jx-cli/pkg/version"
 
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 
-	"github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxenv"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
