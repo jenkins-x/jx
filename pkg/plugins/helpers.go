@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 
-	jenkinsv1 "github.com/jenkins-x/jx-api/v3/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/homedir"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
