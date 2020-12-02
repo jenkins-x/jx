@@ -108,13 +108,13 @@ spec:
 #             #!/bin/bash
 #             source .jx/variables.sh
 #             make goreleaser
-#         - image: google/cloud-sdk:slim
-#           name: build-and-push-image-multi
-#           resources: {}
-#           script: |
-#             #!/bin/bash
-#             source .jx/variables.sh
-#             /workspace/source/build.sh
+        - image: google/cloud-sdk:slim
+          name: build-and-push-image-multi
+          resources: {}
+          script: |
+            #!/bin/bash
+            source .jx/variables.sh
+            /workspace/source/build.sh
 #         - command:
 #           - jx-updatebot
 #           - pr
