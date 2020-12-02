@@ -3,8 +3,8 @@ module github.com/jenkins-x/jx-cli
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/jenkins-x/jx-api/v3 v3.0.3
-	github.com/jenkins-x/jx-helpers/v3 v3.0.23
+	github.com/jenkins-x/jx-api/v4 v4.0.10
+	github.com/jenkins-x/jx-helpers/v3 v3.0.28
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
 	github.com/jenkins-x/jx-logging/v3 v3.0.2
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
@@ -22,7 +22,6 @@ require (
 replace (
 	github.com/jenkins-x/lighthouse => github.com/rawlingsj/lighthouse v0.0.0-20201005083317-4d21277f7992
 	k8s.io/client-go => k8s.io/client-go v0.19.2
-
 )
 
 go 1.15
