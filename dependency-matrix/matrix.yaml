@@ -3,56 +3,56 @@ dependencies:
   owner: jenkins-x
   repo: jx-admin
   url: https://github.com/jenkins-x/jx-admin.git
-  version: 0.0.140
-  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.140
+  version: 0.0.142
+  versionURL: https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.142
 - host: github.com
   owner: jenkins-x
   repo: jx-secret
   url: https://github.com/jenkins-x/jx-secret.git
-  version: 0.0.179
-  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.179
+  version: 0.0.181
+  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.181
 - host: github.com
   owner: jenkins-x
   repo: jx-promote
   url: https://github.com/jenkins-x/jx-promote.git
-  version: 0.0.144
-  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.144
+  version: 0.0.147
+  versionURL: https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.147
 - host: github.com
   owner: jenkins-x
   repo: jx-project
   url: https://github.com/jenkins-x/jx-project.git
-  version: 0.0.153
-  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.153
+  version: 0.0.154
+  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.154
 - host: github.com
   owner: jenkins-x
   repo: jx-verify
   url: https://github.com/jenkins-x/jx-verify.git
-  version: 0.0.32
-  versionURL: https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.32
+  version: 0.0.34
+  versionURL: https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.34
 - host: github.com
   owner: jenkins-x
   repo: jx-pipeline
   url: https://github.com/jenkins-x/jx-pipeline.git
-  version: 0.0.68
-  versionURL: https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.68
+  version: 0.0.71
+  versionURL: https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.71
 - host: github.com
   owner: jenkins-x
   repo: jx-application
   url: https://github.com/jenkins-x/jx-application.git
-  version: 0.0.17
-  versionURL: https://github.com/jenkins-x/jx-application/releases/tag/v0.0.17
+  version: 0.0.18
+  versionURL: https://github.com/jenkins-x/jx-application/releases/tag/v0.0.18
 - host: github.com
   owner: jenkins-x
   repo: jx-gitops
   url: https://github.com/jenkins-x/jx-gitops.git
-  version: 0.0.443
-  versionURL: https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.443
+  version: 0.0.445
+  versionURL: https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.445
 - host: github.com
   owner: jenkins-x
   repo: jx-preview
   url: https://github.com/jenkins-x/jx-preview.git
-  version: 0.0.126
-  versionURL: https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.126
+  version: 0.0.128
+  versionURL: https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.128
 - host: github.com
   owner: jenkins-x
   repo: jx-test

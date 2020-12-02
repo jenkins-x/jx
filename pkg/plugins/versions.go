@@ -6,13 +6,13 @@ import (
 
 const (
 	// AdminVersion the version of the jx admin plugin
-	AdminVersion = "0.0.140"
+	AdminVersion = "0.0.142"
 
 	// ApplicationVersion the version of the jx application plugin
-	ApplicationVersion = "0.0.17"
+	ApplicationVersion = "0.0.18"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.0.443"
+	GitOpsVersion = "0.0.445"
 
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.57"
@@ -27,25 +27,25 @@ const (
 	OctantJXVersion = "0.0.34"
 
 	// PipelineVersion the version of the jx pipeline plugin
-	PipelineVersion = "0.0.68"
+	PipelineVersion = "0.0.71"
 
 	// PreviewVersion the version of the jx preview plugin
-	PreviewVersion = "0.0.126"
+	PreviewVersion = "0.0.128"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.153"
+	ProjectVersion = "0.0.154"
 
 	// PromoteVersion the version of the jx promote plugin
-	PromoteVersion = "0.0.144"
+	PromoteVersion = "0.0.147"
 
 	// SecretVersion the version of the jx secret plugin
-	SecretVersion = "0.0.179"
+	SecretVersion = "0.0.181"
 
 	// TestVersion the version of the jx test plugin
 	TestVersion = "0.0.21"
 
 	// VerifyVersion the version of the jx verify plugin
-	VerifyVersion = "0.0.32"
+	VerifyVersion = "0.0.34"
 )
 
 var (
