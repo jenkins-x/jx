@@ -101,25 +101,25 @@ spec:
             #!/bin/bash
             source .jx/variables.sh
             jx step changelog --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
-        - image: gcr.io/jenkinsxio/step-go-releaser:0.0.14
-          name: upload-binaries
-          resources: {}
-          script: |
-            #!/bin/bash
-            source .jx/variables.sh
-            make goreleaser
-        - image: google/cloud-sdk:slim
-          name: build-and-push-image-multi
-          resources: {}
-          script: |
-            #!/bin/bash
-            source .jx/variables.sh
-            /workspace/source/build.sh
-        - command:
-          - jx-updatebot
-          - pr
-          image: gcr.io/jenkinsxio/jx-updatebot:latest
-          name: promote-release
+#         - image: gcr.io/jenkinsxio/step-go-releaser:0.0.14
+#           name: upload-binaries
+#           resources: {}
+#           script: |
+#             #!/bin/bash
+#             source .jx/variables.sh
+#             make goreleaser
+#         - image: google/cloud-sdk:slim
+#           name: build-and-push-image-multi
+#           resources: {}
+#           script: |
+#             #!/bin/bash
+#             source .jx/variables.sh
+#             /workspace/source/build.sh
+#         - command:
+#           - jx-updatebot
+#           - pr
+#           image: gcr.io/jenkinsxio/jx-updatebot:latest
+#           name: promote-release
   podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
