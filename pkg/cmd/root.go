@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jenkins-x/jx-api/v3/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/dashboard"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/ui"
@@ -233,7 +233,7 @@ func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, er
 		return "", err
 	}
 
-	possibles, err := jxClient.JenkinsV1().Plugins(ns).List(context.TODO(), metav1.ListOptions{
+	possibles, err := jxClient.CoreV4beta1().Plugins(ns).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", extensions.PluginCommandLabel, filename),
 	})
 	if err != nil {
