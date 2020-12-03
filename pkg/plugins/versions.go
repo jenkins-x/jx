@@ -1,7 +1,8 @@
 package plugins
 
 import (
-	jenkinsv1 "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	jenkinsv1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/extensions"
 )
 
 const (
@@ -51,17 +52,17 @@ const (
 var (
 	// Plugins default plugins
 	Plugins = []jenkinsv1.Plugin{
-		CreateJXPlugin(jenkinsxOrganisation, "admin", AdminVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "application", ApplicationVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "gitops", GitOpsVersion),
-		CreateJXPlugin(jenkinsxPluginsOrganisation, "health", HealthVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "jenkins", JenkinsVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "pipeline", PipelineVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "preview", PreviewVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "project", ProjectVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "promote", PromoteVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "secret", SecretVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "test", TestVersion),
-		CreateJXPlugin(jenkinsxOrganisation, "verify", VerifyVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "admin", AdminVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "application", ApplicationVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "gitops", GitOpsVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "health", HealthVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "jenkins", JenkinsVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "pipeline", PipelineVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "preview", PreviewVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "project", ProjectVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "promote", PromoteVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "secret", SecretVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "test", TestVersion),
+		extensions.CreateJXPlugin(jenkinsxOrganisation, "verify", VerifyVersion),
 	}
 )

@@ -201,7 +201,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 		}
 	}
 
-	env, err := o.JXClient.CoreV4beta1().Environments(ns).Get(context.TODO(), name, metav1.GetOptions{})
+	env, err := o.JXClient.JenkinsV1().Environments(ns).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return "", options.InvalidArg(name, names)

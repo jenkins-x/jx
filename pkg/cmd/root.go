@@ -233,7 +233,7 @@ func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, er
 		return "", err
 	}
 
-	possibles, err := jxClient.CoreV4beta1().Plugins(ns).List(context.TODO(), metav1.ListOptions{
+	possibles, err := jxClient.JenkinsV1().Plugins(ns).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", extensions.PluginCommandLabel, filename),
 	})
 	if err != nil {
