@@ -117,9 +117,9 @@ spec:
             /workspace/source/build.sh
         - command:
           - jx-updatebot
+          - help
 # TODO lets disable the PRs for a little while until the beta is ready
-#          - pr
-           - help
+#         - pr
           image: gcr.io/jenkinsxio/jx-updatebot:latest
           name: promote-release
   podTemplate: {}
