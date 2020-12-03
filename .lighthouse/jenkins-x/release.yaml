@@ -34,7 +34,7 @@ spec:
           script: |
             #!/usr/bin/env bash
             jx step tag --version $(cat VERSION)
-        - image: gcr.io/jenkinsxio/jx-cli:3.0.705
+        - image: gcr.io/jenkinsxio/jx-boot:3.0.772
           name: jx-variables
           resources: {}
           script: |
@@ -86,7 +86,7 @@ spec:
             #!/bin/ash
             if [ -d "/workspace/source/charts/$REPO_NAME" ]; then cd /workspace/source/charts/$REPO_NAME
             helm-docs; else echo no charts; fi
-        - image: gcr.io/jenkinsxio/jx-cli:3.0.705
+        - image: gcr.io/jenkinsxio/jx-boot:3.0.772
           name: release-chart
           resources: {}
           script: |
