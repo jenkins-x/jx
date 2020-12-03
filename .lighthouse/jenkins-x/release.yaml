@@ -94,13 +94,13 @@ spec:
             if [ -d "/workspace/source/charts/$REPO_NAME" ]; then source .jx/variables.sh
             cd /workspace/source/charts/$REPO_NAME
             make release; else echo no charts; fi
-        - image: gcr.io/jenkinsxio/builder-go:2.1.142-761
+        - image: gcr.io/jenkinsxio/jx-changelog:0.0.8
           name: changelog
           resources: {}
           script: |
             #!/bin/bash
             source .jx/variables.sh
-            jx step changelog --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
+            jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
         - image: gcr.io/jenkinsxio/step-go-releaser:0.0.14
           name: upload-binaries
           resources: {}
