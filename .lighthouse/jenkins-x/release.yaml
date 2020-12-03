@@ -98,7 +98,7 @@ spec:
           name: changelog
           resources: {}
           script: |
-            #!/bin/bash
+            #!/usr/bin/env sh
             source .jx/variables.sh
             jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
         - image: gcr.io/jenkinsxio/step-go-releaser:0.0.14
