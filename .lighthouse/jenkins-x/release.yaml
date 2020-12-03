@@ -38,7 +38,7 @@ spec:
           name: jx-variables
           resources: {}
           script: |
-            #!/usr/bin/env bash
+            #!/usr/bin/env sh
             jx gitops variables
         - image: golang:1.15
           name: release-binary
