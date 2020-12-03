@@ -18,5 +18,5 @@ options:
   env:
     - 'DOCKER_CLI_EXPERIMENTAL=enabled'
 substitutions:
-  _DOCKER_BUILDX_PLATFORMS: 'linux/amd64,linux/arm/v7'
+  _DOCKER_BUILDX_PLATFORMS: 'linux/amd64,linux/arm64'
 timeout: 3600s
