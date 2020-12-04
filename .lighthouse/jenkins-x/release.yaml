@@ -76,7 +76,7 @@ spec:
             #!/bin/ash
             if [ -d "/workspace/source/charts/$REPO_NAME" ]; then cd /workspace/source/charts/$REPO_NAME
             helm-docs; else echo no charts; fi
-        - image: gcr.io/jenkinsxio/jx-boot:3.0.773
+        - image: gcr.io/jenkinsxio/jx-cli:3.0.773
           name: release-chart
           resources: {}
           script: |
