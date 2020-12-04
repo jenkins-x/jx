@@ -8,13 +8,17 @@ spec:
         - regex:
             pattern: "\\s+image: gcr.io/jenkinsxio/jx-cli:(.*)"
             files:
+              - ".lighthouse/jenkins-x/release.yaml"
+              - ".lighthouse/jenkins-x/pullrequest.yaml"
               - "jenkins-x-*.yml"
               - "git-operator/job.yaml"
         - regex:
             pattern: "\\s+image: gcr.io/jenkinsxio/jx-boot:(.*)"
             files:
+              - ".lighthouse/jenkins-x/release.yaml"
+              - ".lighthouse/jenkins-x/pullrequest.yaml"
               - "jenkins-x-*.yml"
-              - "git-operator/job.yaml"
+              - "git-operator/job*.yaml"
         - regex:
             pattern: "version: (.*)"
             files:
