@@ -80,7 +80,7 @@ spec:
           name: release-chart
           resources: {}
           script: |
-            #!/usr/bin/env sh
+            #!/usr/bin/env bash
             if [ -d "/workspace/source/charts/$REPO_NAME" ]; then source .jx/variables.sh
             cd /workspace/source/charts/$REPO_NAME
             make release; else echo no charts; fi
