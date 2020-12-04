@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/dashboard"
 	"github.com/jenkins-x/jx-cli/pkg/cmd/namespace"
@@ -23,12 +24,12 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/homedir"
-	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/httphelpers"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 // Main creates the new command
@@ -228,6 +229,7 @@ type managedPluginHandler struct {
 
 // Lookup implements PluginHandler
 func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
+	/* TODO lets disable querying CRDs for now...
 	jxClient, ns, err := jxclient.LazyCreateJXClientAndNamespace(h.JXClient, h.Namespace)
 	if err != nil {
 		return "", err
@@ -249,7 +251,48 @@ func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, er
 		}
 		return extensions.EnsurePluginInstalled(found, pluginBinDir)
 	}
+	*/
+
 	return h.localPluginHandler.Lookup(filename, pluginBinDir)
+}
+
+func findStandardPlugin(name string) (*v1.Plugin, error) {
+	u := "https://api.github.com/repos/jenkins-x-plugins/" + name + "/releases/latest"
+
+	client := httphelpers.GetClient()
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create http request for %s", u)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		if resp != nil {
+			return nil, errors.Wrapf(err, "failed to GET endpoint %s with status %s", u, resp.Status)
+		}
+		return nil, errors.Wrapf(err, "failed to GET endpoint %s", u)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read response from %s", u)
+	}
+
+	release := &githubRelease{}
+	err = json.Unmarshal(body, release)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal release from %s", u)
+	}
+	version := strings.TrimPrefix(release.TagName, "v")
+	if version == "" {
+		return nil, nil
+	}
+
+	plugin := extensions.CreateJXPlugin("jenkins-x-plugins", strings.TrimPrefix(name, "jx-"), version)
+	return &plugin, nil
+}
+
+type githubRelease struct {
+	TagName string `json:"tag_name"`
 }
 
 // Execute implements PluginHandler
@@ -267,7 +310,19 @@ func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, erro
 		filename += ".exe"
 	}
 
-	return exec.LookPath(filename)
+	path, err := exec.LookPath(filename)
+	if err != nil {
+		// lets see if the plugin is a standard plugin...
+		plugin, err2 := findStandardPlugin(filename)
+		if err2 != nil {
+			return "", errors.Wrapf(err2, "failed to load plugin %s", filename)
+		}
+		if plugin != nil {
+			return extensions.EnsurePluginInstalled(*plugin, pluginBinDir)
+		}
+		return "", err
+	}
+	return path, nil
 }
 
 // Execute implements PluginHandler
