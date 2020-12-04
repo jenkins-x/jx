@@ -43,6 +43,31 @@ spec:
             #!/busybox/sh
             source .jx/variables.sh
             cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
+            /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:latest
+        - image: gcr.io/kaniko-project/executor:debug-v1.3.0
+          name: build-and-push-image-bdd
+          resources: {}
+          script: |
+            #!/busybox/sh
+            source .jx/variables.sh
+            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
+            /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-bdd --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-bdd:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-bdd:latest
+        - image: gcr.io/kaniko-project/executor:debug-v1.3.0
+          name: build-and-push-image-go
+          resources: {}
+          script: |
+            #!/busybox/sh
+            source .jx/variables.sh
+            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
+            /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-go --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go:latest
+        - image: gcr.io/kaniko-project/executor:debug-v1.3.0
+          name: build-and-push-image-go-maven
+          resources: {}
+          script: |
+            #!/busybox/sh
+            source .jx/variables.sh
+            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
+            /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-go-maven --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go-maven:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go-maven:latest
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
         - image: jnorwood/helm-docs:v1.4.0
           name: chart-docs
@@ -83,6 +108,8 @@ spec:
             #!/bin/bash
             source .jx/variables.sh
             make goreleaser
+        - image: google/cloud-sdk:slim
+          name: build-and-push-image-multi
         - image: gcr.io/jenkinsxio/builder-go:2.1.142-761
           name: promote-release
           resources: {}
