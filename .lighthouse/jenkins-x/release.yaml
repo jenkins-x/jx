@@ -110,6 +110,10 @@ spec:
             make goreleaser
         - image: google/cloud-sdk:slim
           name: build-and-push-image-multi
+          script: |
+            #!/bin/bash
+            source .jx/variables.sh
+            gcloud builds submit --config cloudbuild.yaml --project jenkinsxio --substitutions=_VERSION="$VERSION"
         - command:
           - jx-updatebot
           - pr
