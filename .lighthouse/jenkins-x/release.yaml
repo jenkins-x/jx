@@ -94,7 +94,7 @@ spec:
             if [ -d "/workspace/source/charts/$REPO_NAME" ]; then source .jx/variables.sh
             cd /workspace/source/charts/$REPO_NAME
             make release; else echo no charts; fi
-        - image: gcr.io/jenkinsxio/jx-changelog:0.0.8
+        - image: gcr.io/jenkinsxio/jx-changelog:0.0.10
           name: changelog
           resources: {}
           script: |
