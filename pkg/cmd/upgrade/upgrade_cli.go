@@ -6,22 +6,26 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
+
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxenv"
+
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
+
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	"github.com/jenkins-x/jx-api/v4/pkg/util"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 
 	"github.com/jenkins-x/jx-cli/pkg/version"
 
+	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
+	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 
-	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
-	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxenv"
-	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
-
-	"github.com/jenkins-x/jx-helpers/v3/pkg/versionstream"
-
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/versionstream"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
@@ -46,7 +50,8 @@ var (
 
 const (
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
-	BinaryDownloadBaseURL = "https://github.com/jenkins-x/jx-cli/releases/download/v"
+	BinaryDownloadBaseURL  = "https://github.com/jenkins-x/jx-cli/releases/download/v"
+	LatestVersionstreamURL = "https://github.com/jenkins-x/jxr-versions.git"
 )
 
 // UpgradeOptions the options for upgrading a cluster
@@ -56,7 +61,7 @@ type CLIOptions struct {
 	JXClient            versioned.Interface
 	Version             string
 	VersionStreamGitURL string
-	FromEnvironment     string
+	FromEnvironment     bool
 }
 
 // NewCmdUpgrade creates a command object for the command
@@ -74,14 +79,19 @@ func NewCmdUpgradeCLI() (*cobra.Command, *CLIOptions) {
 		},
 	}
 	cmd.Flags().StringVarP(&o.Version, "version", "v", "", "The specific version to upgrade to (requires --brew=false on macOS)")
-	cmd.Flags().StringVarP(&o.VersionStreamGitURL, "version-stream-git-url", "", "https://github.com/jenkins-x/jxr-versions.git", "The version stream git URL to lookup the jx cli version to upgrade to")
-	cmd.Flags().StringVarP(&o.FromEnvironment, "from-environment", "e", "", "Optional environment to use to obtain a version stream from, this overrides version-stream-git-url and version-stream-git-ref")
-
+	cmd.Flags().StringVarP(&o.VersionStreamGitURL, "version-stream-git-url", "", "", "The version stream git URL to lookup the jx cli version to upgrade to")
+	cmd.Flags().BoolVarP(&o.FromEnvironment, "from-environment", "e", false, "Use the clusters dev environment to obtain the version stream URL to find correct version to upgrade the jx cli, this overrides version-stream-git-url")
 	return cmd, o
 }
 
 // Run implements the command
 func (o *CLIOptions) Run() error {
+	var err error
+	o.JXClient, err = jxclient.LazyCreateJXClient(o.JXClient)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create jx client")
+	}
+
 	// upgrading to a specific version is not yet supported in brew so lets disable it for upgrades
 	candidateInstallVersion, err := o.candidateInstallVersion()
 	if err != nil {
@@ -109,29 +119,22 @@ func (o *CLIOptions) Run() error {
 }
 
 func (o *CLIOptions) candidateInstallVersion() (semver.Version, error) {
-
+	var err error
 	if o.Version == "" {
+		// if version stream URL is set via a flag use this
 		gitURL := o.VersionStreamGitURL
-		if o.FromEnvironment != "" {
-			// get from the environment name
-			jxClient, ns, err := jxclient.LazyCreateJXClientAndNamespace(o.JXClient, "")
+		if gitURL == "" {
+			// get the versionstream URL used to find what jx-cli version to upgrade to
+			gitURL, err = o.getVersionStreamURL(gitURL)
 			if err != nil {
-				return semver.Version{}, err
-			}
-			envMap, _, err := jxenv.GetEnvironments(jxClient, ns)
-			if err != nil {
-				return semver.Version{}, errors.Wrapf(err, "failed to get Jenkins X environments when running in namespace %s", ns)
-			}
-			env := envMap[o.FromEnvironment]
-			if env == nil {
-				return semver.Version{}, errors.Errorf("no environment matching %s found", o.FromEnvironment)
-			}
-			gitURL = env.Spec.Source.URL
-			if gitURL == "" {
-				return semver.Version{}, errors.Errorf("no env.Spec.Source.URL to clone for environment %s", o.FromEnvironment)
+				return semver.Version{}, errors.Wrapf(err, "failed to get version stream ")
 			}
 		}
-		var err error
+
+		if gitURL == "" {
+			return semver.Version{}, errors.New("no version stream URL to get correct jx-cli version")
+		}
+
 		o.Version, err = o.getJXVersion(gitURL)
 		if err != nil {
 			return semver.Version{}, errors.Wrapf(err, "failed to get jx cli version from %s", gitURL)
@@ -143,6 +146,52 @@ func (o *CLIOptions) candidateInstallVersion() (semver.Version, error) {
 		return semver.Version{}, errors.Wrapf(err, "invalid version requested: %s", o.Version)
 	}
 	return *requestedVersion, nil
+}
+
+// get the versionstream URL used to find what jx-cli version to upgrade to
+func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
+	// lookup the version stream URL from the Kptfile
+	// we do this in case we are switching version streams and need to update CLI before running jx gitops upgrade
+
+	path := filepath.Join("versionStream", "Kptfile")
+	exists, err := files.FileExists(path)
+
+	if o.FromEnvironment && exists {
+		return "", errors.New("local %s found in current directory and from-environment flag set, pick only one")
+	}
+
+	// if there's a local kptfile found use the versionstream git details in that, if not use the cluster git repo
+	if err == nil && exists {
+		node, err := yaml.ReadFile(path)
+		if err == nil {
+			refNode, err := node.Pipe(yaml.Lookup("upstream", "git", "repo"))
+			if err == nil {
+				gitURL, err = refNode.String()
+				if err != nil {
+					return "", errors.Wrapf(err, "failed to get a string value of the Kptfile git repo")
+				}
+				gitURL = strings.TrimSpace(gitURL)
+
+				log.Logger().Infof("using local versionstream URL %s from Kptfile to resolve jx-cli version", gitURL)
+			}
+		}
+	}
+	if o.FromEnvironment {
+		// lookup the cluster git repo from the dev environment and use that as the versionstream
+		env, err := jxenv.GetDevEnvironment(o.JXClient, jxcore.DefaultNamespace)
+		if err == nil {
+			if env.Spec.Source.URL != "" {
+				gitURL = env.Spec.Source.URL
+				log.Logger().Infof("using clusters dev environent versionstream URL %s from Kptfile to resolve jx-cli version", gitURL)
+			}
+		}
+	}
+	if gitURL == "" {
+		// if none of the options above find a git url lets default to the latest upstream version stream
+		gitURL = LatestVersionstreamURL
+		log.Logger().Infof("using latest upstream versionstream URL %s from Kptfile to resolve jx-cli version", gitURL)
+	}
+	return gitURL, nil
 }
 
 func (o *CLIOptions) needsUpgrade(currentVersion, latestVersion semver.Version) bool {
@@ -189,6 +238,7 @@ func (o *CLIOptions) InstallJx(upgrade bool, version string) error {
 	if runtime.GOOS == "windows" {
 		extension = "zip"
 	}
+	log.Logger().Infof("downloading version %s...", version)
 	clientURL := fmt.Sprintf("%s%s/"+binary+"-%s-%s.%s", BinaryDownloadBaseURL, version, runtime.GOOS, runtime.GOARCH, extension)
 	exe, err := os.Executable()
 	if err != nil {
@@ -205,15 +255,16 @@ func (o *CLIOptions) InstallJx(upgrade bool, version string) error {
 
 func (o *CLIOptions) getJXVersion(gitURL string) (string, error) {
 	if o.GitClient == nil {
-		o.GitClient = cli.NewCLIClient("", o.CommandRunner)
+		o.GitClient = cli.NewCLIClient("", cmdrunner.QuietCommandRunner)
 	}
 
 	versionStreamDir, err := gitclient.CloneToDir(o.GitClient, gitURL, "")
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to clone git repo %s", gitURL)
 	}
-	// if o.FromEnvironment set move into the versionStream dir
-	if o.FromEnvironment != "" {
+
+	exists, _ := files.DirExists(filepath.Join(versionStreamDir, "versionStream"))
+	if exists {
 		versionStreamDir = filepath.Join(versionStreamDir, "versionStream")
 	}
 
