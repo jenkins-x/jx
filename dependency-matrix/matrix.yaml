@@ -21,8 +21,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-project
   url: https://github.com/jenkins-x/jx-project.git
-  version: 0.0.154
-  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.154
+  version: 0.0.156
+  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.156
 - host: github.com
   owner: jenkins-x
   repo: jx-verify
