@@ -55,7 +55,7 @@ var (
 
 		This commands effectively runs:
 
-		    $ git commit -a -m "release $(VERSION)" --allow-empty
+		    $ git commit -a -m "chore: release $(VERSION)" --allow-empty
 		    $ git tag -fa v$(VERSION) -m "Release version $(VERSION)"
 		    $ git push origin v$(VERSION)
 
@@ -142,12 +142,12 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 	log.Logger().Debugf("performing git commit")
-	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
+	err = o.Git().AddCommit("", fmt.Sprintf("chore: release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = o.Git().CreateTag("", tag, fmt.Sprintf("release %s", o.Flags.Version))
+	err = o.Git().CreateTag("", tag, fmt.Sprintf("Release version %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
