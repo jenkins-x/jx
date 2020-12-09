@@ -3,8 +3,25 @@ kind: UpdateConfig
 spec:
   rules:
     - urls:
+        - https://github.com/jenkins-x/jx3-pipeline-catalog
+      changes:
+        - regex:
+            pattern: "jenkinsxio/jx-cli:(.*)"
+            files:
+              - "**/*.yaml"
+        - regex:
+            pattern: "jenkinsxio/jx-boot:(.*)"
+            files:
+              - "**/*.yaml"
+    - urls:
         - https://github.com/jenkins-x/jxr-versions
       changes:
+        - versionTemplate: |
+            {{ pullRequestSha "jenkins-x/jx3-pipeline-catalog" }}
+          regex:
+            pattern: "+version: (.*)"
+            files:
+              - git/github.com/jenkins-x/jx3-pipeline-catalog.yml
         - regex:
             pattern: "\\s+image: gcr.io/jenkinsxio/jx-cli:(.*)"
             files:
