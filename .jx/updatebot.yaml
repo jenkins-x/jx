@@ -19,7 +19,7 @@ spec:
         - versionTemplate: |
             {{ pullRequestSha "jenkins-x/jx3-pipeline-catalog" }}
           regex:
-            pattern: "+version: (.*)"
+            pattern: "version: (.*)"
             files:
               - git/github.com/jenkins-x/jx3-pipeline-catalog.yml
         - regex:
