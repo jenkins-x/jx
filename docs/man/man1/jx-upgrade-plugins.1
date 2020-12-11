@@ -20,12 +20,20 @@ Upgrades all of the plugins in your local Jenkins X CLI
 
 .SH OPTIONS
 .PP
+\fB\-\-boot\fP[=false]
+    only install plugins required for boot
+
+.PP
 \fB\-h\fP, \fB\-\-help\fP[=false]
     help for plugins
 
 .PP
 \fB\-m\fP, \fB\-\-mandatory\fP[=false]
     if set lets ignore optional plugins
+
+.PP
+\fB\-\-path\fP="/usr/bin"
+    creates a symlink to the binary plugins in this bin path dir
 
 
 .SH EXAMPLE
