@@ -20,8 +20,8 @@ Upgrades your local Jenkins X CLI
 
 .SH OPTIONS
 .PP
-\fB\-e\fP, \fB\-\-from\-environment\fP=""
-    Optional environment to use to obtain a version stream from, this overrides version\-stream\-git\-url and version\-stream\-git\-ref
+\fB\-e\fP, \fB\-\-from\-environment\fP[=false]
+    Use the clusters dev environment to obtain the version stream URL to find correct version to upgrade the jx cli, this overrides version\-stream\-git\-url
 
 .PP
 \fB\-h\fP, \fB\-\-help\fP[=false]
@@ -32,8 +32,7 @@ Upgrades your local Jenkins X CLI
     The specific version to upgrade to (requires \-\-brew=false on macOS)
 
 .PP
-\fB\-\-version\-stream\-git\-url\fP="
-\[la]https://github.com/jenkins-x/jxr-versions.git"\[ra]
+\fB\-\-version\-stream\-git\-url\fP=""
     The version stream git URL to lookup the jx cli version to upgrade to
 
 

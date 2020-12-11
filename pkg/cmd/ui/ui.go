@@ -24,6 +24,7 @@ type Options struct {
 	options.BaseOptions
 	CommandRunner cmdrunner.CommandRunner
 	BrowserPath   string
+	OctantArgs    []string
 }
 
 var (
@@ -35,6 +36,8 @@ var (
 	cmdExample = templates.Examples(`
 		# open the UI
 		jx ui
+        # To pass arguments to octant
+  		jx ui -o --namespace=jx -o -v -o --browser-path="/#/jx/pipelines"
 `)
 )
 
@@ -53,6 +56,7 @@ func NewCmdUI() (*cobra.Command, *Options) {
 	}
 
 	cmd.Flags().StringVarP(&o.BrowserPath, "browser-path", "p", "/#/jx/pipelines-recent", "The browser path inside octant to open")
+	cmd.Flags().StringSliceVarP(&o.OctantArgs, "octant-args", "o", []string{"--namespace=jx"}, "Extra arguments passed to the octant binary")
 	o.BaseOptions.AddBaseFlags(cmd)
 	return cmd, o
 }
@@ -72,9 +76,10 @@ func (o *Options) Run() error {
 		return errors.Wrap(err, "failed to download the Jenkins X octant plugins")
 	}
 
+	args := append([]string{"--browser-path", o.BrowserPath}, o.OctantArgs...)
 	c := &cmdrunner.Command{
 		Name: octantBin,
-		Args: []string{"--browser-path", o.BrowserPath},
+		Args: args,
 		Out:  os.Stdout,
 		Err:  os.Stderr,
 		In:   os.Stdin,
@@ -118,7 +123,7 @@ func VerifyOctantPluginVersion(runner cmdrunner.CommandRunner, pluginName string
 		if err != nil {
 			log.Logger().Warnf("failed to run command %s version: %s", octantJxBin, err.Error())
 		} else {
-			version = strings.TrimSpace(string(out))
+			version = strings.TrimSpace(out)
 		}
 	}
 
