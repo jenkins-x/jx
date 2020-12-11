@@ -36,6 +36,10 @@ Views the Jenkins X UI (octant).
     Sets the logging level. If not specified defaults to $JX\_LOG\_LEVEL
 
 .PP
+\fB\-o\fP, \fB\-\-octant\-args\fP=[\-\-namespace=jx]
+    Extra arguments passed to the octant binary
+
+.PP
 \fB\-\-verbose\fP[=false]
     Enables verbose output. The environment variable JX\_LOG\_LEVEL has precedence over this flag and allows setting the logging level to any value of: panic, fatal, error, warn, info, debug, trace
 
@@ -44,6 +48,8 @@ Views the Jenkins X UI (octant).
 .PP
 # open the UI
   jx ui
+  # To pass arguments to octant
+  jx ui \-o \-\-namespace=jx \-o \-v \-o \-\-browser\-path="/#/jx/pipelines"
 
 
 .SH SEE ALSO
