@@ -22,7 +22,7 @@ const (
 	JenkinsVersion = "0.0.29"
 
 	// OctantVersion the default version of octant to use
-	OctantVersion = "0.16.1"
+	OctantVersion = "0.16.3"
 
 	// OctantJXVersion the default version of octant-jx plugin to use
 	OctantJXVersion = "0.0.36"
