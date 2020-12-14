@@ -22,7 +22,7 @@ const (
 	JenkinsVersion = "0.0.29"
 
 	// OctantVersion the default version of octant to use
-	OctantVersion = "0.16.1"
+	OctantVersion = "0.16.3"
 
 	// OctantJXVersion the default version of octant-jx plugin to use
 	OctantJXVersion = "0.0.36"
@@ -31,13 +31,13 @@ const (
 	PipelineVersion = "0.0.71"
 
 	// PreviewVersion the version of the jx preview plugin
-	PreviewVersion = "0.0.128"
+	PreviewVersion = "0.0.136"
 
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.0.159"
 
 	// PromoteVersion the version of the jx promote plugin
-	PromoteVersion = "0.0.148"
+	PromoteVersion = "0.0.156"
 
 	// SecretVersion the version of the jx secret plugin
 	SecretVersion = "0.0.191"
