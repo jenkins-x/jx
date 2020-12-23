@@ -29,7 +29,7 @@ const EksCtlVersion = "0.25.0"
 const KubectlVersion = "1.16.5"
 
 // Helm2Version binary version to use
-const Helm2Version = "2.16.9"
+const Helm2Version = "2.17.0"
 
 // Helm3Version binary version to use
 const Helm3Version = "3.2.0"
