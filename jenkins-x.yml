@@ -71,7 +71,7 @@ pipelineConfig:
                     memory: 3072Mi
             steps:
               - name: init-helm
-                image: alpine/helm:2.12.3
+                image: gcr.io/jenkinsxio/builder-go:helm-v2.17.0-V
                 command: helm
                 args: ['init','--client-only']
 
