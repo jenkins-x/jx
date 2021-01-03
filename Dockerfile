@@ -1,4 +1,4 @@
-FROM gcr.io/jenkinsxio/jx-cli-base-image:0.0.40
+FROM gcr.io/jenkinsxio/jx-cli-base-image:0.0.41
 
 COPY ./build/linux/jx /usr/bin/jx
 
