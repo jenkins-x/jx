@@ -528,7 +528,7 @@ func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, version
 }
 
 func (h *HelmTemplate) deleteNamespacedResourcesBySelector(ns string, selector string, wait bool, message string) error {
-	kinds := []string{"pvc", "configmap", "release", "sa", "role", "rolebinding", "secret"}
+	kinds := []string{"all", "pvc", "configmap", "release", "sa", "role", "rolebinding", "secret"}
 	errList := []error{}
 	log.Logger().Debugf("Removing Kubernetes resources from %s using selector: %s from %s", message, util.ColorInfo(selector), strings.Join(kinds, " "))
 	errs := h.deleteResourcesBySelector(ns, kinds, selector, wait)
