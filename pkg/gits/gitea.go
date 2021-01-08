@@ -584,7 +584,7 @@ func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          string(result.ID),
+			ID:          fmt.Sprint(result.ID),
 			Context:     result.Context,
 			URL:         result.URL,
 			TargetURL:   result.TargetURL,
@@ -765,12 +765,11 @@ func (p *GiteaProvider) UserInfo(username string) *GitUser {
 	}
 
 	return &GitUser{
-		Login:     username,
+		Login:     user.UserName,
 		Name:      user.FullName,
 		AvatarURL: user.AvatarURL,
 		Email:     user.Email,
-		// TODO figure the Gitea user url
-		URL: p.Server.URL + "/" + username,
+		URL:       p.Server.URL + "/" + user.UserName,
 	}
 }
 
