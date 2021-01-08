@@ -1,7 +1,7 @@
 module github.com/jenkins-x/jx/v2
 
 require (
-	code.gitea.io/sdk/gitea v0.13.0
+	code.gitea.io/sdk/gitea v0.13.2
 	github.com/Azure/azure-storage-blob-go v0.0.0-20190123011202-457680cc0804
 	github.com/Azure/draft v0.15.0
 	github.com/Azure/go-autorest/autorest v0.9.3
@@ -53,7 +53,7 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/google/go-github/v32 v32.0.0
 	github.com/google/uuid v1.1.1
-	github.com/hashicorp/go-version v1.2.0
+	github.com/hashicorp/go-version v1.2.1
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/vault v1.2.0-beta2.0.20190725165751-afd9e759ca82 // indirect
 	github.com/hashicorp/vault/api v1.0.4
