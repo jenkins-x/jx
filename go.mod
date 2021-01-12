@@ -3,10 +3,11 @@ module github.com/jenkins-x/jx-cli
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/jenkins-x/jx-api/v4 v4.0.14
-	github.com/jenkins-x/jx-helpers/v3 v3.0.43
+	github.com/jenkins-x/jx-api/v4 v4.0.17
+	github.com/jenkins-x/jx-helpers/v3 v3.0.54
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
 	github.com/jenkins-x/jx-logging/v3 v3.0.2
+	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
 	github.com/rhysd/go-github-selfupdate v1.2.2
@@ -16,7 +17,7 @@ require (
 	k8s.io/api v0.19.2
 	k8s.io/apimachinery v0.19.2
 	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
-	sigs.k8s.io/kustomize/kyaml v0.6.1
+	sigs.k8s.io/kustomize/kyaml v0.10.5
 
 )
 
