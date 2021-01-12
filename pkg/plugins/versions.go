@@ -34,19 +34,19 @@ const (
 	PreviewVersion = "0.0.136"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.173"
+	ProjectVersion = "0.0.174"
 
 	// PromoteVersion the version of the jx promote plugin
 	PromoteVersion = "0.0.164"
 
 	// SecretVersion the version of the jx secret plugin
-	SecretVersion = "0.0.204"
+	SecretVersion = "0.0.205"
 
 	// TestVersion the version of the jx test plugin
 	TestVersion = "0.0.21"
 
 	// VerifyVersion the version of the jx verify plugin
-	VerifyVersion = "0.0.41"
+	VerifyVersion = "0.0.42"
 )
 
 var (
