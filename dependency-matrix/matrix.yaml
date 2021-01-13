@@ -87,8 +87,8 @@ dependencies:
   owner: jenkins-x-plugins
   repo: jx-health
   url: https://github.com/jenkins-x-plugins/jx-health.git
-  version: 0.0.61
-  versionURL: https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.61
+  version: 0.0.62
+  versionURL: https://github.com/jenkins-x-plugins/jx-health/releases/tag/v0.0.62
 - host: github.com
   owner: jenkins-x
   repo: octant-jx
