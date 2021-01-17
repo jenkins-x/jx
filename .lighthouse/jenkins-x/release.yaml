@@ -117,7 +117,7 @@ spec:
         - command:
           - jx-updatebot
           - pr
-          image: gcr.io/jenkinsxio/jx-updatebot:0.0.39
+          image: gcr.io/jenkinsxio/jx-updatebot:0.0.40
           name: promote-release
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
