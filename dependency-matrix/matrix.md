@@ -8,7 +8,7 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-project](https://github.com/jenkins-x/jx-project.git) |  | [0.0.174](https://github.com/jenkins-x/jx-project/releases/tag/v0.0.174) | 
 [jenkins-x/jx-verify](https://github.com/jenkins-x/jx-verify.git) |  | [0.0.42](https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.42) | 
 [jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline.git) |  | [0.0.81](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.81) | 
-[jenkins-x/jx-application](https://github.com/jenkins-x/jx-application.git) |  | [0.0.19](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.19) | 
+[jenkins-x/jx-application](https://github.com/jenkins-x/jx-application.git) |  | [0.0.23](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.23) | 
 [jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops.git) |  | [0.0.446](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.446) | 
 [jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview.git) |  | [0.0.128](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.128) | 
 [jenkins-x/jx-test](https://github.com/jenkins-x/jx-test.git) |  | [0.0.25](https://github.com/jenkins-x/jx-test/releases/tag/v0.0.25) | 
