@@ -10,7 +10,7 @@ const (
 	AdminVersion = "0.0.156"
 
 	// ApplicationVersion the version of the jx application plugin
-	ApplicationVersion = "0.0.23"
+	ApplicationVersion = "0.0.24"
 
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.0.530"
@@ -28,7 +28,7 @@ const (
 	OctantJXVersion = "0.0.37"
 
 	// PipelineVersion the version of the jx pipeline plugin
-	PipelineVersion = "0.0.81"
+	PipelineVersion = "0.0.82"
 
 	// PreviewVersion the version of the jx preview plugin
 	PreviewVersion = "0.0.136"
