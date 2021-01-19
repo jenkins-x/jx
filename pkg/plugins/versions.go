@@ -31,7 +31,7 @@ const (
 	PipelineVersion = "0.0.83"
 
 	// PreviewVersion the version of the jx preview plugin
-	PreviewVersion = "0.0.136"
+	PreviewVersion = "0.0.144"
 
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.0.176"
@@ -40,7 +40,7 @@ const (
 	PromoteVersion = "0.0.179"
 
 	// SecretVersion the version of the jx secret plugin
-	SecretVersion = "0.0.213"
+	SecretVersion = "0.0.211"
 
 	// TestVersion the version of the jx test plugin
 	TestVersion = "0.0.25"
