@@ -3,7 +3,6 @@ module github.com/jenkins-x/jx-cli
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cpuguy83/go-md2man v1.0.10
-	github.com/jenkins-x/go-scm v1.5.215 // indirect
 	github.com/jenkins-x/jx-api/v4 v4.0.23
 	github.com/jenkins-x/jx-helpers/v3 v3.0.65
 	github.com/jenkins-x/jx-kube-client/v3 v3.0.1
@@ -14,7 +13,6 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
@@ -22,8 +20,6 @@ require (
 
 )
 
-replace (
-	k8s.io/client-go => k8s.io/client-go v0.20.2
-)
+replace k8s.io/client-go => k8s.io/client-go v0.20.2
 
 go 1.15
