@@ -9,8 +9,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-secret
   url: https://github.com/jenkins-x/jx-secret.git
-  version: 0.0.213
-  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.213
+  version: 0.0.214
+  versionURL: https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.214
 - host: github.com
   owner: jenkins-x
   repo: jx-promote
