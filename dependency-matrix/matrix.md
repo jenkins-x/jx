@@ -3,7 +3,7 @@
 Dependency | Sources | Version | Mismatched versions
 ---------- | ------- | ------- | -------------------
 [jenkins-x/jx-admin](https://github.com/jenkins-x/jx-admin.git) |  | [0.0.143](https://github.com/jenkins-x/jx-admin/releases/tag/v0.0.143) | 
-[jenkins-x/jx-secret](https://github.com/jenkins-x/jx-secret.git) |  | [0.0.213](https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.213) | 
+[jenkins-x/jx-secret](https://github.com/jenkins-x/jx-secret.git) |  | [0.0.214](https://github.com/jenkins-x/jx-secret/releases/tag/v0.0.214) | 
 [jenkins-x/jx-promote](https://github.com/jenkins-x/jx-promote.git) |  | [0.0.148](https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.148) | 
 [jenkins-x/jx-project](https://github.com/jenkins-x/jx-project.git) |  | [0.0.176](https://github.com/jenkins-x/jx-project/releases/tag/v0.0.176) | 
 [jenkins-x/jx-verify](https://github.com/jenkins-x/jx-verify.git) |  | [0.0.42](https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.42) | 
