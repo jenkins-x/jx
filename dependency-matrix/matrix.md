@@ -7,7 +7,7 @@ Dependency | Sources | Version | Mismatched versions
 [jenkins-x/jx-promote](https://github.com/jenkins-x/jx-promote.git) |  | [0.0.148](https://github.com/jenkins-x/jx-promote/releases/tag/v0.0.148) | 
 [jenkins-x/jx-project](https://github.com/jenkins-x/jx-project.git) |  | [0.0.176](https://github.com/jenkins-x/jx-project/releases/tag/v0.0.176) | 
 [jenkins-x/jx-verify](https://github.com/jenkins-x/jx-verify.git) |  | [0.0.42](https://github.com/jenkins-x/jx-verify/releases/tag/v0.0.42) | 
-[jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline.git) |  | [0.0.84](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.84) | 
+[jenkins-x/jx-pipeline](https://github.com/jenkins-x/jx-pipeline.git) |  | [0.0.85](https://github.com/jenkins-x/jx-pipeline/releases/tag/v0.0.85) | 
 [jenkins-x/jx-application](https://github.com/jenkins-x/jx-application.git) |  | [0.0.24](https://github.com/jenkins-x/jx-application/releases/tag/v0.0.24) | 
 [jenkins-x/jx-gitops](https://github.com/jenkins-x/jx-gitops.git) |  | [0.0.446](https://github.com/jenkins-x/jx-gitops/releases/tag/v0.0.446) | 
 [jenkins-x/jx-preview](https://github.com/jenkins-x/jx-preview.git) |  | [0.0.128](https://github.com/jenkins-x/jx-preview/releases/tag/v0.0.128) | 
