@@ -21,8 +21,8 @@ dependencies:
   owner: jenkins-x
   repo: jx-project
   url: https://github.com/jenkins-x/jx-project.git
-  version: 0.0.177
-  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.177
+  version: 0.0.178
+  versionURL: https://github.com/jenkins-x/jx-project/releases/tag/v0.0.178
 - host: github.com
   owner: jenkins-x
   repo: jx-verify
@@ -93,5 +93,5 @@ dependencies:
   owner: jenkins-x
   repo: octant-jx
   url: https://github.com/jenkins-x/octant-jx.git
-  version: 0.0.37
-  versionURL: https://github.com/jenkins-x/octant-jx/releases/tag/v0.0.37
+  version: 0.0.38
+  versionURL: https://github.com/jenkins-x/octant-jx/releases/tag/v0.0.38

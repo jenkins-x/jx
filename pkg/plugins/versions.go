@@ -25,7 +25,7 @@ const (
 	OctantVersion = "0.16.3"
 
 	// OctantJXVersion the default version of octant-jx plugin to use
-	OctantJXVersion = "0.0.37"
+	OctantJXVersion = "0.0.38"
 
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.0.86"
@@ -34,7 +34,7 @@ const (
 	PreviewVersion = "0.0.144"
 
 	// ProjectVersion the version of the jx project plugin
-	ProjectVersion = "0.0.177"
+	ProjectVersion = "0.0.178"
 
 	// PromoteVersion the version of the jx promote plugin
 	PromoteVersion = "0.0.179"
