@@ -1,8 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  annotations:
-    lighthouse.jenkins-x.io/prependStepsURL: https://raw.githubusercontent.com/jenkins-x/jx3-pipeline-catalog/005e78cf69b643862344397a635736a51dd1bd89/tasks/git-clone/git-clone-pr.yaml
+  creationTimestamp: null
   name: pullrequest
 spec:
   pipelineSpec:
@@ -12,6 +11,7 @@ spec:
       taskSpec:
         metadata: {}
         stepTemplate:
+          image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/pullrequest.yaml@versionStream
           name: ""
           resources:
             requests:
@@ -19,32 +19,17 @@ spec:
               memory: 600Mi
           workingDir: /workspace/source
         steps:
-        - image: gcr.io/jenkinsxio/jx-boot:3.0.773
-          name: jx-variables
+        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone-pr.yaml@versionStream
+          name: ""
           resources: {}
-          script: |
-            #!/usr/bin/env sh
-            jx gitops variables
-        - image: golang:1.15
-          name: build-make-linux
+        - name: jx-variables
           resources: {}
-          script: |
-            #!/bin/sh
-            make linux
-        - image: golang:1.15
-          name: build-make-test
+        - name: build-make-linux
           resources: {}
-          script: |
-            #!/bin/sh
-            make test
-        - image: gcr.io/kaniko-project/executor:debug-v1.3.0
-          name: build-container-build
+        - name: build-make-test
           resources: {}
-          script: |
-            #!/busybox/sh
-            source .jx/variables.sh
-            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
-            /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/${DOCKERFILE_PATH:-Dockerfile} --destination=$DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
+        - name: build-container-build
+          resources: {}
   podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
