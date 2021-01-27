@@ -1,8 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  annotations:
-    lighthouse.jenkins-x.io/prependStepsURL: https://raw.githubusercontent.com/jenkins-x/jx3-pipeline-catalog/005e78cf69b643862344397a635736a51dd1bd89/tasks/git-clone/git-clone.yaml
+  creationTimestamp: null
   name: release
 spec:
   pipelineSpec:
@@ -12,38 +11,22 @@ spec:
       taskSpec:
         metadata: {}
         stepTemplate:
+          image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/release.yaml@versionStream
           name: ""
           resources: {}
           workingDir: /workspace/source
         steps:
-        - image: gcr.io/jenkinsxio/jx-release-version:1.0.42
-          name: next-version
+        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
+          name: ""
           resources: {}
-          script: |
-            #!/usr/bin/env bash
-            VERSION=$(jx-release-version)
-            echo $VERSION > VERSION
-        - image: gcr.io/jenkinsxio/jx-boot:3.0.773
-          name: jx-variables
+        - name: next-version
           resources: {}
-          script: |
-            #!/usr/bin/env sh
-            jx gitops variables
-        - image: golang:1.15
-          name: release-binary
+        - name: jx-variables
           resources: {}
-          script: |
-            #!/usr/bin/env sh
-            source .jx/variables.sh
-            make release
-        - image: gcr.io/kaniko-project/executor:debug-v1.3.0
-          name: build-and-push-image
+        - name: release-binary
           resources: {}
-          script: |
-            #!/busybox/sh
-            source .jx/variables.sh
-            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
-            /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:latest
+        - name: build-and-push-image
+          resources: {}
         - image: gcr.io/kaniko-project/executor:debug-v1.3.0
           name: build-and-push-image-bdd
           resources: {}
@@ -69,56 +52,23 @@ spec:
             cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-go-maven --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go-maven:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go-maven:latest
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile --destination=gcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
-        - image: jnorwood/helm-docs:v1.4.0
-          name: chart-docs
+        - name: chart-docs
           resources: {}
-          script: |
-            #!/bin/ash
-            if [ -d "/workspace/source/charts/$REPO_NAME" ]; then cd /workspace/source/charts/$REPO_NAME
-            helm-docs; else echo no charts; fi
-        - image: gcr.io/jenkinsxio/jx-cli:3.0.773
-          name: release-chart
+        - name: release-chart
           resources: {}
-          script: |
-            #!/usr/bin/env bash
-            if [ -d "/workspace/source/charts/$REPO_NAME" ]; then source .jx/variables.sh
-            cd /workspace/source/charts/$REPO_NAME
-            make release; else echo no charts; fi
-        - image: gcr.io/jenkinsxio/jx-changelog:0.0.8
-          name: changelog
-          script: |
-            #!/usr/bin/env sh
-            source .jx/variables.sh
-
-            if [ -d "/workspace/source/charts/$REPO_NAME" ]; then
-            sed -i -e "s/^version:.*/version: $VERSION/" ./charts/$REPO_NAME/Chart.yaml
-            sed -i -e "s/repository:.*/repository: $DOCKER_REGISTRY\/$DOCKER_REGISTRY_ORG\/$APP_NAME/" ./charts/$REPO_NAME/values.yaml
-            sed -i -e "s/tag:.*/tag: $VERSION/" ./charts/$REPO_NAME/values.yaml;
-            else echo no charts; fi
-
-            git commit -a -m "release $VERSION" --allow-empty
-            git tag -fa v$VERSION -m "Release version $VERSION"
-            git push origin v$VERSION
-
-            jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
-        - image: gcr.io/jenkinsxio/step-go-releaser:0.0.14
-          name: upload-binaries
+        - name: changelog
           resources: {}
-          script: |
-            #!/bin/bash
-            source .jx/variables.sh
-            make goreleaser
+        - name: upload-binaries
+          resources: {}
         - image: google/cloud-sdk:slim
           name: build-and-push-image-multi
+          resources: {}
           script: |
             #!/bin/bash
             source .jx/variables.sh
             gcloud builds submit --config cloudbuild.yaml --project jenkinsxio --substitutions=_VERSION="$VERSION"
-        - command:
-          - jx-updatebot
-          - pr
-          image: gcr.io/jenkinsxio/jx-updatebot:latest
-          name: promote-release
+        - name: promote-release
+          resources: {}
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
 status: {}
