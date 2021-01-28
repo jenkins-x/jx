@@ -18,7 +18,7 @@ jobs:
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
       with:
-        args: -c 'export VERSION=$(jx-release-version}; echo "::set-output name=version::${VERSION}"'
+        args: -c 'export VERSION="$(jx-release-version)"; echo "::set-output name=version::${VERSION}"'
         entrypoint: bash
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
