@@ -36,6 +36,12 @@ jobs:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      name: release-chart
+      uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
+      with:
+        entrypoint: .github/workflows/jenkins-x/release-chart.sh
+    - env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
@@ -53,7 +59,7 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: ${{ github.repository_owner }}
+        username: jenkins-x
         password: ${{ secrets.GHCR_TOKEN }}
     - name: Build and push jx-boot
       uses: docker/build-push-action@v2
@@ -65,8 +71,8 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version}}
         tags: |
-          ghcr.io/${{ github.repository_owner }}/jx-boot:latest
-          ghcr.io/{{ github.repository_owner }}/jx-boot:${{ steps.prep.outputs.version }}
+          ghcr.io/jenkins-x/jx-boot:latest
+          ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
     - name: Build and push jx-cli
       uses: docker/build-push-action@v2
       with:
@@ -77,8 +83,8 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version}}
         tags: |
-          ghcr.io/${{ github.repository_owner }}/jx-cli:latest
-          ghcr.io/{{ github.repository_owner }}/jx-cli:${{ steps.prep.outputs.version }}
+          ghcr.io/jenkins-x/jx-cli:latest
+          ghcr.io/jenkins-x/jx-cli:${{ steps.prep.outputs.version }}
     - name: Build and push jx-go
       uses: docker/build-push-action@v2
       with:
@@ -89,8 +95,8 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version}}
         tags: |
-          ghcr.io/${{ github.repository_owner }}/jx-go:latest
-          ghcr.io/{{ github.repository_owner }}/jx-go:${{ steps.prep.outputs.version }}
+          ghcr.io/jenkins-x/jx-go:latest
+          ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
     - name: Build and push jx-go-maven
       uses: docker/build-push-action@v2
       with:
@@ -101,8 +107,8 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version}}
         tags: |
-          ghcr.io/${{ github.repository_owner }}/jx-go-maven:latest
-          ghcr.io/{{ github.repository_owner }}/jx-go-maven:${{ steps.prep.outputs.version }}
+          ghcr.io/jenkins-x/jx-go-maven:latest
+          ghcr.io/jenkins-x/jx-go-maven:${{ steps.prep.outputs.version }}
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
@@ -113,14 +119,8 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version}}
         tags: |
-          ghcr.io/${{ github.repository_owner }}/jx-bdd:latest
-          ghcr.io/{{ github.repository_owner }}/jx-bdd:${{ steps.prep.outputs.version }}
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      name: release-chart
-      uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
-      with:
-        entrypoint: .github/workflows/jenkins-x/release-chart.sh
+          ghcr.io/jenkins-x/jx-bdd:latest
+          ghcr.io/jenkins-x/jx-bdd:${{ steps.prep.outputs.version }}
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: promote-release
