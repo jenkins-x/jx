@@ -49,10 +49,7 @@ jobs:
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
-        entrypoint: /bin/ash
-        args: |
-          source .jx/variables.sh
-          jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
+        entrypoint: .github/workflows/jenkins-x/changelog.sh
     - name: push-tag
       uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
       with:
@@ -72,6 +69,7 @@ jobs:
         entrypoint: bash
         args: |
           source .jx/variables.sh
+
           export BRANCH=$(git rev-parse --abbrev-ref HEAD)
           export BUILDDATE=$(date)
           export REV=$(git rev-parse HEAD)
