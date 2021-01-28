@@ -1,7 +1,7 @@
 apiVersion: core.jenkins-x.io/v4beta1
 kind: Settings
 spec:
-  gitUrl: "https://github.com/jenkins-x/jx-cli.git"
+  gitUrl: "https://github.com/jx3-gitops-repositories/jx3-github.git"
   destination:
     chartRepository: https://github.com/jenkins-x-charts/repo.git
     chartKind: pages
