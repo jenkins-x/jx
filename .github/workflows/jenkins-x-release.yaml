@@ -50,26 +50,25 @@ jobs:
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
+    - id: prep
+      name: Set the values
+      run: |
+        source .jx/variables.sh
+        echo "::set-output name=version::${VERSION}"
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ steps.prep.outputs.version}}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
         entrypoint: bash
         args: |
-          source .jx/variables.sh
-
           export BRANCH=$(git rev-parse --abbrev-ref HEAD)
           export BUILDDATE=$(date)
           export REV=$(git rev-parse HEAD)
           export GOVERSION="1.15"
           export ROOTPACKAGE="github.com/$REPO_OWNER/$REPO_NAME"
           goreleaser release
-    - id: prep
-      name: Set the values
-      run: |
-        source .jx/variables.sh
-        echo "::set-output name=version::${VERSION}"
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
