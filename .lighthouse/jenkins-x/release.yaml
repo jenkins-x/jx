@@ -41,7 +41,7 @@ spec:
           script: |
             #!/busybox/sh
             source .jx/variables.sh
-            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docker/config.json
+            cp /tekton/creds-secrets/tekton-container-registry-auth/.dockerconfigjson /kaniko/.docbddker/config.json
             /kaniko/executor $KANIKO_FLAGS --context=/workspace/source --dockerfile=/workspace/source/Dockerfile-go --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go:$VERSION --destination=gcr.io/$DOCKER_REGISTRY_ORG/jx-go:latest
         - image: gcr.io/kaniko-project/executor:debug-v1.3.0
           name: build-and-push-image-go-maven
