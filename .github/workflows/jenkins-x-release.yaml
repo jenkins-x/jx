@@ -53,7 +53,7 @@ jobs:
     - name: push-tag
       uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
       with:
-        entrypoint: bash
+        entrypoint: /bin/ash
         args: |
           source .jx/variables.sh
           git add * || true
