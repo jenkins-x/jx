@@ -6,6 +6,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: "0"
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: next-version
@@ -33,13 +37,36 @@ jobs:
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
-        entrypoint: .github/workflows/jenkins-x/changelog.sh
+        entrypoint: sh
+        args: |
+          source .jx/variables.sh
+
+          if [ -d "charts/$REPO_NAME" ]; then
+          sed -i -e "s/^version:.*/version: $VERSION/" ./charts/$REPO_NAME/Chart.yaml
+          sed -i -e "s/repository:.*/repository: $DOCKER_REGISTRY\/$DOCKER_REGISTRY_ORG\/$APP_NAME/" ./charts/$REPO_NAME/values.yaml
+          sed -i -e "s/tag:.*/tag: $VERSION/" ./charts/$REPO_NAME/values.yaml;
+          else echo no charts; fi
+
+          jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
+
+          git add * || true
+          git commit -a -m "chore: release $VERSION" --allow-empty
+          git tag -fa v$VERSION -m "Release version $VERSION"
+          git push origin v$VERSION
+
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
-        entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
+        entrypoint: /bin/sh
+        args: |
+          export BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          export BUILDDATE=$(date)
+          export REV=$(git rev-parse HEAD)
+          export GOVERSION="1.15"
+          export ROOTPACKAGE="github.com/$REPO_OWNER/$REPO_NAME"
+          goreleaser release
     - id: prep
       name: Set the values
       run: |
@@ -121,7 +148,13 @@ jobs:
       name: release-chart
       uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
       with:
-        entrypoint: .github/workflows/jenkins-x/release-chart.sh
+        entrypoint: sh
+        args: |
+          echo setting the git user.name
+          git config user.name jenkins-x-bot-test
+          git config user.email jenkins-x@googlegroups.com
+          jx gitops helm release
+
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: promote-release
