@@ -167,7 +167,7 @@ jobs:
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: promote-release
-      uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.46
+      uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.47
       with:
         entrypoint: jx-updatebot
         args: pr
