@@ -11,5 +11,5 @@ jx changelog create --verbose --header-file=hack/changelog-header.md --version=$
 
 git add * || true
 git commit -a -m "chore: release $VERSION" --allow-empty
-git tag -fa v$VERSION -m "Release version $VERSION"
-git push origin v$VERSION
+#git tag -fa v$VERSION -m "Release version $VERSION"
+#git push origin v$VERSION
