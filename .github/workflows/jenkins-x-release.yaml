@@ -15,10 +15,11 @@ jobs:
         token: '${{ secrets.GITHUB_TOKEN }}'
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      id: prep
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
       with:
-        args: -c 'export VERSION="$(jx-release-version)"; echo "::set-output name=version::${VERSION}"'
+        args: -c "echo ::set-output name=version::$(jx-release-version)"
         entrypoint: bash
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,7 +118,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         JX_REPOSITORY_USERNAME: jenkins-x-bot-test
       name: release-chart
-      uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
+      uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
       with:
         entrypoint: sh
         args: |
