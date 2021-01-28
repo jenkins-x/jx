@@ -20,12 +20,6 @@ jobs:
       with:
         args: gitops variables
         entrypoint: jx
-    - id: prep
-      name: Set the values
-      run: |
-        source .jx/variables.sh
-        echo "::set-output name=version::${VERSION}"
-
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: chart-docs
@@ -42,16 +36,15 @@ jobs:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      name: release-chart
-      uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
-      with:
-        entrypoint: .github/workflows/jenkins-x/release-chart.sh
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
         entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
+    - id: prep
+      name: Set the values
+      run: |
+        source .jx/variables.sh
+        echo "::set-output name=version::${VERSION}"
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
@@ -122,6 +115,12 @@ jobs:
         tags: |
           ghcr.io/${{ github.repository_owner }}/jx-bdd:latest
           ghcr.io/{{ github.repository_owner }}/jx-bdd:${{ steps.prep.outputs.version }}
+    - env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      name: release-chart
+      uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
+      with:
+        entrypoint: .github/workflows/jenkins-x/release-chart.sh
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: promote-release
