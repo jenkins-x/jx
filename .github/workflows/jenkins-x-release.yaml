@@ -7,9 +7,12 @@ jobs:
       with:
         fetch-depth: "0"
         token: ${{ secrets.GITHUB_TOKEN }}
-    - run: |
-        git config user.name jenkins-x-bot-test
-        git config user.email jenkins-x@googlegroups.com
+    - uses: oleksiyrudenko/gha-git-credentials@v2-latest
+      with:
+        name: 'jenkins-x-bot-test'
+        email: 'jenkins-x@googlegroups.com'
+        actor: 'jenkins-x-bot-test'
+        token: '${{ secrets.GITHUB_TOKEN }}'
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: next-version
@@ -46,15 +49,20 @@ jobs:
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
-        entrypoint: jx
+        entrypoint: /bin/ash
         args: |
-          changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
-    - run: |
-        source .jx/variables.sh
-        git add * || true
-        git commit -a -m "chore: release $VERSION" --allow-empty
-        git tag -fa v$VERSION -m "Release version $VERSION"
-        git push origin v$VERSION
+          source .jx/variables.sh
+          jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
+    - name: push-tag
+      uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
+      with:
+        entrypoint: bash
+        args: |
+          source .jx/variables.sh
+          git add * || true
+          git commit -a -m "chore: release $VERSION" --allow-empty
+          git tag -fa v$VERSION -m "Release version $VERSION"
+          git push origin v$VERSION
 
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
