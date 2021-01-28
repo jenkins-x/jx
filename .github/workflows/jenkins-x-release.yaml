@@ -61,14 +61,7 @@ jobs:
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
-        entrypoint: bash
-        args: |
-          export BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          export BUILDDATE=$(date)
-          export REV=$(git rev-parse HEAD)
-          export GOVERSION="1.15"
-          export ROOTPACKAGE="github.com/$REPO_OWNER/$REPO_NAME"
-          goreleaser release
+        entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx

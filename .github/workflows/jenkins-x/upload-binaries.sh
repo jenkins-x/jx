@@ -1,5 +1,4 @@
 #!/bin/bash
-source .jx/variables.sh
 
 git add * || true
 git commit -a -m "chore: release $VERSION" --allow-empty
