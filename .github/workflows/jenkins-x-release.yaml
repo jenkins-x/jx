@@ -50,17 +50,6 @@ jobs:
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
-    - name: push-tag
-      uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
-      with:
-        entrypoint: /bin/ash
-        args: |
-          source .jx/variables.sh
-          git add * || true
-          git commit -a -m "chore: release $VERSION" --allow-empty
-          git tag -fa v$VERSION -m "Release version $VERSION"
-          git push origin v$VERSION
-
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: upload-binaries
