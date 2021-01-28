@@ -24,6 +24,15 @@ jobs:
       with:
         args: gitops variables
         entrypoint: jx
+    - run: |
+        source .jx/variables.sh
+
+        if [ -d "charts/$REPO_NAME" ]; then
+        sed -i -e "s/^version:.*/version: $VERSION/" ./charts/$REPO_NAME/Chart.yaml
+        sed -i -e "s/repository:.*/repository: $DOCKER_REGISTRY\/$DOCKER_REGISTRY_ORG\/$APP_NAME/" ./charts/$REPO_NAME/values.yaml
+        sed -i -e "s/tag:.*/tag: $VERSION/" ./charts/$REPO_NAME/values.yaml;
+        else echo no charts; fi
+
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: chart-docs
@@ -37,30 +46,24 @@ jobs:
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
-        entrypoint: /bin/ash
+        entrypoint: jx
         args: |
-          source .jx/variables.sh
-
-          if [ -d "charts/$REPO_NAME" ]; then
-          sed -i -e "s/^version:.*/version: $VERSION/" ./charts/$REPO_NAME/Chart.yaml
-          sed -i -e "s/repository:.*/repository: $DOCKER_REGISTRY\/$DOCKER_REGISTRY_ORG\/$APP_NAME/" ./charts/$REPO_NAME/values.yaml
-          sed -i -e "s/tag:.*/tag: $VERSION/" ./charts/$REPO_NAME/values.yaml;
-          else echo no charts; fi
-
-          jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
-
-          git add * || true
-          git commit -a -m "chore: release $VERSION" --allow-empty
-          git tag -fa v$VERSION -m "Release version $VERSION"
-          git push origin v$VERSION
+          changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
+    - run: |
+        source .jx/variables.sh
+        git add * || true
+        git commit -a -m "chore: release $VERSION" --allow-empty
+        git tag -fa v$VERSION -m "Release version $VERSION"
+        git push origin v$VERSION
 
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
-        entrypoint: /bin/sh
+        entrypoint: bash
         args: |
+          source .jx/variables.sh
           export BRANCH=$(git rev-parse --abbrev-ref HEAD)
           export BUILDDATE=$(date)
           export REV=$(git rev-parse HEAD)
