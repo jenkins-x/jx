@@ -18,7 +18,7 @@ jobs:
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
       with:
-        args: -c "echo '::set-output name=version::$(jx-release-version)'"
+        args: -c "export VERSION=$(jx-release-version} && echo '::set-output name=version::${VERSION}'"
         entrypoint: bash
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,9 +36,9 @@ jobs:
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ steps.prep.outputs.version}}
-        REPOSITORY: ${{ github.repository }} 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPOSITORY: ${{ github.repository }}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
