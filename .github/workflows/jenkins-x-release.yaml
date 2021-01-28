@@ -15,27 +15,11 @@ jobs:
         token: '${{ secrets.GITHUB_TOKEN }}'
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      name: next-version
+      name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
       with:
-        args: -c "jx-release-version > VERSION"
+        args: -c "echo '::set-output name=version::$(VERSION)'"
         entrypoint: bash
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      name: jx-variables
-      uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
-      with:
-        args: gitops variables
-        entrypoint: jx
-    - run: |
-        source .jx/variables.sh
-
-        if [ -d "charts/$REPO_NAME" ]; then
-        sed -i -e "s/^version:.*/version: $VERSION/" ./charts/$REPO_NAME/Chart.yaml
-        sed -i -e "s/repository:.*/repository: $DOCKER_REGISTRY\/$DOCKER_REGISTRY_ORG\/$APP_NAME/" ./charts/$REPO_NAME/values.yaml
-        sed -i -e "s/tag:.*/tag: $VERSION/" ./charts/$REPO_NAME/values.yaml;
-        else echo no charts; fi
-
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: chart-docs
@@ -46,18 +30,15 @@ jobs:
         entrypoint: /bin/ash
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO_NAME: jx-cli
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
-    - id: prep
-      name: Set the values
-      run: |
-        source .jx/variables.sh
-        echo "::set-output name=version::${VERSION}"
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ steps.prep.outputs.version}}
+        REPOSITORY: ${{ github.repository }} 
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
       with:
@@ -80,7 +61,7 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         build-args: |
-          VERSION=${{ steps.prep.outputs.version}}
+          VERSION=${{ steps.prep.outputs.version }}
         tags: |
           ghcr.io/jenkins-x/jx-boot:latest
           ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}

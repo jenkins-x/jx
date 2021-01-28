@@ -9,5 +9,5 @@ export BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export BUILDDATE=$(date)
 export REV=$(git rev-parse HEAD)
 export GOVERSION="1.15"
-export ROOTPACKAGE="github.com/$REPO_OWNER/$REPO_NAME"
+export ROOTPACKAGE="github.com/$REPOSITORY"
 goreleaser release
