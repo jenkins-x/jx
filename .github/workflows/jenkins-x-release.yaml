@@ -36,7 +36,7 @@ jobs:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        JX_REPOSITORY_USERNAME: x-access-token
+        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
       name: release-chart
       uses: docker://gcr.io/jenkinsxio/jx-cli:3.1.170
       with:
