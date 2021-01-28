@@ -17,6 +17,8 @@ steps:
 options:
   env:
     - 'DOCKER_CLI_EXPERIMENTAL=enabled'
+  machineType: 'N1_HIGHCPU_8'
+  diskSizeGb: 200    
 substitutions:
   _DOCKER_BUILDX_PLATFORMS: 'linux/amd64,linux/arm64'
 timeout: 3600s
