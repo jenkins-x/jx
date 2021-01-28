@@ -9,10 +9,10 @@ spec:
     trigger: "/test"
     rerun_command: "/retest"
     source: "pullrequest.yaml"
-  postsubmits:
-  - name: release
-    context: "release"
-    source: "release.yaml"
-    branches:
-    - ^main$
-    - ^master$
+#  postsubmits:
+#  - name: release
+#    context: "release"
+#    source: "release.yaml"
+#    branches:
+#    - ^main$
+#    - ^master$
