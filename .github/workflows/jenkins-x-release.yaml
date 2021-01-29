@@ -7,10 +7,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: "0"
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GIT_BOT_TOKEN }}
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
-        credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GITHUB_TOKEN) }}
+        credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
     - id: prep
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
@@ -18,7 +18,7 @@ jobs:
         args: -c "echo ::set-output name=version::$(jx-release-version)"
         entrypoint: bash
     - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
       name: chart-docs
       uses: docker://jnorwood/helm-docs:v1.4.0
       with:
@@ -26,7 +26,7 @@ jobs:
           else echo no charts; fi"
         entrypoint: /bin/ash
     - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         VERSION: ${{ steps.prep.outputs.version}}
         REPO_NAME: jx-cli
       name: changelog
@@ -34,7 +34,7 @@ jobs:
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         JX_REPOSITORY_USERNAME: jenkins-x-bot-test
         VERSION: ${{ steps.prep.outputs.version}}
       name: release-chart
@@ -43,7 +43,7 @@ jobs:
         entrypoint: .github/workflows/jenkins-x/release-chart.sh
     - env:
         VERSION: ${{ steps.prep.outputs.version}}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPOSITORY: ${{ github.repository }}
       name: upload-binaries
       uses: docker://goreleaser/goreleaser:v0.155.0
@@ -120,7 +120,7 @@ jobs:
           ghcr.io/jenkins-x/jx-bdd:latest
           ghcr.io/jenkins-x/jx-bdd:${{ steps.prep.outputs.version }}
     - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
       name: promote-release
       uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.47
       with:
