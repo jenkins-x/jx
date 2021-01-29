@@ -6,11 +6,11 @@ spec:
         - https://github.com/jenkins-x/jx3-pipeline-catalog
       changes:
         - regex:
-            pattern: "jenkinsxio/jx-cli:(.*)"
+            pattern: "jenkins-x/jx-cli:(.*)"
             files:
               - "**/*.yaml"
         - regex:
-            pattern: "jenkinsxio/jx-boot:(.*)"
+            pattern: "jenkins-x/jx-boot:(.*)"
             files:
               - "**/*.yaml"
     - urls:
@@ -23,14 +23,14 @@ spec:
             files:
               - git/github.com/jenkins-x/jx3-pipeline-catalog.yml
         - regex:
-            pattern: "\\s+image: gcr.io/jenkinsxio/jx-cli:(.*)"
+            pattern: "\\s+image: ghcr.io/jenkins-x/jx-cli:(.*)"
             files:
               - ".lighthouse/jenkins-x/release.yaml"
               - ".lighthouse/jenkins-x/pullrequest.yaml"
               - "jenkins-x-*.yml"
               - "git-operator/job.yaml"
         - regex:
-            pattern: "\\s+image: gcr.io/jenkinsxio/jx-boot:(.*)"
+            pattern: "\\s+image: ghcr.io/jenkins-x/jx-boot:(.*)"
             files:
               - ".lighthouse/jenkins-x/release.yaml"
               - ".lighthouse/jenkins-x/pullrequest.yaml"
@@ -39,10 +39,10 @@ spec:
         - regex:
             pattern: "version: (.*)"
             files:
-              - "docker/gcr.io/jenkinsxio/jx-cli.yml"
+              - "docker/ghcr.io/jenkins-x/jx-cli.yml"
               - "packages/jx-cli.yml"
         - regex:
-            pattern: "JX_DEFAULT_IMAGE: gcr.io/jenkinsxio/jx-cli:(.*)"
+            pattern: "JX_DEFAULT_IMAGE: ghcr.io/jenkins-x/jx-cli:(.*)"
             files:
               - "apps/jenkins-x/lighthouse/values.yaml.gotmpl"
               - "charts/jenkins-x/lighthouse/values.yaml.gotmpl"
