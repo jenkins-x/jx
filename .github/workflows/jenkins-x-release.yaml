@@ -36,13 +36,7 @@ jobs:
       name: release-chart
       uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.188
       with:
-        entrypoint: sh
-        args: |
-          echo HOME = ${HOME}
-          echo setting the git user.name
-          git config user.name jenkins-x-bot-test
-          git config user.email jenkins-x@googlegroups.com
-          jx gitops helm release
+        entrypoint: .github/workflows/jenkins-x/release-chart.sh
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ steps.prep.outputs.version}}
