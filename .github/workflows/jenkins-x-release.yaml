@@ -6,7 +6,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: "0"
-        token: ${{ secrets.GITHUB_TOKEN }}
     - uses: oleksiyrudenko/gha-git-credentials@v2-latest
       with:
         name: 'jenkins-x-bot-test'
@@ -15,10 +14,8 @@ jobs:
         token: '${{ secrets.GITHUB_TOKEN }}'
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
-        credentials: ${{secrets.GITHUB_TOKEN }}
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      id: prep
+        credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GITHUB_TOKEN) }}
+    - id: prep
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
       with:
@@ -34,6 +31,7 @@ jobs:
         entrypoint: /bin/ash
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ steps.prep.outputs.version}}
         REPO_NAME: jx-cli
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
@@ -123,19 +121,15 @@ jobs:
       name: release-chart
       uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
       with:
-        entrypoint: sh
+        entrypoint: jx
         args: |
-          echo setting the git user.name
-          git config user.name jenkins-x-bot-test
-          git config user.email jenkins-x@googlegroups.com
-          jx gitops helm release
+          gitops helm release
 
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: promote-release
       uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.47
       with:
-        entrypoint: jx-updatebot
         args: pr
 "on":
   push:
