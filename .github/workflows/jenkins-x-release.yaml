@@ -13,6 +13,9 @@ jobs:
         email: 'jenkins-x@googlegroups.com'
         actor: 'jenkins-x-bot-test'
         token: '${{ secrets.GITHUB_TOKEN }}'
+    - uses: fusion-engineering/setup-git-credentials@v2
+      with:
+        credentials: ${{secrets.GITHUB_TOKEN }}
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       id: prep
