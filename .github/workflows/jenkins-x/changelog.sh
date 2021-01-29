@@ -7,7 +7,15 @@ sed -i -e "s/tag:.*/tag: $VERSION/" ./charts/$REPO_NAME/values.yaml;
 
 jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=false
 
-git config --global user.name "jenkins-x-bot-test"
+echo "HOME is $HOME"
+echo current git configuration
+
+git config --global --get user.name
+git config --global --get user.email
+
+echo "setting git user"
+
+git config --global user.name jenkins-x-bot-test
 git config --global user.email "jenkins-x@googlegroups.com"
 
 git add * || true
