@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 echo "HOME is $HOME"
 echo setting the git user.name
 git config --global --add user.name jenkins-x-bot-test
