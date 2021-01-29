@@ -28,6 +28,7 @@ jobs:
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         JX_REPOSITORY_USERNAME: jenkins-x-bot-test
+        VERSION: ${{ steps.prep.outputs.version}}
       name: release-chart
       uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.188
       with:
