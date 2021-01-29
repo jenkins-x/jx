@@ -27,8 +27,8 @@ jobs:
         entrypoint: /bin/ash
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        VERSION: ${{ steps.prep.outputs.version}}
-        REPO_NAME: jx-cli
+        REPO_NAME: ${{ github.event.repository.name }}
+        VERSION: ${{ steps.prep.outputs.version }}
       name: changelog
       uses: docker://gcr.io/jenkinsxio/jx-changelog:0.0.30
       with:
@@ -36,13 +36,13 @@ jobs:
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         JX_REPOSITORY_USERNAME: jenkins-x-bot-test
-        VERSION: ${{ steps.prep.outputs.version}}
+        VERSION: ${{ steps.prep.outputs.version }}
       name: release-chart
       uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.189
       with:
         entrypoint: .github/workflows/jenkins-x/release-chart.sh
     - env:
-        VERSION: ${{ steps.prep.outputs.version}}
+        VERSION: ${{ steps.prep.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPOSITORY: ${{ github.repository }}
       name: upload-binaries
@@ -79,7 +79,7 @@ jobs:
         platforms: linux/amd64
         push: true
         build-args: |
-          VERSION=${{ steps.prep.outputs.version}}
+          VERSION=${{ steps.prep.outputs.version }}
         tags: |
           ghcr.io/jenkins-x/jx-cli:latest
           ghcr.io/jenkins-x/jx-cli:${{ steps.prep.outputs.version }}
@@ -91,7 +91,7 @@ jobs:
         platforms: linux/amd64
         push: true
         build-args: |
-          VERSION=${{ steps.prep.outputs.version}}
+          VERSION=${{ steps.prep.outputs.version }}
         tags: |
           ghcr.io/jenkins-x/jx-go:latest
           ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
@@ -103,7 +103,7 @@ jobs:
         platforms: linux/amd64
         push: true
         build-args: |
-          VERSION=${{ steps.prep.outputs.version}}
+          VERSION=${{ steps.prep.outputs.version }}
         tags: |
           ghcr.io/jenkins-x/jx-go-maven:latest
           ghcr.io/jenkins-x/jx-go-maven:${{ steps.prep.outputs.version }}
@@ -115,7 +115,7 @@ jobs:
         platforms: linux/amd64
         push: true
         build-args: |
-          VERSION=${{ steps.prep.outputs.version}}
+          VERSION=${{ steps.prep.outputs.version }}
         tags: |
           ghcr.io/jenkins-x/jx-bdd:latest
           ghcr.io/jenkins-x/jx-bdd:${{ steps.prep.outputs.version }}
@@ -124,7 +124,7 @@ jobs:
       name: promote-release
       uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.47
       with:
-        args: pr
+        args: pr --git-credentials
 "on":
   push:
     branches:
