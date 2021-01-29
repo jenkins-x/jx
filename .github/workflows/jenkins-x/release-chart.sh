@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 echo "HOME is $HOME"
-echo setting the git user.name
-git config --global --add user.name jenkins-x-bot-test
-git config user.name jenkins-x-bot-test
+echo current git configuration
+git config --global --get user.name
+git config --global --get user.emao;
+
+git config --global user.name jenkins-x-bot-test
+git config --global user.email "jenkins-x@googlegroups.com"
+
 jx gitops helm release
