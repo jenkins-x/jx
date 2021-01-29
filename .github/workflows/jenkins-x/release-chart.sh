@@ -7,4 +7,6 @@ git config --global --get user.emao;
 git config --global user.name jenkins-x-bot-test
 git config --global user.email "jenkins-x@googlegroups.com"
 
+jx gitops git setup 
+
 jx gitops helm release

@@ -11,9 +11,6 @@ jobs:
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GITHUB_TOKEN) }}
-    - run: |
-        git config --global user.name "jenkins-x-bot-test"
-        git config --global user.email "jenkins-x@googlegroups.com"
     - id: prep
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
