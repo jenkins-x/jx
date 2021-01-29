@@ -34,6 +34,14 @@ jobs:
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
+        VERSION: ${{ steps.prep.outputs.version}}
+      name: release-chart
+      uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.189
+      with:
+        entrypoint: .github/workflows/jenkins-x/release-chart.sh
+    - env:
         VERSION: ${{ steps.prep.outputs.version}}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         REPOSITORY: ${{ github.repository }}
@@ -75,14 +83,6 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-cli:latest
           ghcr.io/jenkins-x/jx-cli:${{ steps.prep.outputs.version }}
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
-        VERSION: ${{ steps.prep.outputs.version}}
-      name: release-chart
-      uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.188
-      with:
-        entrypoint: .github/workflows/jenkins-x/release-chart.sh
     - name: Build and push jx-go
       uses: docker/build-push-action@v2
       with:
