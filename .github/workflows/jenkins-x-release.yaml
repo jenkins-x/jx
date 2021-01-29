@@ -34,14 +34,6 @@ jobs:
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
-        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
-        VERSION: ${{ steps.prep.outputs.version }}
-      name: release-chart
-      uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.189
-      with:
-        entrypoint: .github/workflows/jenkins-x/release-chart.sh
-    - env:
         VERSION: ${{ steps.prep.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPOSITORY: ${{ github.repository }}
@@ -121,8 +113,19 @@ jobs:
           ghcr.io/jenkins-x/jx-bdd:${{ steps.prep.outputs.version }}
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
+        VERSION: ${{ steps.prep.outputs.version }}
+      name: release-chart
+      uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.189
+      with:
+        entrypoint: .github/workflows/jenkins-x/release-chart.sh
+    - env:
+        GIT_USERNAME: jenkins-x-bot-test
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        VERSION: ${{ steps.prep.outputs.version}}
+        XDG_CONFIG_HOME: /github/home/.config
       name: promote-release
-      uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.47
+      uses: docker://gcr.io/jenkinsxio/jx-updatebot:0.0.48
       with:
         args: pr --git-credentials
 "on":
