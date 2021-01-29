@@ -7,15 +7,13 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: "0"
-    - uses: oleksiyrudenko/gha-git-credentials@v2-latest
-      with:
-        name: 'jenkins-x-bot-test'
-        email: 'jenkins-x@googlegroups.com'
-        actor: 'jenkins-x-bot-test'
-        token: '${{ secrets.GITHUB_TOKEN }}'
+        token: ${{ secrets.GITHUB_TOKEN }}
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GITHUB_TOKEN) }}
+    - run: |
+        git config --global user.name "jenkins-x-bot-test"
+        git config --global user.email "jenkins-x@googlegroups.com"
     - id: prep
       name: prep
       uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
