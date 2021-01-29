@@ -1,3 +1,4 @@
+name: Release
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -29,6 +30,19 @@ jobs:
         args: -c "if [ -d \"charts/$REPO_NAME\" ]; then cd charts/$REPO_NAME; helm-docs;
           else echo no charts; fi"
         entrypoint: /bin/ash
+    - env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
+      name: release-chart
+      uses: docker://ghcr.io/jenkins-x/jx-boot:3.1.188
+      with:
+        entrypoint: sh
+        args: |
+          echo HOME = ${HOME}
+          echo setting the git user.name
+          git config user.name jenkins-x-bot-test
+          git config user.email jenkins-x@googlegroups.com
+          jx gitops helm release
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ steps.prep.outputs.version}}
@@ -103,7 +117,7 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-go-maven:latest
           ghcr.io/jenkins-x/jx-go-maven:${{ steps.prep.outputs.version }}
-    - name: Build and push
+    - name: Build and push jx-bdd
       uses: docker/build-push-action@v2
       with:
         context: .
@@ -115,16 +129,6 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-bdd:latest
           ghcr.io/jenkins-x/jx-bdd:${{ steps.prep.outputs.version }}
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        JX_REPOSITORY_USERNAME: jenkins-x-bot-test
-      name: release-chart
-      uses: docker://gcr.io/jenkinsxio/jx-boot:3.1.170
-      with:
-        entrypoint: jx
-        args: |
-          gitops helm release
-
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       name: promote-release
