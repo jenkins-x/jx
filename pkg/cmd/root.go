@@ -121,6 +121,7 @@ func Main(args []string) *cobra.Command {
 	)
 	createCmd.AddCommand(
 		aliasCommand(cmd, doCmd, "quickstart", []string{"project", "quickstart"}, "qs"),
+		aliasCommand(cmd, doCmd, "spring", []string{"project", "spring"}, "sb"),
 		aliasCommand(cmd, doCmd, "project", []string{"project"}),
 		aliasCommand(cmd, doCmd, "pullrequest", []string{"project", "pullrequest"}, "pr"),
 	)
