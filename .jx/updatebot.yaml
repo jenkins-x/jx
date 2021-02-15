@@ -42,6 +42,10 @@ spec:
               - "docker/ghcr.io/jenkins-x/jx-cli.yml"
               - "packages/jx-cli.yml"
         - regex:
+            pattern: "terraformVersion: (.*)"
+            files:
+            - ".lighthouse/jenkins-x/bdd/*.yaml"
+        - regex:
             pattern: "JX_DEFAULT_IMAGE: ghcr.io/jenkins-x/jx-cli:(.*)"
             files:
               - "apps/jenkins-x/lighthouse/values.yaml.gotmpl"

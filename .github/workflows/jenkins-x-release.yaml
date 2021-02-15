@@ -63,6 +63,18 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-boot:latest
           ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
+    - name: Build and push jx-tfo-gcp
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-tfo-gcp
+        platforms: linux/amd64
+        push: true
+        build-args: |
+          VERSION=${{ steps.prep.outputs.version }}
+        tags: |
+          ghcr.io/jenkins-x/terraform-operator-gcp:latest
+          ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
     - name: Build and push jx-cli
       uses: docker/build-push-action@v2
       with:
