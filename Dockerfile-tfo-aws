@@ -33,7 +33,7 @@ RUN jx admin help
 
 COPY run.sh /run.sh
 ENTRYPOINT ["/bin/bash"]
-CMD ["run.sh"]
+CMD ["/run.sh"]
 
 
 LABEL org.opencontainers.image.source https://github.com/jenkins-x/jx-cli
