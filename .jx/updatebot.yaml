@@ -44,7 +44,7 @@ spec:
         - regex:
             pattern: "terraformVersion: (.*)"
             files:
-            - ".lighthouse/jenkins-x/bdd/*.yaml"
+            - ".lighthouse/jenkins-x/bdd/*.yaml*"
         - regex:
             pattern: "JX_DEFAULT_IMAGE: ghcr.io/jenkins-x/jx-cli:(.*)"
             files:
