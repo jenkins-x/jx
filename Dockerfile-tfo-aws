@@ -6,7 +6,7 @@ ARG VERSION
 
 # unzip jq
 RUN yum -y update \
-    && yum install -y unzip jq \
+    && yum install -y tar unzip jq \
     && yum clean all
 
 RUN curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.15.10/2020-02-22/bin/linux/amd64/aws-iam-authenticator && \
