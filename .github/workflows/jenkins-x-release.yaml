@@ -63,6 +63,18 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-boot:latest
           ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
+    - name: Build and push jx-tfo-aws
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-tfo-aws
+        platforms: linux/amd64
+        push: true
+        build-args: |
+          VERSION=${{ steps.prep.outputs.version }}
+        tags: |
+          ghcr.io/jenkins-x/terraform-operator-aws:latest
+          ghcr.io/jenkins-x/terraform-operator-aws:${{ steps.prep.outputs.version }}
     - name: Build and push jx-tfo-gcp
       uses: docker/build-push-action@v2
       with:
@@ -111,18 +123,6 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-go-maven:latest
           ghcr.io/jenkins-x/jx-go-maven:${{ steps.prep.outputs.version }}
-    - name: Build and push jx-bdd
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile-bdd
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ steps.prep.outputs.version }}
-        tags: |
-          ghcr.io/jenkins-x/jx-bdd:latest
-          ghcr.io/jenkins-x/jx-bdd:${{ steps.prep.outputs.version }}
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         JX_REPOSITORY_USERNAME: jenkins-x-bot-test
