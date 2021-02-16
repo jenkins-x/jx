@@ -26,14 +26,14 @@ spec:
             pattern: "\\s+image: ghcr.io/jenkins-x/jx-cli:(.*)"
             files:
               - ".lighthouse/jenkins-x/release.yaml"
-              - ".lighthouse/jenkins-x/pullrequest.yaml"
+              - ".lighthouse/jenkins-x/pullrequest*.yaml"
               - "jenkins-x-*.yml"
               - "git-operator/job.yaml"
         - regex:
             pattern: "\\s+image: ghcr.io/jenkins-x/jx-boot:(.*)"
             files:
               - ".lighthouse/jenkins-x/release.yaml"
-              - ".lighthouse/jenkins-x/pullrequest.yaml"
+              - ".lighthouse/jenkins-x/pullrequest*.yaml"
               - "jenkins-x-*.yml"
               - "git-operator/job*.yaml"
         - regex:
