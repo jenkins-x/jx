@@ -28,6 +28,7 @@ const (
 // ShowOptions the options for viewing running PRs
 type Options struct {
 	Verbose bool
+	Quiet   bool
 }
 
 // NewCmdVersion creates a command object for the "version" command
@@ -42,12 +43,17 @@ func NewCmdVersion() (*cobra.Command, *Options) {
 			helper.CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&o.Quiet, "quiet", "q", false, "uses the quiet format of just outputting the version number only")
 	return cmd, o
 }
 
 // Run implements the command
 func (o *Options) Run() error {
 	v := GetVersion()
+	if o.Quiet {
+		log.Logger().Infof(v)
+		return nil
+	}
 	log.Logger().Infof("version: %s", termcolor.ColorInfo(v))
 	return nil
 }
