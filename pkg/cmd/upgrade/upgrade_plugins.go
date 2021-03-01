@@ -25,6 +25,7 @@ var (
 
 	bootPlugins = map[string]bool{
 		"gitops": true,
+		"health": true,
 		"secret": true,
 		"verify": true,
 	}
