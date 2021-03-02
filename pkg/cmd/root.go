@@ -74,6 +74,14 @@ func Main(args []string) *cobra.Command {
 		},
 		SuggestFor: []string{"list", "ps"},
 	}
+	addCmd := &cobra.Command{
+		Use:   "add TYPE [flags]",
+		Short: "Adds one or more resources",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cmd.Help()
+			helper.CheckErr(err)
+		},
+	}
 	getBuildCmd := &cobra.Command{
 		Use:     "build TYPE [flags]",
 		Short:   "Display one or more resources relating to a pipeline build",
@@ -108,6 +116,9 @@ func Main(args []string) *cobra.Command {
 			helper.CheckErr(err)
 		},
 	}
+	addCmd.AddCommand(
+		aliasCommand(cmd, doCmd, "app", []string{"gitops", "helmfile", "add"}, "chart"),
+	)
 	getCmd.AddCommand(
 		getBuildCmd,
 		aliasCommand(cmd, doCmd, "activities", []string{"pipeline", "activities"}, "act", "activity"),
@@ -131,7 +142,7 @@ func Main(args []string) *cobra.Command {
 	stopCmd.AddCommand(
 		aliasCommand(cmd, doCmd, "pipeline", []string{"pipeline", "stop"}, "pipelines"),
 	)
-	generalCommands = append(generalCommands, getCmd, createCmd, startCmd, stopCmd,
+	generalCommands = append(generalCommands, addCmd, getCmd, createCmd, startCmd, stopCmd,
 		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}, "log"),
 	)
 
