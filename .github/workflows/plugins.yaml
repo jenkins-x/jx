@@ -1,0 +1,34 @@
+jobs:
+  plugins:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            TARGET: linux
+            BINARY: jx
+          - os: macos-latest
+            TARGET: darwin
+            BINARY: jx
+          - os: windows-latest
+            TARGET: win
+            BINARY: jx-windows-amd64.exe
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15'
+      - run: make ${{ matrix.target }}
+      - run: |
+          ./build/${{ matrix.target }}/${{ matrix.binary }} version
+          ./build/${{ matrix.target }}/${{ matrix.binary }} upgrade plugins
+          ./build/${{ matrix.target }}/${{ matrix.binary }} gitops --help
+          ./build/${{ matrix.target }}/${{ matrix.binary }} secret --help
+
+on:
+  push:
+    branches-ignore:
+    - main
+    - master
