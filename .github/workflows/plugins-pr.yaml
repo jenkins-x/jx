@@ -28,7 +28,7 @@ jobs:
           ./build/${{ matrix.target }}/${{ matrix.binary }} secret --help
 
 on:
-  push:
-    branches-ignore:
+  pull_request:
+    branches:
     - main
     - master
