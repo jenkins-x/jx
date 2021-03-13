@@ -241,30 +241,6 @@ type managedPluginHandler struct {
 
 // Lookup implements PluginHandler
 func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
-	/* TODO lets disable querying CRDs for now...
-	jxClient, ns, err := jxclient.LazyCreateJXClientAndNamespace(h.JXClient, h.Namespace)
-	if err != nil {
-		return "", err
-	}
-
-	possibles, err := jxClient.JenkinsV1().Plugins(ns).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", extensions.PluginCommandLabel, filename),
-	})
-	if err != nil {
-		return "", err
-	}
-	if len(possibles.Items) > 0 {
-		found := possibles.Items[0]
-		if len(possibles.Items) > 1 {
-			// There is a warning about this when you install extensions as well
-			log.Logger().Warnf("More than one plugin installed for %s by apps. Selecting the one installed by %s at random.",
-				filename, found.Name)
-
-		}
-		return extensions.EnsurePluginInstalled(found, pluginBinDir)
-	}
-	*/
-
 	return h.localPluginHandler.Lookup(filename, pluginBinDir)
 }
 
@@ -316,12 +292,6 @@ type localPluginHandler struct{}
 
 // Lookup implements PluginHandler
 func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
-	// if on Windows, append the "exe" extension
-	// to the filename that we are looking up.
-	if runtime.GOOS == "windows" {
-		filename += ".exe"
-	}
-
 	path, err := exec.LookPath(filename)
 	if err != nil {
 		// lets see if the plugin is a standard plugin...
@@ -339,7 +309,23 @@ func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, erro
 
 // Execute implements PluginHandler
 func (h *localPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
-	return syscall.Exec(executablePath, cmdArgs, environment)
+	// Windows does not support exec syscall.
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command(executablePath, cmdArgs...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Env = environment
+		err := cmd.Run()
+		if err == nil {
+			os.Exit(0)
+		}
+		return err
+	}
+
+	// invoke cmd binary relaying the environment and args given
+	// append executablePath to cmdArgs, as execve will make first argument the "binary name".
+	return syscall.Exec(executablePath, append([]string{executablePath}, cmdArgs...), environment)
 }
 
 func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, pluginBinDir string) error {
@@ -396,10 +382,9 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	// invoke cmd binary relaying the current environment and args given
 	// remainingArgs will always have at least one element.
 	// execute will make remainingArgs[0] the "binary name".
-	if err := pluginHandler.Execute(foundBinaryPath, append([]string{foundBinaryPath}, nextArgs...), os.Environ()); err != nil {
+	if err := pluginHandler.Execute(foundBinaryPath, nextArgs, os.Environ()); err != nil {
 		return err
 	}
-
 	return nil
 }
 
