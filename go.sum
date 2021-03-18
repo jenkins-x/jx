@@ -364,10 +364,12 @@ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANyt
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jenkins-x/go-scm v1.5.223 h1:dOdlcUJOILDbQp9o5yt/mrxiCkUOltbj99s0hqx592A=
 github.com/jenkins-x/go-scm v1.5.223/go.mod h1:yVqpMl3ZSkPWVcPi9EhcK3QtTM/anrtYqI//FqwrdxQ=
+github.com/jenkins-x/go-scm v1.6.2/go.mod h1:yVqpMl3ZSkPWVcPi9EhcK3QtTM/anrtYqI//FqwrdxQ=
 github.com/jenkins-x/jx-api/v4 v4.0.25 h1:G80im88KcIOH8smhzvK/6qOI76RB328dAX9Wneb+xyo=
 github.com/jenkins-x/jx-api/v4 v4.0.25/go.mod h1:IC88X+24Nmexuj7lRNRgzfrchzlo0qysfwkICpqDmMQ=
 github.com/jenkins-x/jx-helpers/v3 v3.0.89 h1:bCUaH/HeJMa5UMVYmJK13dGKNwF5EoZbZj1+eDTLeRM=
 github.com/jenkins-x/jx-helpers/v3 v3.0.89/go.mod h1:3TfsTUurqCh2kyF8hZp7XaFKLKI/o3vAPkqje7qp4PU=
+github.com/jenkins-x/jx-helpers/v3 v3.0.90/go.mod h1:W/ZUs7eWMJ+n0qVjUH9TDCc01dBTD9ptnqtS5qehk2c=
 github.com/jenkins-x/jx-kube-client/v3 v3.0.2 h1:sJs6FaIwycDYwE4UsA7j9tpdXOxXEta9KNUJp6s45VI=
 github.com/jenkins-x/jx-kube-client/v3 v3.0.2/go.mod h1:C/mKnCT5wvolX61eLKJVBNev9sqnkGNpi4skTQ1Gr3Q=
 github.com/jenkins-x/jx-logging/v3 v3.0.3 h1:sVACbwiKuaDFYPfJeVAU10MJI4DA6LcH1RqJKwfNozc=
