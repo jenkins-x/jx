@@ -92,7 +92,7 @@ jobs:
         sudo swapoff -a
         sudo rm -f /swapfile
         sudo apt clean
-        docker rmi $(docker image ls -aq)
+        docker image prune -a
         df -h
     - name: Build and push jx-cli
       uses: docker/build-push-action@v2
@@ -111,7 +111,7 @@ jobs:
         sudo swapoff -a
         sudo rm -f /swapfile
         sudo apt clean
-        docker rmi $(docker image ls -aq)
+        docker image prune -a
         df -h
     - name: Build and push jx-go
       uses: docker/build-push-action@v2
@@ -130,7 +130,7 @@ jobs:
         sudo swapoff -a
         sudo rm -f /swapfile
         sudo apt clean
-        docker rmi $(docker image ls -aq)
+        docker image prune -a
         df -h
     - name: Build and push jx-go-maven
       uses: docker/build-push-action@v2
