@@ -87,6 +87,13 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/terraform-operator-gcp:latest
           ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
+    - name: free disk space
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        docker rmi $(docker image ls -aq)
+        df -h
     - name: Build and push jx-cli
       uses: docker/build-push-action@v2
       with:
@@ -99,6 +106,13 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-cli:latest
           ghcr.io/jenkins-x/jx-cli:${{ steps.prep.outputs.version }}
+    - name: free disk space2
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        docker rmi $(docker image ls -aq)
+        df -h
     - name: Build and push jx-go
       uses: docker/build-push-action@v2
       with:
@@ -111,6 +125,13 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-go:latest
           ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
+    - name: free disk space3
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        docker rmi $(docker image ls -aq)
+        df -h
     - name: Build and push jx-go-maven
       uses: docker/build-push-action@v2
       with:
