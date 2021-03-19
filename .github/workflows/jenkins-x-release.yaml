@@ -112,7 +112,7 @@ jobs:
       name: getrelease
       uses: pozetroninc/github-action-get-latest-release@master
       with:
-        repository: jenkins-x/jx
+        repository: jenkins-x/jx-cli
     - id: prep
       name: prep
       env:
