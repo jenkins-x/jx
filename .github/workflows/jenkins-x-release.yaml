@@ -117,9 +117,8 @@ jobs:
       name: prep
       env:
         VERSION: ${{ steps.getrelease.outputs.release }}
-      with:
-        args: -c "echo ::set-output name=version::${VERSION#v}"
-        entrypoint: bash
+      run: |
+        echo "::set-output name=version::${VERSION#v}"
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
