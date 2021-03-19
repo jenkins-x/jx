@@ -87,13 +87,6 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/terraform-operator-gcp:latest
           ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
-    - name: free disk space
-      run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo apt clean
-        docker image prune -a
-        df -h
     - name: Build and push jx-cli
       uses: docker/build-push-action@v2
       with:
@@ -106,13 +99,40 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-cli:latest
           ghcr.io/jenkins-x/jx-cli:${{ steps.prep.outputs.version }}
-    - name: free disk space2
-      run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo apt clean
-        docker image prune -a
-        df -h
+  release2:
+    runs-on: ubuntu-latest
+    needs: release
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: "0"
+        token: ${{ secrets.GIT_BOT_TOKEN }}
+    - id: getrelease
+      name: getrelease
+      uses: pozetroninc/github-action-get-latest-release@master
+      with:
+        repository: jenkins-x/jx
+    - id: prep
+      name: prep
+      env:
+        VERSION: ${{ steps.getrelease.outputs.release }}
+      with:
+        args: -c "echo ::set-output name=version::${VERSION#v}"
+        entrypoint: bash
+    - uses: fusion-engineering/setup-git-credentials@v2
+      with:
+        credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: jenkins-x
+        password: ${{ secrets.GHCR_TOKEN }}
     - name: Build and push jx-go
       uses: docker/build-push-action@v2
       with:
@@ -125,13 +145,6 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-go:latest
           ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
-    - name: free disk space3
-      run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo apt clean
-        docker image prune -a
-        df -h
     - name: Build and push jx-go-maven
       uses: docker/build-push-action@v2
       with:
