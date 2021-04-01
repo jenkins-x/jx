@@ -1,24 +1,24 @@
 # Jenkins X CLI for Version 3.x
 
-[![Documentation](https://godoc.org/github.com/jenkins-x/jx-cli?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx-cli)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx-cli)](https://goreportcard.com/report/github.com/jenkins-x/jx-cli)
-[![Releases](https://img.shields.io/github/release-pre/jenkins-x/jx-cli.svg)](https://github.com/jenkins-x/jx-cli/releases)
-[![LICENSE](https://img.shields.io/github/license/jenkins-x/jx-cli.svg)](https://github.com/jenkins-x/jx-cli/blob/master/LICENSE)
+[![Documentation](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx)](https://goreportcard.com/report/github.com/jenkins-x/jx)
+[![Releases](https://img.shields.io/github/release-pre/jenkins-x/jx.svg)](https://github.com/jenkins-x/jx/releases)
+[![LICENSE](https://img.shields.io/github/license/jenkins-x/jx.svg)](https://github.com/jenkins-x/jx/blob/master/LICENSE)
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://slack.k8s.io/)
 
-`jx-cli` is the modular command line CLI for [Jenkins X 3.x](https://jenkins-x.io/v3/about/)
+`jx` is the modular command line CLI for [Jenkins X 3.x](https://jenkins-x.io/v3/about/)
 
 
 ## Commands
 
-See the [jx command reference](https://github.com/jenkins-x/jx-cli/blob/master/docs/cmd/jx.md)
+See the [jx command reference](https://github.com/jenkins-x/jx/blob/master/docs/cmd/jx.md)
 
 ## Issues
 
-To track [issues in this repository](https://github.com/jenkins-x/jx-cli/issues) and all the related [Plugins](#plugins) use this link:
+To track [issues in this repository](https://github.com/jenkins-x/jx/issues) and all the related [Plugins](#plugins) use this link:
 
-* [view open issues in jx-cli and its plugins](https://github.com/issues?q=is%3Aopen+is%3Aissue+repo%3Ajenkins-x%2Fjx-cli+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
-* [view open pull requests in jx-cli and its plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr+-label%3Adependencies+repo%3Ajenkins-x%2Fjx-cli+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
+* [view open issues in jx and its plugins](https://github.com/issues?q=is%3Aopen+is%3Aissue+repo%3Ajenkins-x%2Fjx+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
+* [view open pull requests in jx and its plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr+-label%3Adependencies+repo%3Ajenkins-x%2Fjx+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
 * [view open pull requests in jenkins-x-plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr++archived%3Afalse+user%3Ajenkins-x-plugins+)
 
 ## Plugins

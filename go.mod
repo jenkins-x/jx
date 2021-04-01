@@ -1,4 +1,4 @@
-module github.com/jenkins-x/jx-cli
+module github.com/jenkins-x/jx
 
 require (
 	github.com/blang/semver v3.5.1+incompatible

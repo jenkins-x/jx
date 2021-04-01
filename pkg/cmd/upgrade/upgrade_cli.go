@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx-api/v4/pkg/util"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 
-	"github.com/jenkins-x/jx-cli/pkg/version"
+	"github.com/jenkins-x/jx/pkg/version"
 
 	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
 	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
@@ -50,7 +50,7 @@ var (
 
 const (
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
-	BinaryDownloadBaseURL  = "https://github.com/jenkins-x/jx-cli/releases/download/v"
+	BinaryDownloadBaseURL  = "https://github.com/jenkins-x/jx/releases/download/v"
 	LatestVersionstreamURL = "https://github.com/jenkins-x/jxr-versions.git"
 )
 
@@ -124,7 +124,7 @@ func (o *CLIOptions) candidateInstallVersion() (semver.Version, error) {
 		// if version stream URL is set via a flag use this
 		gitURL := o.VersionStreamGitURL
 		if gitURL == "" {
-			// get the versionstream URL used to find what jx-cli version to upgrade to
+			// get the versionstream URL used to find what jx version to upgrade to
 			gitURL, err = o.getVersionStreamURL(gitURL)
 			if err != nil {
 				return semver.Version{}, errors.Wrapf(err, "failed to get version stream ")
@@ -132,7 +132,7 @@ func (o *CLIOptions) candidateInstallVersion() (semver.Version, error) {
 		}
 
 		if gitURL == "" {
-			return semver.Version{}, errors.New("no version stream URL to get correct jx-cli version")
+			return semver.Version{}, errors.New("no version stream URL to get correct jx version")
 		}
 
 		o.Version, err = o.getJXVersion(gitURL)
@@ -148,7 +148,7 @@ func (o *CLIOptions) candidateInstallVersion() (semver.Version, error) {
 	return *requestedVersion, nil
 }
 
-// get the versionstream URL used to find what jx-cli version to upgrade to
+// get the versionstream URL used to find what jx version to upgrade to
 func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 	// lookup the version stream URL from the Kptfile
 	// we do this in case we are switching version streams and need to update CLI before running jx gitops upgrade
@@ -172,7 +172,7 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 				}
 				gitURL = strings.TrimSpace(gitURL)
 
-				log.Logger().Infof("using local versionstream URL %s from Kptfile to resolve jx-cli version", gitURL)
+				log.Logger().Infof("using local versionstream URL %s from Kptfile to resolve jx version", gitURL)
 			}
 		}
 	}
@@ -182,14 +182,14 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 		if err == nil {
 			if env.Spec.Source.URL != "" {
 				gitURL = env.Spec.Source.URL
-				log.Logger().Infof("using clusters dev environent versionstream URL %s from Kptfile to resolve jx-cli version", gitURL)
+				log.Logger().Infof("using clusters dev environent versionstream URL %s from Kptfile to resolve jx version", gitURL)
 			}
 		}
 	}
 	if gitURL == "" {
 		// if none of the options above find a git url lets default to the latest upstream version stream
 		gitURL = LatestVersionstreamURL
-		log.Logger().Infof("using latest upstream versionstream URL %s from Kptfile to resolve jx-cli version", gitURL)
+		log.Logger().Infof("using latest upstream versionstream URL %s from Kptfile to resolve jx version", gitURL)
 	}
 	return gitURL, nil
 }
@@ -226,7 +226,7 @@ func (o *CLIOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 // InstallJx installs jx cli
 func (o *CLIOptions) InstallJx(upgrade bool, version string) error {
 	log.Logger().Debugf("installing jx %s", version)
-	binary := "jx-cli"
+	binary := "jx"
 	if !upgrade {
 		flag, err := shouldInstallBinary(binary)
 		if err != nil || !flag {
@@ -272,9 +272,9 @@ func (o *CLIOptions) getJXVersion(gitURL string) (string, error) {
 		VersionsDir: versionStreamDir,
 	}
 
-	data, err := resolver.StableVersion(versionstream.KindPackage, "jx-cli")
+	data, err := resolver.StableVersion(versionstream.KindPackage, "jx")
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to get stable version for %s from versionstream %s", "jx-cli", gitURL)
+		return "", errors.Wrapf(err, "failed to get stable version for %s from versionstream %s", "jx", gitURL)
 	}
 	return data.Version, nil
 }

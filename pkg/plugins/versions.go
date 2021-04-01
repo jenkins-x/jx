@@ -52,17 +52,16 @@ const (
 var (
 	// Plugins default plugins
 	Plugins = []jenkinsv1.Plugin{
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "admin", AdminVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "application", ApplicationVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "gitops", GitOpsVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "admin", AdminVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "application", ApplicationVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "gitops", GitOpsVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "health", HealthVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "jenkins", JenkinsVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "pipeline", PipelineVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "preview", PreviewVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "project", ProjectVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "promote", PromoteVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "secret", SecretVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "pipeline", PipelineVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "preview", PreviewVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "project", ProjectVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "promote", PromoteVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "secret", SecretVersion),
 		extensions.CreateJXPlugin(jenkinsxOrganisation, "test", TestVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "verify", VerifyVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "verify", VerifyVersion),
 	}
 )
