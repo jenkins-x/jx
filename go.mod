@@ -1,7 +1,7 @@
 module github.com/jenkins-x/jx/v2
 
 require (
-	code.gitea.io/sdk/gitea v0.13.2
+	code.gitea.io/sdk/gitea v0.14.0
 	github.com/Azure/azure-storage-blob-go v0.0.0-20190123011202-457680cc0804
 	github.com/Azure/draft v0.15.0
 	github.com/Azure/go-autorest/autorest v0.9.3
@@ -16,7 +16,6 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alecthomas/jsonschema v0.0.0-20190504002508-159cbd5dba26
-	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
@@ -24,7 +23,6 @@ require (
 	github.com/aws/aws-sdk-go v1.30.16
 	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
 	github.com/banzaicloud/bank-vaults v0.0.0-20191212164220-b327d7f2b681
-	github.com/banzaicloud/bank-vaults/pkg/sdk v0.2.1 // indirect
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.7.0 // indirect
@@ -53,9 +51,8 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/google/go-github/v32 v32.0.0
 	github.com/google/uuid v1.1.1
-	github.com/hashicorp/go-version v1.2.1
+	github.com/hashicorp/go-version v1.3.0
 	github.com/hashicorp/hcl v1.0.0
-	github.com/hashicorp/vault v1.2.0-beta2.0.20190725165751-afd9e759ca82 // indirect
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/heptio/sonobuoy v0.16.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
