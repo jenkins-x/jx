@@ -29,7 +29,7 @@ RUN echo using yq version ${YQ_VERSION} and OS ${TARGETOS} arch ${TARGETARCH} &&
 # jx
 RUN echo using jx version ${VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
   mkdir -p /home/.jx3 && \
-  curl -L https://github.com/jenkins-x/jx-cli/releases/download/v${VERSION}/jx-cli-${TARGETOS}-${TARGETARCH}.tar.gz | tar xzv && \
+  curl -L https://github.com/jenkins-x/jx/releases/download/v${VERSION}/jx-${TARGETOS}-${TARGETARCH}.tar.gz | tar xzv && \
   mv jx /usr/bin
 
 # lets install the boot plugins
@@ -42,4 +42,4 @@ COPY run.sh /run.sh
 ENTRYPOINT ["/bin/bash"]
 CMD ["/run.sh"]
 
-LABEL org.opencontainers.image.source https://github.com/jenkins-x/jx-cli
+LABEL org.opencontainers.image.source https://github.com/jenkins-x/jx
