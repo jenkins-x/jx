@@ -1,5 +1,5 @@
 CHART_REPO := gs://jenkinsxio/charts
-NAME := jx-cli
+NAME := jx
 
 build: clean
 	rm -rf Chart.lock

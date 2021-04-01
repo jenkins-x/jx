@@ -1,7 +1,7 @@
 package upgrade
 
 import (
-	"github.com/jenkins-x/jx-cli/pkg/plugins"
+	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"

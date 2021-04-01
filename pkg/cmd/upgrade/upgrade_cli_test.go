@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jenkins-x/jx-cli/pkg/version"
+	"github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"

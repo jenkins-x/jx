@@ -2,7 +2,7 @@
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SHELL := /bin/bash
-NAME := jx-cli
+NAME := jx
 BINARY_NAME := jx
 BUILD_TARGET = build
 MAIN_SRC_FILE=cmd/main.go
@@ -80,7 +80,7 @@ get-test-deps: ## Install test dependencies
 print-version: ## Print version
 	@echo $(VERSION)
 
-build: $(GO_DEPENDENCIES) clean ## Build jx-cli binary for current OS
+build: $(GO_DEPENDENCIES) clean ## Build jx binary for current OS
 	go mod download
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/$(BINARY_NAME) $(MAIN_SRC_FILE)
 

@@ -41,38 +41,38 @@ $ GOOS=linux GOARCH=amd64 ./make.bash --no-clean
 
 ## Fork the Repository
 
-Begin at GitHub by forking jx-cli, then clone your fork locally. Since jx-cli is a Go package, it
-should be located at `$GOPATH/src/github.com/jenkins-x/jx-cli`.
+Begin at GitHub by forking jx, then clone your fork locally. Since jx is a Go package, it
+should be located at `$GOPATH/src/github.com/jenkins-x/jx`.
 
 ```shell
 $ mkdir -p $GOPATH/src/github.com/jenkins-x
 $ cd $GOPATH/src/github.com/jenkins-x
-$ git clone git@github.com:<username>/jx-cli.git
-$ cd jx-cli
+$ git clone git@github.com:<username>/jx.git
+$ cd jx
 ```
 
-Add the conventional [upstream][] `git` remote in order to fetch changes from jx-cli's main master
+Add the conventional [upstream][] `git` remote in order to fetch changes from jx's main master
 branch and to create pull requests:
 
 ```shell
-$ git remote add upstream https://github.com/jenkins-x/jx-cli.git
+$ git remote add upstream https://github.com/jenkins-x/jx.git
 ```
 
 ## Build Your Changes
 
-With the prerequisites installed and your fork of jx-cli cloned, you can make changes to local jx-cli
+With the prerequisites installed and your fork of jx cloned, you can make changes to local jx
 source code.
 
-Run `make` to build the `jx-cli`  binaries:
+Run `make` to build the `jx`  binaries:
 
 ```shell
 
-$ make build      # runs dep and builds `jx-cli`  inside the build/
+$ make build      # runs dep and builds `jx`  inside the build/
 ```
 
 ## Testing
 
-The jx-cli test suite is divided into three sections:
+The jx test suite is divided into three sections:
  - The standard unit test suite
  - Slow unit tests
  - Integration tests
