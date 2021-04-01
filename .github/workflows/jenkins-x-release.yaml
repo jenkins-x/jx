@@ -87,7 +87,7 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/terraform-operator-gcp:latest
           ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
-    - name: Build and push jx-cli
+    - name: Build and push jx
       uses: docker/build-push-action@v2
       with:
         context: .
@@ -97,8 +97,8 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version }}
         tags: |
-          ghcr.io/jenkins-x/jx-cli:latest
-          ghcr.io/jenkins-x/jx-cli:${{ steps.prep.outputs.version }}
+          ghcr.io/jenkins-x/jx:latest
+          ghcr.io/jenkins-x/jx:${{ steps.prep.outputs.version }}
   release2:
     runs-on: ubuntu-latest
     needs: release
@@ -112,7 +112,7 @@ jobs:
       name: getrelease
       uses: pozetroninc/github-action-get-latest-release@master
       with:
-        repository: jenkins-x/jx-cli
+        repository: jenkins-x/jx
     - id: prep
       name: prep
       env:

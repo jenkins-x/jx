@@ -6,7 +6,7 @@ before:
     - go mod download
 
 builds:
-  - id: jx-cli
+  - id: jx
     # Path to main.go file or main package.
     # Default is `.`.
     main: ./cmd/main.go
@@ -38,15 +38,15 @@ builds:
       - arm64
 
 archives:
-  - name_template: "jx-cli-{{ .Os }}-{{ .Arch }}"
+  - name_template: "jx-{{ .Os }}-{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
 
 checksum:
   # You can change the name of the checksums file.
-  # Default is `jx-cli_{{ .Version }}_checksums.txt`.
-  name_template: "jx-cli-checksums.txt"
+  # Default is `jx_{{ .Version }}_checksums.txt`.
+  name_template: "jx-checksums.txt"
 
   # Algorithm to be used.
   # Accepted options are sha256, sha512, sha1, crc32, md5, sha224 and sha384.

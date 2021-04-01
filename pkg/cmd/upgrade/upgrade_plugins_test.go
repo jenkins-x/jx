@@ -3,7 +3,7 @@ package upgrade_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx-cli/pkg/cmd/upgrade"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"github.com/stretchr/testify/require"
 )
 
