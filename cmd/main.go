@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/jenkins-x/jx-cli/cmd/app"
+	"github.com/jenkins-x/jx/cmd/app"
 )
 
 // Entrypoint for the command
