@@ -93,7 +93,7 @@ func GetOctantJXBinary(version string) (string, error) {
 // CreateOctantJXPlugin creates the helm 3 plugin
 func CreateOctantJXPlugin(version string) jenkinsv1.Plugin {
 	binaries := extensions.CreateBinaries(func(p extensions.Platform) string {
-		return fmt.Sprintf("https://github.com/jenkins-x/octant-jx/releases/download/v%s/octant-jx-%s-%s.%s", version, strings.ToLower(p.Goos), strings.ToLower(p.Goarch), p.Extension())
+		return fmt.Sprintf("https://github.com/jenkins-x-plugins/octant-jx/releases/download/v%s/octant-jx-%s-%s.%s", version, strings.ToLower(p.Goos), strings.ToLower(p.Goarch), p.Extension())
 	})
 
 	plugin := jenkinsv1.Plugin{
