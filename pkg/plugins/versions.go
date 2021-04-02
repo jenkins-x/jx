@@ -61,7 +61,7 @@ var (
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "project", ProjectVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "promote", PromoteVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "secret", SecretVersion),
-		extensions.CreateJXPlugin(jenkinsxOrganisation, "test", TestVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "test", TestVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "verify", VerifyVersion),
 	}
 )
