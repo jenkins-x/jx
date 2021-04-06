@@ -1,0 +1,53 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-04-06T16:47:38Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      chore: upgrade jenkins-x/jx to version 0.0.201
+
+      from: https://github.com/jenkins-x-plugins/jx-project.git
+    sha: 4f0d578e559d098e7134564374120b410a2e5d25
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    message: |
+      fix: upgrade to version 0.0.253
+
+      from: https://github.com/jenkins-x-plugins/jx-promote
+    sha: ac562638660f04919af5d611b0c039d76132b813
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore: upgrade jenkins-x/jx to version 0.2.45
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: 1c2b9d758216c80db4c587a21d2e9f786ed1f3f3
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.14
+status: {}
+ 
+{{- end }}
