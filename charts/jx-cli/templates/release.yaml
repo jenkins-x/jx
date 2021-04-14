@@ -1,0 +1,41 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-04-14T15:45:23Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    branch: master
+    committer:
+      email: noreply@github.com
+      name: GitHub
+    message: |-
+      fix: lets use the /root dir for home
+
+      then we don't get unnecessary downloading of plugins inside pipelines due to confusion over /root versus /home
+    sha: 19c926e88d898b07bba7c60df5965526d9013146
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore: upgrade jenkins-x/jx to version 0.2.55
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: bf46b1419fbc23025f8404fa43dc6d6c5e97d5c1
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.37
+status: {}
+ 
+{{- end }}
