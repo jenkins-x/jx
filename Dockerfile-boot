@@ -13,11 +13,8 @@ RUN addgroup -S app \
     && apk --no-cache add \
     ca-certificates curl git make netcat-openbsd
 
-#WORKDIR /home
-#ENV HOME /home
-
-ENV JX_HOME /home/.jx
-ENV JX3_HOME /home/.jx
+ENV JX_HOME /root/.jx
+ENV JX3_HOME /root/.jx
 
 ENV YQ_VERSION "4.6.1"
 
