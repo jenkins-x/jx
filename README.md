@@ -15,37 +15,18 @@ See the [jx command reference](https://github.com/jenkins-x/jx/blob/master/docs/
 
 ## Issues
 
-To track [issues in this repository](https://github.com/jenkins-x/jx/issues) and all the related [Plugins](#plugins) use this link:
+To track [issues in this repository](https://github.com/jenkins-x/jx/issues) and all the related [Plugins](#plugins) use these links:
 
-* [view open issues in jx and its plugins](https://github.com/issues?q=is%3Aopen+is%3Aissue+repo%3Ajenkins-x%2Fjx+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
-* [view open pull requests in jx and its plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr+-label%3Adependencies+repo%3Ajenkins-x%2Fjx+repo%3Ajenkins-x%2Fjx-admin+repo%3Ajenkins-x%2Fjx-application+repo%3Ajenkins-x%2Fjx-apps+repo%3Ajenkins-x%2Fjx-helpers+repo%3Ajenkins-x%2Fjx-git-operator+repo%3Ajenkins-x%2Fjx-gitops+repo%3Ajenkins-x%2Fjx-pipeline+repo%3Ajenkins-x%2Fjx-project+repo%3Ajenkins-x%2Fjx-promote+repo%3Ajenkins-x%2Fjx-secret+repo%3Ajenkins-x%2Fjx-verify+repo%3Ajenkins-x%2F%2Fjx-secret+repo%3Ajenkins-x%2Foctant-jx+)
+* [view open issues in jenkins-x-plugins](https://github.com/issues?q=is%3Aopen+is%3Aissue+author%3Ajstrachan+archived%3Afalse+user%3Ajenkins-x-plugins)
 * [view open pull requests in jenkins-x-plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr++archived%3Afalse+user%3Ajenkins-x-plugins+)
 
 ## Plugins
 
-* [jx admin](https://github.com/jenkins-x/jx-admin/blob/master/docs/cmd/jx-admin.md) for administration commands (creating a new environment, booting it up with the operator)
-* [jx application](https://github.com/jenkins-x/jx-application/blob/master/docs/cmd/jx-application.md) for viewing applications in your environments
-* [jx build controller](https://github.com/jenkins-x-plugins/jx-build-controller) watches pipelines and writes their logs to long term storage for use by the [jx pipeline visualizer](https://github.com/jenkins-x/jx-pipelines-visualizer)
-* [jx changelog](https://github.com/jenkins-x-plugins/jx-changelog) for generating release changelogs in your git provider  
-* [jx gitops](https://github.com/jenkins-x/jx-gitops/blob/master/docs/cmd/jx-gitops.md) a set of commands used inside pipelines for modifying helm charts, kpt files, using kustomise or modifying kubernetes resources for GitOps
-* [jx health](https://github.com/jenkins-x-plugins/jx-health/blob/master/docs/cmd/jx-health.md) for visualising and reporting on cluster health
-* [jx pipeline](https://github.com/jenkins-x/jx-pipeline/blob/master/docs/cmd/jx-pipeline.md#jx-pipeline) a command for working with Jenkins X and Tekton Pipelines
-* [jx pipeline visualizer](https://github.com/jenkins-x/jx-pipelines-visualizer) visualises pipelines in a web UI  
-* [jx preview](https://github.com/jenkins-x/jx-preview/blob/master/docs/cmd/jx-preview.md#preview) a command for creating Preview Environments
-* [jx promote](https://github.com/jenkins-x/jx-promote/blob/master/docs/cmd/jx-promote.md#jx-promote) a command for promoting a new version of an application to an Environment
-* [jx project](https://github.com/jenkins-x/jx-project/blob/master/docs/cmd/project.md) a set of commands for importing projects or creating new projects from quickstarts or wizards
-* [jx registry](https://github.com/jenkins-x-plugins/jx-registry) a set of commands for lazy creating container registries; particularly on AWS EKS
-* [jx release version](https://github.com/jenkins-x-plugins/jx-release-version) generates new release verisons
-* [jx scm](https://github.com/jenkins-x-plugins/jx-scm) a simple CLI for working with git repositories using [go-scm](https://github.com/jenkins-x/go-scm). We use this to create git repositories in BDD tests  
-* [jx secret](https://github.com/jenkins-x/jx-secret/blob/master/docs/cmd/jx-secret.md) a set of commands for working with [Kubernetes External Secrets](https://github.com/godaddy/kubernetes-external-secrets)
-* [jx slack](https://github.com/jenkins-x-plugins/jx-slack) for reporting pipeline statuses to [slack](https://slack.com/)
-* [jx tap](https://github.com/jenkins-x-plugins/jx-tap) a command line tool for converting [Test Anything Protocol (TAP)](https://testanything.org/) files to HTML or for commenting on Pull Requests with the results  
-* [jx test](https://github.com/jenkins-x-plugins/jx-test/blob/master/docs/cmd/jx-test.md) a set of commands for managing tests on kubernetes/clouds
-* [jx test collector](https://github.com/jenkins-x-plugins/jx-test-collector) captures logs and kubernetes resources to git when running system tests  
-* [jx updatebot](https://github.com/jenkins-x-plugins/jx-updatebot) a command line tool for generating downstream Pull Requests on demand or as part of a release pipeline  
-* [jx verify](https://github.com/jenkins-x/jx-verify/blob/master/docs/cmd/jx-verify.md) a set of commands for verifying Jenkins X installations
+You can browse the documentation for all of the `jx`  plugins at:
 
-[check out all of the other plugins available](https://github.com/jenkins-x-plugins)
+* [Plugin CLI Reference](https://jenkins-x.io/v3/develop/reference/jx/)
+* [Plugin Source](https://github.com/jenkins-x-plugins)
+
 
 ## Components
 
@@ -62,9 +43,3 @@ These are the modular libraries which have been refactored out of the main [jenk
 * [jx-kube-client](https://github.com/jenkins-x/jx-kube-client) the core library for working with kube/jx/tekton clients
 * [jx-logging](https://github.com/jenkins-x/jx-logging) logging APIs
                                              
-
-
-### Deprecated libraries
-
-* [jx-apps](https://github.com/jenkins-x/jx-apps) a library for loading/saving the `jx-apps.yml` file
-* [lighthouse-config](https://github.com/jenkins-x/lighthouse-config) for configuring lighthouses

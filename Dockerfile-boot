@@ -16,12 +16,6 @@ RUN addgroup -S app \
 ENV JX_HOME /root/.jx
 ENV JX3_HOME /root/.jx
 
-ENV YQ_VERSION "4.6.1"
-
-RUN echo using yq version ${YQ_VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
-  curl -L -s https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_${TARGETOS}_${TARGETARCH} > yq && \
-  chmod +x yq && mv yq /usr/bin
-
 RUN echo using jx version ${VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
   mkdir -p /home/.jx3 && \
   curl -L https://github.com/jenkins-x/jx/releases/download/v${VERSION}/jx-${TARGETOS}-${TARGETARCH}.tar.gz | tar xzv && \
