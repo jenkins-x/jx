@@ -15,13 +15,6 @@ RUN curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${T
   unzip terraform_${TERRAFORM}_linux_amd64.zip && \
   chmod +x terraform && mv terraform /usr/bin && rm terraform_${TERRAFORM}_linux_amd64.zip
 
-# yq
-ENV YQ_VERSION "4.6.1"
-
-RUN echo using yq version ${YQ_VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
-  curl -L -s https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_${TARGETOS}_${TARGETARCH} > yq && \
-  chmod +x yq && mv yq /usr/bin
-
 # jx
 RUN echo using jx version ${VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
   mkdir -p /home/.jx3 && \
