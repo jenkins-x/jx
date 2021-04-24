@@ -1,18 +1,19 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx-api/v4/pkg/util"
-	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/files"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/options"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
+	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
@@ -24,6 +25,8 @@ type Options struct {
 	options.BaseOptions
 	CommandRunner cmdrunner.CommandRunner
 	BrowserPath   string
+	Host          string
+	Port          int
 	OctantArgs    []string
 }
 
@@ -56,6 +59,8 @@ func NewCmdUI() (*cobra.Command, *Options) {
 	}
 
 	cmd.Flags().StringVarP(&o.BrowserPath, "browser-path", "p", "/#/jx/pipelines-recent", "The browser path inside octant to open")
+	cmd.Flags().StringVarP(&o.Host, "host", "", "", "The host to listen on")
+	cmd.Flags().IntVarP(&o.Port, "port", "", 0, "The port for octant to listen on")
 	cmd.Flags().StringSliceVarP(&o.OctantArgs, "octant-args", "o", []string{"--namespace=jx"}, "Extra arguments passed to the octant binary")
 	o.BaseOptions.AddBaseFlags(cmd)
 	return cmd, o
@@ -77,6 +82,17 @@ func (o *Options) Run() error {
 	}
 
 	args := append([]string{"--browser-path", o.BrowserPath}, o.OctantArgs...)
+
+	if o.Port != 0 || o.Host != "" {
+		if o.Port == 0 {
+			o.Port = 8080
+		}
+		if o.Host == "" {
+			o.Host = "localhost"
+		}
+		args = append(args, "--listener-addr", fmt.Sprintf("%s:%d", o.Host, o.Port))
+	}
+
 	c := &cmdrunner.Command{
 		Name: octantBin,
 		Args: args,
