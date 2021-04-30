@@ -1,4 +1,4 @@
-# Jenkins X CLI for Version 3.x
+# Jenkins X CLI
 
 [![Documentation](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx)](https://goreportcard.com/report/github.com/jenkins-x/jx)
