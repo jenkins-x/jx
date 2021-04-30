@@ -31,7 +31,7 @@ You can browse the documentation for all of the `jx`  plugins at:
 ## Components
 
 * [jx-git-operator](https://github.com/jenkins-x/jx-git-operator) is an operator for triggering jobs when git commits are made
-* [octant-jx](https://github.com/jenkins-x/octant-jx) an open source Jenkins X UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octan)
+* [octant-jx](https://github.com/jenkins-x/octant-jx) an open source Jenkins X UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octant)
 
 ## Libraries
 
