@@ -64,4 +64,13 @@ var (
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "test", TestVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "verify", VerifyVersion),
 	}
+
+	PluginMap = map[string]*jenkinsv1.Plugin{}
 )
+
+func init() {
+	for i := range Plugins {
+		plugin := &Plugins[i]
+		PluginMap[plugin.Spec.Name] = plugin
+	}
+}
