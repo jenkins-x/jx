@@ -13,12 +13,6 @@ import (
 
 	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/cmd/dashboard"
-	"github.com/jenkins-x/jx/pkg/cmd/namespace"
-	"github.com/jenkins-x/jx/pkg/cmd/ui"
-	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
-	"github.com/jenkins-x/jx/pkg/cmd/version"
-	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -27,6 +21,12 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/httphelpers"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
+	"github.com/jenkins-x/jx/pkg/cmd/dashboard"
+	"github.com/jenkins-x/jx/pkg/cmd/namespace"
+	"github.com/jenkins-x/jx/pkg/cmd/ui"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
+	"github.com/jenkins-x/jx/pkg/cmd/version"
+	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -294,10 +294,14 @@ type localPluginHandler struct{}
 func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
 	path, err := exec.LookPath(filename)
 	if err != nil {
-		// lets see if the plugin is a standard plugin...
-		plugin, err2 := findStandardPlugin(filename)
-		if err2 != nil {
-			return "", errors.Wrapf(err2, "failed to load plugin %s", filename)
+		plugin := plugins.PluginMap[filename]
+		if plugin == nil {
+			// lets see if the plugin is a community plugin...
+			var err2 error
+			plugin, err2 = findStandardPlugin(filename)
+			if err2 != nil {
+				return "", errors.Wrapf(err2, "failed to load plugin %s", filename)
+			}
 		}
 		if plugin != nil {
 			return extensions.EnsurePluginInstalled(*plugin, pluginBinDir)
