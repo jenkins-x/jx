@@ -1,7 +1,6 @@
 package upgrade
 
 import (
-	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -9,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/homedir"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
+	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
