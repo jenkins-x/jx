@@ -1,0 +1,80 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-05-06T16:59:50Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.0.132
+
+      from: https://github.com/jenkins-x-plugins/jx-pipeline.git
+    sha: 7b2a7101b76e2c26ad0a57080bfc5fc45ce16c55
+  - author:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    branch: master
+    committer:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    message: |
+      chore: fix hound
+    sha: d35c59e8e963d008d2ac9edbd45e875f0ca9723f
+  - author:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    branch: master
+    committer:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    message: |
+      chore: polish mods
+    sha: a79479bc4bb5fd577fa55508eb97bd00f1245a13
+  - author:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    branch: master
+    committer:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    message: |
+      chore: fmt
+    sha: 890cc8bbed20025a953fa5ac4587be1fb8395c92
+  - author:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    branch: master
+    committer:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    issueIds:
+    - "7708"
+    message: |
+      fix: avoid downloading newer plugin versions
+
+      fixes #7708
+    sha: f96fb9e3d3277ea2b0ad73d6c52d2b7ee6d990ab
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  issues:
+  - body: "the boot plugin versions (e.g. secret, gitops, verify) should be baked into the container image. jx should not download new versions each time.\r\n\r\nLooks like a regression happened breaking this at some point"
+    creationTimestamp: "2021-04-22T15:49:58Z"
+    id: "7708"
+    state: closed
+    title: jx should not download new versions of the boot plugins by default
+    url: https://github.com/jenkins-x/jx/issues/7708
+  name: '{{ .Chart.Name }}'
+  version: 3.2.79
+status: {}
+ 
+{{- end }}
