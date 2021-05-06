@@ -65,6 +65,7 @@ var (
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "verify", VerifyVersion),
 	}
 
+	// PluginMap a map of plugin names like `jx-gitops` to the Plugin object
 	PluginMap = map[string]*jenkinsv1.Plugin{}
 )
 
