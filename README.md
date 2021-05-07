@@ -17,7 +17,7 @@ See the [jx command reference](https://github.com/jenkins-x/jx/blob/master/docs/
 To track [issues in this repository](https://github.com/jenkins-x/jx/issues) and all the related [Plugins](#plugins) use these links:
 
 * [view open issues in jenkins-x-plugins](https://github.com/issues?q=is%3Aopen+is%3Aissue+author%3Ajstrachan+archived%3Afalse+user%3Ajenkins-x-plugins)
-* [view open pull requests in jenkins-x-plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr++archived%3Afalse+user%3Ajenkins-x-plugins+)
+* [view open pull requests in jenkins-x-plugins](https://github.com/pulls?q=is%3Aopen+is%3Apr+archived%3Afalse+user%3Ajenkins-x-plugins+-label%3Adependencies)
 
 ## Plugins
 
