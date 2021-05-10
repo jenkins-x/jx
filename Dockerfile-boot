@@ -11,7 +11,7 @@ LABEL maintainer="jenkins-x"
 RUN addgroup -S app \
     && adduser -S -g app app \
     && apk --no-cache add \
-    ca-certificates curl git make netcat-openbsd
+    ca-certificates curl git git-lfs make netcat-openbsd
 
 ENV JX_HOME /root/.jx
 ENV JX3_HOME /root/.jx
