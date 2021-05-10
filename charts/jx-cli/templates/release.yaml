@@ -1,0 +1,41 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-05-10T13:43:22Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.2.83
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: 6fb4b9c559f2695d43ad44141f5a15f244442273
+  - author:
+      email: terry@bootstrap.je
+      name: Terry Cox
+    branch: master
+    committer:
+      email: terry@bootstrap.je
+      name: Terry Cox
+    message: |
+      fix: Add git-lfs support
+
+      Signed-off-by: Terry Cox <terry@bootstrap.je>
+    sha: 5e2be2e3969f8e98abd76657c36fe5c00e0d0f03
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.87
+status: {}
+ 
+{{- end }}
