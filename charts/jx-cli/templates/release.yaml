@@ -1,0 +1,41 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-05-10T08:43:27Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.2.81
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: 546ac0484f91304f791254a3903ab9a32611975b
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.0.133
+
+      from: https://github.com/jenkins-x-plugins/jx-pipeline.git
+    sha: bca77791109cf9d786ac148d933b7e3fd3d323c1
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.84
+status: {}
+ 
+{{- end }}
