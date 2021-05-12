@@ -1,4 +1,0 @@
-dependencies:
-- name: chart2
-  repository: file://../chart2
-  version: v0.1.0

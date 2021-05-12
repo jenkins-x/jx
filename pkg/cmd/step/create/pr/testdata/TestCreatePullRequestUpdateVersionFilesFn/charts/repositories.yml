@@ -1,4 +1,0 @@
-repositories:
-  - prefix: acme
-    urls:
-      - https://acme.com/charts

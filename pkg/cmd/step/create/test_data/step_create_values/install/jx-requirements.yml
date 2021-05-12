@@ -1,7 +1,0 @@
-cluster:
-  clusterName: foo
-  gitKind: gitlab
-  gitServer: https://gitlab.com
-  namespace: jx
-  provider: gke
-secretStorage: vault

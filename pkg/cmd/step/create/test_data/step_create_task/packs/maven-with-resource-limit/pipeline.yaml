@@ -1,8 +1,0 @@
-extends:
-  file: ../maven/pipeline.yaml
-containerOptions:
-  resources:
-    limits:
-      cpu: 0.4
-      memory: 256Mi
-

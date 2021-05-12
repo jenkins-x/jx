@@ -1,4 +1,0 @@
-auth:
-  git:
-    username: {{ .Parameters.pipelineUser.github.username }}
-    password: {{ .Parameters.pipelineUser.github.password }}

@@ -1,6 +1,0 @@
-apiVersion: jenkins.io/v1
-kind: Scheduler
-metadata:
-  creationTimestamp: null
-  name: default-scheduler
-spec: {}

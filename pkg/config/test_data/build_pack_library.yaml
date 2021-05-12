@@ -1,5 +1,0 @@
-buildPacks:
-  buildPackLibrary:
-    name: "Test name"
-    gitURL: "github.com"
-    gitRef: "master"

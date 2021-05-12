@@ -1,8 +1,0 @@
-buildPack: maven
-pipelineConfig:
-  pipelines:
-    release:
-      build:
-        replace: true
-        steps:
-        - command: echo hello world
