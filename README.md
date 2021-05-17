@@ -41,4 +41,5 @@ These are the modular libraries which have been refactored out of the main [jenk
 * [jx-helpers](https://github.com/jenkins-x/jx-helpers) a bunch of utilities (mostly from the `util` package) refactored + no longer dependent on [jenkins-x/jx](https://github.com/jenkins-x/jx/) 
 * [jx-kube-client](https://github.com/jenkins-x/jx-kube-client) the core library for working with kube/jx/tekton clients
 * [jx-logging](https://github.com/jenkins-x/jx-logging) logging APIs
+* [lighthouse-client](https://github.com/jenkins-x/lighthouse-client) client library for working with [lighthouse](https://github.com/jenkins-x/lighthouse)
                                              
