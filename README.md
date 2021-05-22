@@ -10,7 +10,7 @@
 
 ## Commands
 
-See the [jx command reference](https://github.com/jenkins-x/jx/blob/master/docs/cmd/jx.md)
+See the [jx command reference](https://jenkins-x.io/v3/develop/reference/jx/)
 
 ## Issues
 
