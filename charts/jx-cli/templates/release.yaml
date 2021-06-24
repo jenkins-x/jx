@@ -1,0 +1,38 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-06-24T20:49:12Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    branch: master
+    committer:
+      email: noreply@github.com
+      name: GitHub
+    message: Update README.md
+    sha: e8d683e1439762d7cd615ebf924dbf44bdc1eb6b
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    message: |
+      fix: upgrade to version 0.0.270
+
+      from: https://github.com/jenkins-x-plugins/jx-promote
+    sha: bb1408b476d69a78096b2f939d16208b05aa0ea3
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.151
+status: {}
+ 
+{{- end }}
