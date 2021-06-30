@@ -46,7 +46,7 @@ const (
 	TestVersion = "0.0.48"
 
 	// VerifyVersion the version of the jx verify plugin
-	VerifyVersion = "0.1.3"
+	VerifyVersion = "0.1.4"
 )
 
 var (
