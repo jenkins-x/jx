@@ -16,7 +16,7 @@ const (
 	GitOpsVersion = "0.2.107"
 
 	// HealthVersion the version of the jx health plugin
-	HealthVersion = "0.0.74"
+	HealthVersion = "0.0.75"
 
 	// JenkinsVersion the version of the jx jenkins plugin
 	JenkinsVersion = "0.0.29"
