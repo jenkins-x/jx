@@ -1,0 +1,125 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-07-27T19:57:56Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.0.36
+
+      from: https://github.com/jenkins-x-plugins/jx-application.git
+    sha: 2a2e5fd5f3061a3938b553ba3e9467b9529922c8
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.3.6
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: 42e307d3f2d7ab96115c5abad5f86070b1a01fb1
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      fix: upgrade to version 0.1.49
+
+      from: https://github.com/jenkins-x-plugins/jx-secret.git
+    sha: e36941ab260e7626cba7f3eefdc6acbf7656cbd8
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.3.5
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: 0eca0d562d08549cadd95c29441515a50088c2fa
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.2.12
+
+      from: https://github.com/jenkins-x-plugins/jx-project.git
+    sha: ec08dbc0f88873ed70b6ff1002835636b3ccf0c6
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    branch: master
+    committer:
+      email: james.strachan@gmail.com
+      name: James Strachan
+    message: |
+      chore(deps): upgrade jenkins-x/jx3-pipeline-catalog to version 0.0.190
+
+      from: https://github.com/jenkins-x-plugins/jx-admin
+    sha: fa346efee8d4272017d95595bd39e87b69f2ed3f
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot-test
+    message: |
+      chore(deps): upgrade jenkins-x/jx3-pipeline-catalog to version 0.0.275
+
+      from: https://github.com/jenkins-x-plugins/jx-promote
+    sha: eff7056043e5527aed2ffd32b2ede66daba2e55f
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: root
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: root
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.3.4
+
+      from: https://github.com/jenkins-x-plugins/jx-gitops.git
+    sha: 6f1a29ce851552efdfbcecbbaff23d90e0bda218
+  - author:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    branch: master
+    committer:
+      email: jenkins-x@googlegroups.com
+      name: jenkins-x-bot
+    message: |
+      chore(deps): upgrade jenkins-x/jx to version 0.1.5
+
+      from: https://github.com/jenkins-x-plugins/jx-verify.git
+    sha: 58b019cd6930fba651b15a49bb49428ff1240680
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.177
+status: {}
+ 
+{{- end }}
