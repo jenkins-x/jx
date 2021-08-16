@@ -41,6 +41,7 @@ spec:
             files:
               - "docker/ghcr.io/jenkins-x/jx.yml"
               - "packages/jx.yml"
+              - "packages/jx-cli.yml"
         - regex:
             pattern: "terraformVersion: (.*)"
             files:
