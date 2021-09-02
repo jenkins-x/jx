@@ -1,0 +1,26 @@
+{{- if .Capabilities.APIVersions.Has "jenkins.io/v1/Release" }}
+apiVersion: jenkins.io/v1
+kind: Release
+metadata:
+  creationTimestamp: "2021-09-02T15:30:25Z"
+  deletionTimestamp: null
+  name: '{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}'
+spec:
+  commits:
+  - author:
+      email: rawlingsj80@gmail.com
+      name: James Rawlings
+    branch: master
+    committer:
+      email: noreply@github.com
+      name: GitHub
+    message: 'chore: add public key for verifying with cosign'
+    sha: e797e0d1875eb524afeda181b2a3b735205500e7
+  gitHttpUrl: https://github.com/jenkins-x/jx
+  gitOwner: jenkins-x
+  gitRepository: jx
+  name: '{{ .Chart.Name }}'
+  version: 3.2.191
+status: {}
+ 
+{{- end }}
