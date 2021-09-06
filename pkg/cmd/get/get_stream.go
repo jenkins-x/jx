@@ -36,7 +36,7 @@ var (
 
 	getStreamExample = templates.Examples(`
 		# List the version of a docker image
-		jx get stream -k docker gcr.io/jenkinsxio/builder-jx
+		jx get stream -k docker ghcr.io/jenkins-x/builder-jx
 
 		# List the version of a chart
 		jx get stream -k charts jenkins-x/tekton

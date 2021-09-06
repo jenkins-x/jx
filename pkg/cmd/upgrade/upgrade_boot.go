@@ -51,7 +51,7 @@ var (
 )
 
 const (
-	builderImage         = "gcr.io/jenkinsxio/builder-go"
+	builderImage         = "ghcr.io/jenkins-x/builder-go"
 	keepDevEnvKey        = "keepDevEnv"
 	keepDevEnvDriverName = "Always keep the dev env version during merges and cherry-picks"
 )
@@ -581,7 +581,7 @@ func (o *UpgradeBootOptions) updatePipelineBuilderImage(resolver *versionstream.
 		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
 	}
 	log.Logger().Infof("Updating pipeline agent images to %s", util.ColorInfo(updatedBuilderImage))
-	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*agent:\n\s*image: (gcr.io\/jenkinsxio\/builder-go.*$)`, piplineFileGlob)
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*agent:\n\s*image: (ghcr.io\/jenkins-x\/builder-go.*$)`, piplineFileGlob)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -613,7 +613,7 @@ func (o *UpgradeBootOptions) updateTemplateBuilderImage(resolver *versionstream.
 		return errors.Wrapf(err, "failed to resolve image %s", builderImage)
 	}
 	log.Logger().Infof("Updating template builder images to %s", util.ColorInfo(updatedBuilderImage))
-	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*builderImage: (gcr.io\/jenkinsxio\/builder-go.*$)`, templateFile)
+	fn, err := operations.CreatePullRequestRegexFn(updatedBuilderImage, `(?m)^\s*builderImage: (ghcr.io\/jenkins-x\/builder-go.*$)`, templateFile)
 	if err != nil {
 		return errors.WithStack(err)
 	}

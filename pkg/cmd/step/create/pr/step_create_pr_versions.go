@@ -153,14 +153,14 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			pro.AuthorName = authorName
 			pro.AuthorEmail = authorEmail
 		}
-		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform|go-nodejs):(?P<versions>.+)", "jenkins-x*.yml")
+		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "ghcr.io/jenkins-x/builder-(?:maven|go|terraform|go-nodejs):(?P<versions>.+)", "jenkins-x*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", fn))
 		modifyFns = append(modifyFns, pro.WrapChangeFilesWithCommitFn("versions", operations.CreatePullRequestBuildersFn(builderImageVersion)))
 		// Update the pipeline files
-		fn, err = operations.CreatePullRequestRegexFn(builderImageVersion, `(?m)^\s*agent:\n\s*image: gcr.io/jenkinsxio/builder-.*:(?P<version>.*)$`, "jenkins-x-*.yml")
+		fn, err = operations.CreatePullRequestRegexFn(builderImageVersion, `(?m)^\s*agent:\n\s*image: ghcr.io/jenkins-x/builder-.*:(?P<version>.*)$`, "jenkins-x-*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -247,11 +247,11 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 }
 
 func findLatestBuilderImageVersion() (string, error) {
-	return findLatestImageVersion("gcr.io/jenkinsxio/builder-maven")
+	return findLatestImageVersion("ghcr.io/jenkins-x/builder-maven")
 }
 
 func findLatestMLBuilderImageVersion() (string, error) {
-	return findLatestImageVersion("gcr.io/jenkinsxio/builder-machine-learning")
+	return findLatestImageVersion("ghcr.io/jenkins-x/builder-machine-learning")
 }
 
 func findLatestImageVersion(image string) (string, error) {
