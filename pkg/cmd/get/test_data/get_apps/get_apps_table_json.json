@@ -4,7 +4,7 @@
       "appName": "<NAME_PLACEHOLDER>",
       "version": "0.0.1",
       "description": "My test chart description",
-      "chartRepository": "https://storage.googleapis.com/chartmuseum.jenkins-x.io",
+      "chartRepository": "https://jenkins-x-charts.github.io/v2",
       "status": "DEPLOYED",
       "namespace": "jx"
     }

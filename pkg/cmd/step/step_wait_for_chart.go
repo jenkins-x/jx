@@ -79,7 +79,7 @@ func NewCmdStepWaitForChart(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.ChartName, optionChartName, "", "", "Helm chart name to search for [required]")
 	cmd.Flags().StringVarP(&options.ChartVersion, optionChartVersion, "", "", "Helm chart version to search for [required]")
-	cmd.Flags().StringVarP(&options.ChartRepo, optionChartRepo, "", "https://storage.googleapis.com/chartmuseum.jenkins-x.io", "The repo to search for the helm chart")
+	cmd.Flags().StringVarP(&options.ChartRepo, optionChartRepo, "", "https://jenkins-x-charts.github.io/v2", "The repo to search for the helm chart")
 	cmd.Flags().StringVarP(&options.RepoUsername, optionRepoUsername, "", "", "Helm Repo username if auth enabled")
 	cmd.Flags().StringVarP(&options.RepoPassword, optionRepoPassword, "", "", "Helm Repo password if auth enabled")
 	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The duration before we consider this operation failed")
