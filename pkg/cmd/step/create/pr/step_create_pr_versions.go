@@ -148,7 +148,7 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 			Version:       builderImageVersion,
 			DryRun:        o.DryRun,
 		}
-		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "gcr.io/jenkinsxio/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x-*.yml")
+		fn, err := operations.CreatePullRequestRegexFn(builderImageVersion, "ghcr.io/jenkins-x/builder-(?:maven|go|terraform):(?P<versions>.+)", "jenkins-x-*.yml")
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -233,11 +233,11 @@ func (o *StepCreatePullRequestVersionsOptions) Run() error {
 }
 
 func findLatestBuilderImageVersion() (string, error) {
-	return findLatestImageVersion("gcr.io/jenkinsxio/builder-maven")
+	return findLatestImageVersion("ghcr.io/jenkins-x/builder-maven")
 }
 
 func findLatestMLBuilderImageVersion() (string, error) {
-	return findLatestImageVersion("gcr.io/jenkinsxio/builder-machine-learning")
+	return findLatestImageVersion("ghcr.io/jenkins-x/builder-machine-learning")
 }
 
 func findLatestImageVersion(image string) (string, error) {
