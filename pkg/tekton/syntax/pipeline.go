@@ -32,7 +32,7 @@ import (
 
 const (
 	// GitMergeImage is the default image name that is used in the git merge step of a pipeline
-	GitMergeImage = "gcr.io/jenkinsxio/builder-jx"
+	GitMergeImage = "ghcr.io/jenkins-x/builder-jx:2.1.142-761-patch2"
 
 	// WorkingDirRoot is the root directory for working directories.
 	WorkingDirRoot = "/workspace"
