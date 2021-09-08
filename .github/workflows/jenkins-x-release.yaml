@@ -13,7 +13,7 @@ jobs:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
     - id: prep
       name: prep
-      uses: docker://gcr.io/jenkinsxio/jx-release-version:1.0.46
+      uses: docker://ghcr.io/jenkins-x/jx-release-version:2.4.13
       with:
         args: -c "echo ::set-output name=version::$(jx-release-version)"
         entrypoint: bash
