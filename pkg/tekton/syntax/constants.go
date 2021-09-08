@@ -14,5 +14,5 @@ const (
 	KanikoDockerImage = "gcr.io/kaniko-project/executor:v0.22.0"
 
 	// DefaultContainerImage - the default image used for pipelines if none is specified.
-	DefaultContainerImage = "gcr.io/jenkinsxio/builder-maven"
+	DefaultContainerImage = "ghcr.io/jenkins-x/builder-maven"
 )
