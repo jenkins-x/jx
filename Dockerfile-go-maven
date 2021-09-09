@@ -1,4 +1,4 @@
-FROM gcr.io/jenkinsxio/jx-go-maven-base-image:0.0.2
+FROM ghcr.io/jenkins-x/jx-go-maven-base-image:0.0.2
 
 ARG VERSION
 ARG TARGETARCH
