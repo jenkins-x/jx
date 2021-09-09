@@ -1,4 +1,4 @@
 # this is used for testing jx inside a cluster in development
-FROM gcr.io/jenkinsxio/builder-scala:latest
+FROM ghcr.io/jenkins-x/builder-scala:2.1.155-778
 
 COPY build/linux/jx /usr/bin/jx
