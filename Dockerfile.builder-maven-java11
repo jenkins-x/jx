@@ -1,4 +1,4 @@
 # this is used for testing jx inside a cluster in development
-FROM gcr.io/jenkinsxio/builder-maven-java11:2.1.155-778
+FROM ghcr.io/jenkins-x/builder-maven-java11:2.1.155-779
 
 COPY build/linux/jx /usr/bin/jx
