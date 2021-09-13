@@ -2,7 +2,7 @@ package kube
 
 const (
 	// DefaultChartMuseumURL default URL for Jenkins X Charts
-	DefaultChartMuseumURL = "https://storage.googleapis.com/chartmuseum.jenkins-x.io"
+	DefaultChartMuseumURL = "https://jenkins-x-charts.github.io/v2"
 	// DefaultChartMuseumJxRepoName default repo name for Jenkins X Charts
 	DefaultChartMuseumJxRepoName = "jenkins-x"
 

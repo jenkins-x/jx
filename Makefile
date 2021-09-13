@@ -48,7 +48,7 @@ GOTEST := GO111MODULE=on gotestsum --junitfile $(REPORTS_DIR)/integration.junit.
 endif
 
 # set dev version unless VERSION is explicitly set via environment
-VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
+VERSION ?= $(shell git rev-parse --abbrev-ref HEAD)
 
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
