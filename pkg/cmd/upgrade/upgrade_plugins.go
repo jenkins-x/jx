@@ -1,6 +1,9 @@
 package upgrade
 
 import (
+	"os"
+	"regexp"
+
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -75,9 +78,6 @@ func (o *PluginOptions) Run() error {
 		if o.Boot && !bootPlugins[p.Name] {
 			continue
 		}
-		if o.OnlyMandatory && p.Name == "jenkins" {
-			continue
-		}
 		log.Logger().Infof("checking binary jx plugin %s version %s is installed", termcolor.ColorInfo(p.Name), termcolor.ColorInfo(p.Spec.Version))
 		fileName, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
 		if err != nil {
@@ -110,5 +110,38 @@ func (o *PluginOptions) Run() error {
 			}
 		}
 	}
+	if ! (o.OnlyMandatory || o.Boot) {
+		// Upgrade the rest
+		file, err := os.Open(pluginBinDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read plugin dir %s", pluginBinDir)
+		}
+		defer file.Close()
+		files, err := file.Readdirnames(0)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read plugin dir %s", pluginBinDir)
+		}
+		pluginPattern, err := regexp.Compile("^(jx-.*)-[0-9.]+$")
+		if err != nil {
+			return err
+		}
+		extraPlugins := make(map[string]bool)
+		for _, plugin := range files {
+			res := pluginPattern.FindStringSubmatch(plugin)
+			if len(res) > 1 {
+				cleanPlugin := res[1]
+				if plugins.PluginMap[cleanPlugin] == nil {
+					extraPlugins[cleanPlugin] = true
+				}
+			}
+		}
+		for plugin := range extraPlugins {
+			_, err = plugins.InstallStandardPlugin(pluginBinDir, plugin)
+			if err != nil {
+				log.Logger().Warnf("Failed to upgrade plugin %s: %+v", plugin, err)
+			}
+		}
+	}
+
 	return nil
 }
