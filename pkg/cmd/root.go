@@ -3,22 +3,22 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"syscall"
 
-	v1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/homedir"
-	"github.com/jenkins-x/jx-helpers/v3/pkg/httphelpers"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/jenkins-x/jx/pkg/cmd/dashboard"
@@ -29,7 +29,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/plugins"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
 // Main creates the new command
@@ -244,44 +243,7 @@ func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, er
 	return h.localPluginHandler.Lookup(filename, pluginBinDir)
 }
 
-func findStandardPlugin(name string) (*v1.Plugin, error) {
-	u := "https://api.github.com/repos/jenkins-x-plugins/" + name + "/releases/latest"
 
-	client := httphelpers.GetClient()
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create http request for %s", u)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		if resp != nil {
-			return nil, errors.Wrapf(err, "failed to GET endpoint %s with status %s", u, resp.Status)
-		}
-		return nil, errors.Wrapf(err, "failed to GET endpoint %s", u)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read response from %s", u)
-	}
-
-	release := &githubRelease{}
-	err = json.Unmarshal(body, release)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal release from %s", u)
-	}
-	version := strings.TrimPrefix(release.TagName, "v")
-	if version == "" {
-		return nil, nil
-	}
-
-	plugin := extensions.CreateJXPlugin("jenkins-x-plugins", strings.TrimPrefix(name, "jx-"), version)
-	return &plugin, nil
-}
-
-type githubRelease struct {
-	TagName string `json:"tag_name"`
-}
 
 // Execute implements PluginHandler
 func (h *managedPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
@@ -294,21 +256,52 @@ type localPluginHandler struct{}
 func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
 	path, err := exec.LookPath(filename)
 	if err != nil {
-		plugin := plugins.PluginMap[filename]
-		if plugin == nil {
-			// lets see if the plugin is a community plugin...
-			var err2 error
-			plugin, err2 = findStandardPlugin(filename)
-			if err2 != nil {
-				return "", errors.Wrapf(err2, "failed to load plugin %s", filename)
-			}
+		path, err = findStandardPlugin(pluginBinDir, filename)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to load plugin %s", filename)
 		}
-		if plugin != nil {
-			return extensions.EnsurePluginInstalled(*plugin, pluginBinDir)
-		}
-		return "", err
 	}
 	return path, nil
+}
+
+func findStandardPlugin(dir string, name string) (string, error) {
+	file, err := os.Open(dir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to read plugin dir %s", dir)
+	}
+	defer file.Close()
+	files, err := file.Readdirnames(0)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to read plugin dir %s", dir)
+	}
+	pluginPattern, err := regexp.Compile("^" + name + "-([0-9.]+)$")
+	if err != nil {
+		return "", err
+	}
+
+	vers := make([]string, 0)
+	for _, plugin := range files {
+		res := pluginPattern.FindStringSubmatch(plugin)
+		if len(res) > 1 {
+			vers = append(vers, res[1])
+		}
+	}
+
+	if len(vers) > 0 {
+		vs := make([]semver.Version, 0)
+		for _, r := range vers {
+			v, err := semver.Parse(r)
+			if err == nil {
+				vs = append(vs, v)
+			}
+		}
+
+		sort.Sort(sort.Reverse(semver.Versions(vs)))
+		if len(vs) > 0 {
+			return filepath.Join(dir, name + "-" + vs[0].String()), nil
+		}
+	}
+	return plugins.InstallStandardPlugin(dir, name)
 }
 
 // Execute implements PluginHandler
@@ -345,29 +338,23 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	foundBinaryPath := ""
 
 	// attempt to find binary, starting at longest possible name with given cmdArgs
+	var err error
 	for len(remainingArgs) > 0 {
 		commandName := fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-"))
 
 		// lets try the correct plugin versions first
 		path := ""
-		var err error
-		for i := range plugins.Plugins {
-			p := plugins.Plugins[i]
-			if p.Spec.Name == commandName {
-				path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
-				if err != nil {
-					return errors.Wrapf(err, "failed to install binary plugin %s version %s to %s", commandName, p.Spec.Version, pluginBinDir)
-				}
-				if path != "" {
-					break
-				}
+		if plugins.PluginMap[commandName] != nil {
+			p := *plugins.PluginMap[commandName]
+			path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
+			if err != nil {
+				return errors.Wrapf(err, "failed to install binary plugin %s version %s to %s", commandName, p.Spec.Version, pluginBinDir)
 			}
 		}
 
 		// lets see if there's a local build of the plugin on the PATH for developers...
-		localPath, err := pluginHandler.Lookup(commandName, pluginBinDir)
-		if err == nil && localPath != "" {
-			path = localPath
+		if path == "" {
+			path, err = pluginHandler.Lookup(commandName, pluginBinDir)
 		}
 		if path != "" {
 			foundBinaryPath = path
@@ -377,7 +364,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	}
 
 	if foundBinaryPath == "" {
-		return nil
+		return err
 	}
 
 	nextArgs := cmdArgs[len(remainingArgs):]

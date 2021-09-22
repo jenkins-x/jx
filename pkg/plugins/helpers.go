@@ -2,13 +2,18 @@ package plugins
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"runtime"
 	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx-api/v4/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/homedir"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/httphelpers"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 const (
@@ -135,4 +140,48 @@ func CreateOctantJXOPlugin(version string) jenkinsv1.Plugin {
 	plugin.Spec.Name = OctantJXOPluginName
 	plugin.Spec.SubCommand = OctantJXOPluginName
 	return plugin
+}
+
+
+type githubRelease struct {
+	TagName string `json:"tag_name"`
+}
+
+// InstallStandardPlugin makes sure that latest version of plugin is installed and returns the path to the binary
+func InstallStandardPlugin(dir string, name string) (string, error) {
+	u := "https://api.github.com/repos/jenkins-x-plugins/" + name + "/releases/latest"
+
+	client := httphelpers.GetClient()
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create http request for %s", u)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		if resp != nil {
+			return "", errors.Wrapf(err, "failed to GET endpoint %s with status %s", u, resp.Status)
+		}
+		return "", errors.Wrapf(err, "failed to GET endpoint %s", u)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to read response from %s", u)
+	}
+
+	release := &githubRelease{}
+	err = json.Unmarshal(body, release)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to unmarshal release from %s", u)
+	}
+	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	if latestVersion == "" {
+		return "", fmt.Errorf("can't find latest version of plugin: %s", body)
+	}
+
+	plugin := extensions.CreateJXPlugin("jenkins-x-plugins", strings.TrimPrefix(name, "jx-"), latestVersion)
+	if err != nil {
+		return "", err
+	}
+	return extensions.EnsurePluginInstalled(plugin, dir)
 }
