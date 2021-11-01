@@ -243,8 +243,6 @@ func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, er
 	return h.localPluginHandler.Lookup(filename, pluginBinDir)
 }
 
-
-
 // Execute implements PluginHandler
 func (h *managedPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
 	return h.localPluginHandler.Execute(executablePath, cmdArgs, environment)
@@ -264,7 +262,7 @@ func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, erro
 	return path, nil
 }
 
-func findStandardPlugin(dir string, name string) (string, error) {
+func findStandardPlugin(dir, name string) (string, error) {
 	file, err := os.Open(dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to read plugin dir %s", dir)
@@ -298,7 +296,7 @@ func findStandardPlugin(dir string, name string) (string, error) {
 
 		sort.Sort(sort.Reverse(semver.Versions(vs)))
 		if len(vs) > 0 {
-			return filepath.Join(dir, name + "-" + vs[0].String()), nil
+			return filepath.Join(dir, name+"-"+vs[0].String()), nil
 		}
 	}
 	return plugins.InstallStandardPlugin(dir, name)

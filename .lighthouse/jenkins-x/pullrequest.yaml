@@ -26,6 +26,8 @@ spec:
           resources: {}
         - name: build-make-linux
           resources: {}
+        - name: make-lint
+          resources: {}
         - name: build-make-test
           resources: {}
   podTemplate: {}

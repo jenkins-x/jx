@@ -110,7 +110,7 @@ func (o *PluginOptions) Run() error {
 			}
 		}
 	}
-	if ! (o.OnlyMandatory || o.Boot) {
+	if !(o.OnlyMandatory || o.Boot) {
 		// Upgrade the rest
 		file, err := os.Open(pluginBinDir)
 		if err != nil {
@@ -121,10 +121,7 @@ func (o *PluginOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to read plugin dir %s", pluginBinDir)
 		}
-		pluginPattern, err := regexp.Compile("^(jx-.*)-[0-9.]+$")
-		if err != nil {
-			return err
-		}
+		pluginPattern := regexp.MustCompile("^(jx-.*)-[0-9.]+$")
 		extraPlugins := make(map[string]bool)
 		for _, plugin := range files {
 			res := pluginPattern.FindStringSubmatch(plugin)
