@@ -142,13 +142,12 @@ func CreateOctantJXOPlugin(version string) jenkinsv1.Plugin {
 	return plugin
 }
 
-
 type githubRelease struct {
 	TagName string `json:"tag_name"`
 }
 
 // InstallStandardPlugin makes sure that latest version of plugin is installed and returns the path to the binary
-func InstallStandardPlugin(dir string, name string) (string, error) {
+func InstallStandardPlugin(dir, name string) (string, error) {
 	u := "https://api.github.com/repos/jenkins-x-plugins/" + name + "/releases/latest"
 
 	client := httphelpers.GetClient()

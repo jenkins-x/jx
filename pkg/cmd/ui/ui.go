@@ -119,7 +119,7 @@ func VerifyOctantPlugins(runner cmdrunner.CommandRunner) error {
 	})
 }
 
-func VerifyOctantPluginVersion(runner cmdrunner.CommandRunner, pluginName string, requiredVersion string, fn func() (string, error)) error {
+func VerifyOctantPluginVersion(runner cmdrunner.CommandRunner, pluginName, requiredVersion string, fn func() (string, error)) error {
 	pluginDir := OctantPluginsDir()
 	octantJxBin := filepath.Join(pluginDir, pluginName)
 

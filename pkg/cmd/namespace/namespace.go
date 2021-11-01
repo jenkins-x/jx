@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -26,8 +27,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"sort"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"k8s.io/client-go/kubernetes"
@@ -155,7 +154,6 @@ func (o *Options) Run() error {
 		server := kube.CurrentServer(cfg)
 		if config == nil {
 			log.Logger().Infof("Using namespace '%s' on server '%s'. No context - probably a unit test or pod?\n", info(ns), info(server))
-
 		} else {
 			log.Logger().Infof("Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(cfg.CurrentContext), info(server))
 		}
@@ -283,10 +281,8 @@ func handleStatusError(err error, client kubernetes.Interface, ns string, create
 			return nil
 		}
 		return err
-	} else {
-		return err
 	}
-	return nil
+	return err
 }
 
 func createNamespace(client kubernetes.Interface, ns string) error {

@@ -36,7 +36,7 @@ linters-settings:
       - unnamedResult # not important
   gocyclo:
     min-complexity: 15
-  goimports:
+  goimports: {}
   golint:
     min-confidence: 0
   gofmt:
@@ -45,7 +45,7 @@ linters-settings:
     settings:
       mnd:
         # don't include the "operation" and "assign"
-        checks: argument,case,condition,return
+        checks: [argument, case, condition, return]
   govet:
     check-shadowing: true
     settings:
@@ -60,7 +60,7 @@ linters-settings:
     line-length: 140
   maligned:
     suggest-new: true
-  misspell:
+  misspell: {}
   nolintlint:
     allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
     allow-unused: false # report any unused nolint directives
@@ -75,18 +75,13 @@ linters:
     - bodyclose
     - deadcode
     - depguard
-#    - dogsled
-    - dupl
     - errcheck
-#    - funlen
-#    - goconst
     - gofmt
     - goimports
     - goprintffuncname
     - gosec
     - gosimple
     - ineffassign
-#    - interfacer (This tool is deprecated)
     - misspell
     - nakedret
     - rowserrcheck
@@ -97,52 +92,31 @@ linters:
     - unparam
     - unused
     - varcheck
-    - golint
+    - revive
     - gocritic
     - govet
-#    - lll
-#    - gocyclo
-#    - nestif
-  # don't enable:
-  # - testpackage
-  # - gochecknoinits
-  # - stylecheck
-  # - lll
-  # - govet
-  # - whitespace
-  # - exhaustive (TODO: enable after next release; current release at time of writing is v1.27)
-  # - gochecknoglobals
-  # - gocognit
-  # - godot
-  # - godox
-  # - goerr113
-  # - maligned
-  # - prealloc
-  # - wsl
-  # - nolintlint
-  # - gomnd
-  # - scopelint
+    - dupl
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
-#    - path: _test\.go
-#      linters:
-#        - gomnd
-#    https://github.com/go-critic/go-critic/issues/926
+    #    - path: _test\.go
+    #      linters:
+    #        - gomnd
+    #    https://github.com/go-critic/go-critic/issues/926
     - linters:
         - gocritic
       text: "unnecessaryDefer:"
+  exclude:
+    - 'shadow: declaration of "err" shadows declaration at'
   max-same-issues: 0
-  
+
 run:
+  timeout: 30m
   skip-dirs:
-    - test/testdata_etc
-    - internal/cache
-    - internal/renameio
-    - internal/robustio
+    - cmd/docs
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
-  golangci-lint-version: 1.29.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.42.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"
