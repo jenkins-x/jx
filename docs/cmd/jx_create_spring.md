@@ -1,23 +1,23 @@
-## jx create pullrequest
+## jx create spring
 
-alias for: jx pullrequest
+alias for: jx spring
 
-***Aliases**: pr*
+***Aliases**: sb*
 
 ### Usage
 
 ```
-jx create pullrequest
+jx create spring
 ```
 
 ### Synopsis
 
-alias for: jx pullrequest
+alias for: jx spring
 
 ### Options
 
 ```
-  -h, --help   help for pullrequest
+  -h, --help   help for spring
 ```
 
 ### SEE ALSO
