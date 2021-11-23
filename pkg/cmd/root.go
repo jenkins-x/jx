@@ -35,7 +35,7 @@ import (
 func Main(args []string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "jx",
-		Short: "Jenkins X 3.x alpha command line",
+		Short: "Jenkins X 3.x command line",
 		Run:   runHelp,
 	}
 
