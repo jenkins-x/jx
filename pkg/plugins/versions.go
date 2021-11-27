@@ -18,9 +18,6 @@ const (
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.75"
 
-	// JenkinsVersion the version of the jx jenkins plugin
-	JenkinsVersion = "0.0.29"
-
 	// OctantVersion the default version of octant to use
 	OctantVersion = "0.23.0"
 
