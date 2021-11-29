@@ -51,3 +51,10 @@ spec:
             files:
               - "apps/jenkins-x/lighthouse/values.yaml.gotmpl"
               - "charts/jenkins-x/lighthouse/values.yaml.gotmpl"
+    - urls:
+        - https://github.com/jenkins-x-charts/jxboot-helmfile-resources
+      changes:
+        - regex:
+            pattern: "jx: (.*)"
+            files:
+              - "charts/jxboot-helmfile-resources/values.yaml"
