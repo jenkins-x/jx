@@ -15,6 +15,7 @@ RUN addgroup -S app \
 
 ENV JX_HOME /root/.jx
 ENV JX3_HOME /root/.jx
+ENV HELM_DATA_HOME /root/.local/share/helm
 
 RUN echo using jx version ${VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
   mkdir -p /home/.jx3 && \
