@@ -78,10 +78,10 @@ func (o *Options) Run() error {
 
 	u, err := services.FindServiceURL(client, o.Namespace, o.ServiceName)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find dashboard URL. Check you have 'chart: jx3/jx-pipelines-visualizer' in your helmfile.yaml")
+		return errors.Wrapf(err, "failed to find dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml")
 	}
 	if u == "" {
-		return errors.Errorf("no dashboard URL. Check you have 'chart: jx3/jx-pipelines-visualizer' in your helmfile.yaml")
+		return errors.Errorf("no dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml")
 	}
 
 	log.Logger().Infof("Jenkins X dashboard is running at: %s", info(u))
