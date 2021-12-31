@@ -23,8 +23,6 @@ spec:
           resources: {}
         - name: build-make-linux
           resources: {}
-        - name: make-lint
-          resources: {}
         # Move to catalog
         - image: golang:1.17.9-alpine3.15
           name: coverage-report

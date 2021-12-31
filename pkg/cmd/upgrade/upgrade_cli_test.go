@@ -1,15 +1,19 @@
-package upgrade
+package upgrade_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/jenkins-x/jx-logging/v3/pkg/log"
+	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 
+	jxfake "github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
+	// typev1 "github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 )
 
 func TestNeedsUpgrade(t *testing.T) {
@@ -32,23 +36,32 @@ func TestNeedsUpgrade(t *testing.T) {
 		},
 	}
 
-	o := CLIOptions{}
+	o := upgrade.CLIOptions{}
 	for _, data := range testCases {
 		currentVersion, _ := semver.New(data.current)
 		latestVersion, _ := semver.New(data.latest)
 		actualMessage := log.CaptureOutput(func() {
-			actualUpgradeNeeded := o.needsUpgrade(*currentVersion, *latestVersion)
+			actualUpgradeNeeded := o.NeedsUpgrade(*currentVersion, *latestVersion)
 			assert.Equal(t, data.expectedUpgradeNeeded, actualUpgradeNeeded, fmt.Sprintf("Unexpected upgrade flag for %v", data))
 		})
 		assert.Equal(t, data.expectedMessage, actualMessage, fmt.Sprintf("Unexpected message for %v", data))
 	}
 }
 
-//
+func TestNewCmdUpgradeCLI(t *testing.T) {
+	kubeClient := jxfake.NewSimpleClientset()
+	os.Setenv("KUBECONFIG", "testdata/kubeconfig")
+	cmd, o := upgrade.NewCmdUpgradeCLI()
+	o.JXClient = kubeClient
+	o.Version = "3.2.238"
+	err := cmd.Execute()
+	assert.NoError(t, err)
+}
+
 func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	version.Map["version"] = "1.4.0"
-	opts := &CLIOptions{}
+	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
 	assert.False(t, update, "should not update")
@@ -57,7 +70,7 @@ func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T)
 func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	version.Map["version"] = "1.2.3"
-	opts := &CLIOptions{}
+	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
 	assert.False(t, update, "should not update")
@@ -66,7 +79,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
 func TestVersionCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	version.Map["version"] = "1.0.0"
-	opts := &CLIOptions{}
+	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
 	assert.True(t, update, "should update")
@@ -77,7 +90,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testi
 	prVersions = append(prVersions, semver.PRVersion{VersionStr: "dev"})
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
 	version.Map["version"] = "1.2.3"
-	opts := &CLIOptions{}
+	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
 	assert.False(t, update, "should not update")
@@ -86,7 +99,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testi
 func TestVersionCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	version.Map["version"] = "1.2.3-dev+6a8285f4"
-	opts := &CLIOptions{}
+	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
 	assert.False(t, update, "should not update")
@@ -95,7 +108,7 @@ func TestVersionCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testi
 func TestVersionCheckWhenCurrentVersionWithPatchIsLessThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	version.Map["version"] = "1.2.2-dev+6a8285f4"
-	opts := &CLIOptions{}
+	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
 	assert.False(t, update, "should not update")
