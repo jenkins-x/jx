@@ -19,7 +19,7 @@ function run_terraform {
     terraform -chdir=. init
     if [ $? -gt 0 ];then return 1;fi
 
-    terraform plan -chdir=. $TFOPS_VARFILE_FLAG $destroy_when_true -out plan.out 2>&1| tee $TMP
+    terraform -chdir=. plan $TFOPS_VARFILE_FLAG $destroy_when_true -out plan.out 2>&1| tee $TMP
     if [ ${PIPESTATUS[0]} -gt 0 ];then
         set +x
         save_plan
@@ -54,7 +54,7 @@ function run_terraform {
 
     set +x
     # Replan to see what tf thinks should happen next.
-    terraform plan -chdir=. $TFOPS_VARFILE_FLAG $destroy_when_true 2>&1| tee $TMP
+    terraform -chdir=. plan $TFOPS_VARFILE_FLAG $destroy_when_true 2>&1| tee $TMP
 }
 
 function save_plan {
