@@ -35,7 +35,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPOSITORY: ${{ github.repository }}
       name: upload-binaries
-      uses: docker://goreleaser/goreleaser:v0.155.0
+      uses: docker://goreleaser/goreleaser:v1.4.1
       with:
         entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
     - name: Set up QEMU
