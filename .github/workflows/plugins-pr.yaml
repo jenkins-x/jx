@@ -1,5 +1,6 @@
 jobs:
   plugins:
+    if: github.repository_owner == 'jenkins-x'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

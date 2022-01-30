@@ -1,5 +1,6 @@
 jobs:
   pr:
+    if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
