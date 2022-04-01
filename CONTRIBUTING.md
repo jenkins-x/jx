@@ -11,6 +11,7 @@ To compile, test and contribute towards the jx binaries you will need:
  - [git][]
  - [Go][] 1.15.5 is supported
  - [dep](https://github.com/golang/dep)
+ - [golangci-lint](https://github.com/golangci/golangci-lint) `1.42.1` , wich will be used to lint your code later
  - [pre-commit](https://pre-commit.com) _optional: we use [detect-secrets](https://github.com/Yelp/detect-secrets) to help prevent secrets leaking into the code base_
  
 
@@ -37,7 +38,7 @@ $ cd /usr/local/go/src
 $ # compile Go for the default platform first, then add cross-compile support
 $ ./make.bash --no-clean
 $ GOOS=linux GOARCH=amd64 ./make.bash --no-clean
-```
+``` 
 
 ## Fork the Repository
 
@@ -57,6 +58,18 @@ branch and to create pull requests:
 ```shell
 $ git remote add upstream https://github.com/jenkins-x/jx.git
 ```
+
+## Lint your changes
+
+This step is necessary to ensure that the modifications you make follow the same approach as the jx standard, otherwise, the linting test will fail.
+
+```sh
+$ make lint
+// Or 
+$ golangci-lint run ./... --verbose --build-tags build
+``` 
+
+Note: You may discover certain linting errors that are unrelated to your changes, you should always try to resolve these issues to help maintain the code quality.
 
 ## Build Your Changes
 
