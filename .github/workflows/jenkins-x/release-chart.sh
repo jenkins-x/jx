@@ -2,6 +2,9 @@
 echo "HOME is $HOME"
 echo current git configuration
 
+# See https://github.com/actions/checkout/issues/766
+git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
 git config --global --get user.name
 git config --global --get user.email
 
