@@ -1,4 +1,4 @@
-FROM ghcr.io/jenkins-x/jx-cli-base-image:0.0.48
+FROM ghcr.io/jenkins-x/jx-cli-base-image:0.1.1
 
 ARG VERSION
 ARG TARGETARCH
