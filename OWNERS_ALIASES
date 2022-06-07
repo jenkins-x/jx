@@ -1,6 +1,2 @@
-aliases:
-- rawlingsj
-best-approvers:
-- rawlingsj
-best-reviewers:
-- rawlingsj
+foreignAliases:
+- name: jx-community
