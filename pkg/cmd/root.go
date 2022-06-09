@@ -143,6 +143,7 @@ func Main(args []string) *cobra.Command {
 	)
 	generalCommands = append(generalCommands, addCmd, getCmd, createCmd, startCmd, stopCmd,
 		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}, "log"),
+		aliasCommand(cmd, doCmd, "ctx", []string{"context"}),
 	)
 
 	cmd.AddCommand(generalCommands...)

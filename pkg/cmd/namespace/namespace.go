@@ -78,7 +78,7 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 	o := &Options{}
 	cmd := &cobra.Command{
 		Use:     "namespace",
-		Aliases: []string{"ns", "ctx"},
+		Aliases: []string{"ns"},
 		Short:   "View or change the current namespace context in the current Kubernetes cluster",
 		Long:    cmdLong,
 		Example: cmdExample,
