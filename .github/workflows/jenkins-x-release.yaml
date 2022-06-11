@@ -14,7 +14,7 @@ jobs:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
     - id: prep
       name: next release version
-      uses: jenkins-x-plugins/jx-release-version@v2.4.13
+      uses: jenkins-x-plugins/jx-release-version@v2.5.2
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
       name: chart-docs
