@@ -25,8 +25,30 @@ spec:
           resources: {}
         - name: make-lint
           resources: {}
-        - name: build-make-test
+        # Move to catalog
+        - image: golang:1.17.9-alpine3.15
+          name: coverage-report
           resources: {}
+          script: |
+            #!/bin/sh
+            source .jx/variables.sh
+            apk add --update make bash curl gnupg coreutils
+            make test-coverage
+            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+            curl -Os https://uploader.codecov.io/latest/alpine/codecov
+            curl -Os https://uploader.codecov.io/latest/alpine/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/alpine/codecov.SHA256SUM.sig
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            sha256sum -c codecov.SHA256SUM
+            chmod +x codecov
+            ./codecov -Z -B ${PR_HEAD_REF} -C ${PULL_PULL_SHA} -t ${CODECOV_TOKEN} -R . -f ./build/reports/cover.txt
+          env:
+          - name: CODECOV_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: codecov
+                key: token
+                optional: true
   podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 1h0m
