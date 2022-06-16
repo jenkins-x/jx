@@ -7,7 +7,7 @@ import (
 
 const (
 	// AdminVersion the version of the jx admin plugin
-	AdminVersion = "0.1.13"
+	AdminVersion = "0.1.14"
 
 	// ApplicationVersion the version of the jx application plugin
 	ApplicationVersion = "0.2.0"
