@@ -51,7 +51,7 @@ var (
 const (
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
 	BinaryDownloadBaseURL  = "https://github.com/jenkins-x/jx/releases/download/v"
-	LatestVersionstreamURL = "https://github.com/jenkins-x/jxr-versions.git"
+	LatestVersionstreamURL = "https://github.com/jenkins-x/jx3-versions.git"
 )
 
 // UpgradeOptions the options for upgrading a cluster

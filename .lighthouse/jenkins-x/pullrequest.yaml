@@ -32,7 +32,7 @@ spec:
             source .jx/variables.sh
             apk add --update make bash curl gnupg coreutils
             make test-coverage
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
             curl -Os https://uploader.codecov.io/latest/alpine/codecov
             curl -Os https://uploader.codecov.io/latest/alpine/codecov.SHA256SUM
             curl -Os https://uploader.codecov.io/latest/alpine/codecov.SHA256SUM.sig
