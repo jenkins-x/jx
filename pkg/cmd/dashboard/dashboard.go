@@ -29,6 +29,23 @@ type Options struct {
 	BasicAuthSecretName string
 	NoBrowser           bool
 	Quiet               bool
+	BrowserHandler      Opener
+}
+
+type Opener interface {
+	Open() error
+}
+
+type Browser struct {
+	URL string
+}
+
+func (b *Browser) Open() error {
+	err := browser.OpenURL(b.URL)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 var (
@@ -97,7 +114,10 @@ func (o *Options) Run() error {
 
 	log.Logger().Debugf("opening: %s", info(u))
 
-	err = browser.OpenURL(u)
+	if o.BrowserHandler == nil {
+		o.BrowserHandler = &Browser{u}
+	}
+	err = o.BrowserHandler.Open()
 	if err != nil {
 		return err
 	}

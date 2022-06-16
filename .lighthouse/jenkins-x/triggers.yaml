@@ -6,6 +6,13 @@ spec:
     context: "pr"
     always_run: true
     optional: false
-    trigger: "/test"
-    rerun_command: "/retest"
+    trigger: (?m)^/test( all| pr),?(s+|$)
+    rerun_command: /test pr
     source: "pullrequest.yaml"
+  - name: lint
+    context: "lint"
+    always_run: true
+    optional: false
+    trigger: (?m)^/test( all| lint),?(s+|$)
+    rerun_command: /test lint
+    source: "lint.yaml"

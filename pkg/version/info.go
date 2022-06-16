@@ -51,7 +51,7 @@ const (
 	// TestVersion used in test cases for the current version if no
 	// version can be found - such as if the version property is not properly
 	// included in the go test flags.
-	TestVersion = "2.0.404"
+	TestVersion = "3.2.238"
 
 	// TestRevision can be used in tests if no revision is passed in the test flags
 	TestRevision = "04b628f48"

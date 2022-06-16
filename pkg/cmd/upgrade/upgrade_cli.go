@@ -105,7 +105,7 @@ func (o *CLIOptions) Run() error {
 
 	log.Logger().Debugf("Current version of jx: %s", termcolor.ColorInfo(currentVersion))
 
-	if o.needsUpgrade(currentVersion, candidateInstallVersion) {
+	if o.NeedsUpgrade(currentVersion, candidateInstallVersion) {
 		shouldUpgrade, err := o.ShouldUpdate(candidateInstallVersion)
 		if err != nil {
 			return errors.Wrap(err, "failed to determine if we should upgrade")
@@ -194,7 +194,7 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 	return gitURL, nil
 }
 
-func (o *CLIOptions) needsUpgrade(currentVersion, latestVersion semver.Version) bool {
+func (o *CLIOptions) NeedsUpgrade(currentVersion, latestVersion semver.Version) bool {
 	if latestVersion.EQ(currentVersion) {
 		log.Logger().Infof("You are already on the latest version of jx %s", termcolor.ColorInfo(currentVersion.String()))
 		return false
