@@ -12,6 +12,12 @@ jobs:
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
+    - name: Run coverage
+      run: make test-coverage
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./build/reports/cover.txt
     - id: prep
       name: next release version
       uses: jenkins-x-plugins/jx-release-version@v2.5.2
