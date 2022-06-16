@@ -5,6 +5,7 @@
 [![Releases](https://img.shields.io/github/release-pre/jenkins-x/jx.svg)](https://github.com/jenkins-x/jx/releases)
 [![LICENSE](https://img.shields.io/github/license/jenkins-x/jx.svg)](https://github.com/jenkins-x/jx/blob/master/LICENSE)
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://slack.k8s.io/)
+[![codecov](https://codecov.io/gh/jenkins-x/jx/branch/main/graph/badge.svg?token=aBT7eQHx37)](https://codecov.io/gh/jenkins-x/jx)
 
 `jx` is the modular command line CLI for [Jenkins X 3.x](https://jenkins-x.io/v3/about/)
 
