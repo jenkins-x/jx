@@ -14,7 +14,7 @@ spec:
             files:
               - "**/*.yaml"
     - urls:
-        - https://github.com/jenkins-x/jxr-versions
+        - https://github.com/jenkins-x/jx3-versions
       changes:
         - versionTemplate: |
             {{ pullRequestSha "jenkins-x/jx3-pipeline-catalog" }}
