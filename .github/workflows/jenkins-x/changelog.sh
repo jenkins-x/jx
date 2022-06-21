@@ -13,4 +13,4 @@ else
   echo no charts
 fi
 
-jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=CHANGELOG.md --update-release=false
+jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=CHANGELOG.md
