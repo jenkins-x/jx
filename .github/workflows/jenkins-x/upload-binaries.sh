@@ -10,9 +10,6 @@ echo "setting git user"
 git config --global user.name jenkins-x-bot-test
 git config --global user.email "jenkins-x@googlegroups.com"
 
-git tag -fa v$VERSION -m "Release version $VERSION"
-git push origin v$VERSION
-
 export BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export BUILDDATE=$(date)
 export REV=$(git rev-parse HEAD)
