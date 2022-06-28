@@ -1,7 +1,21 @@
 #!/usr/bin/env sh
 
-echo "REPO_NAME = $PULL_BASE_SHA"
+echo "HOME is $HOME"
+echo current git configuration
 
-export PULL_BASE_SHA=$(git rev-parse HEAD)
+# See https://github.com/actions/checkout/issues/766
+git config --global --add safe.directory "$GITHUB_WORKSPACE"
+git config --global --get user.name
+git config --global --get user.email
 
-jx changelog create --verbose --header-file=hack/changelog-header.md --version=v$VERSION --rev=$PULL_BASE_SHA
+echo "setting git user"
+
+git config --global user.name jenkins-x-bot-test
+git config --global user.email "jenkins-x@googlegroups.com"
+
+git add * || true
+git commit -a -m "chore: release $VERSION" --allow-empty
+git tag -fa v$VERSION -m "Release version $VERSION"
+git push origin v$VERSION
+
+jx changelog create --verbose --header-file=hack/changelog-header.md --version=v$VERSION --prerelease
