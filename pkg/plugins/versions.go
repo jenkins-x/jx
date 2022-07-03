@@ -13,7 +13,7 @@ const (
 	ApplicationVersion = "0.2.0"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.7.23"
+	GitOpsVersion = "0.7.24"
 
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.76"
@@ -28,7 +28,7 @@ const (
 	PipelineVersion = "0.1.54"
 
 	// PreviewVersion the version of the jx preview plugin
-	PreviewVersion = "0.0.218"
+	PreviewVersion = "0.0.220"
 
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.2.49"
