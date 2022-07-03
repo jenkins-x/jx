@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -321,7 +320,8 @@ func (h *localPluginHandler) Execute(executablePath string, cmdArgs, environment
 
 	// invoke cmd binary relaying the environment and args given
 	// append executablePath to cmdArgs, as execve will make first argument the "binary name".
-	return syscall.Exec(executablePath, append([]string{executablePath}, cmdArgs...), environment)
+	// ToDo: Look at sanitizing the inputs passed to syscall exec, may be move away from syscall as it's deprecated.
+	return syscall.Exec(executablePath, append([]string{executablePath}, cmdArgs...), environment) //nolint
 }
 
 func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, pluginBinDir string) error {
@@ -381,7 +381,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 // FindPluginBinary tries to find the jx-foo binary plugin in the plugins dir `~/.jx/plugins/jx/bin` dir `
 func FindPluginBinary(pluginDir, commandName string) string {
 	if pluginDir != "" {
-		files, err := ioutil.ReadDir(pluginDir)
+		files, err := os.ReadDir(pluginDir)
 		if err != nil {
 			log.Logger().Debugf("failed to read plugin dir %s", err.Error())
 		} else {
