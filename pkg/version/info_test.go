@@ -1,4 +1,4 @@
-// +build unit
+//go:build unit
 
 package version_test
 
