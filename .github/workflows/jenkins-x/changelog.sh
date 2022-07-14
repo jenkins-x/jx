@@ -13,9 +13,7 @@ echo "setting git user"
 git config --global user.name jenkins-x-bot-test
 git config --global user.email "jenkins-x@googlegroups.com"
 
-git add * || true
-git commit -a -m "chore: release $VERSION" --allow-empty
-git tag -fa v$VERSION -m "Release version $VERSION"
+git tag -fa v$VERSION -m "chore: release version $VERSION"
 git push origin v$VERSION
 
 jx changelog create --verbose --header-file=hack/changelog-header.md --version=v$VERSION --prerelease
