@@ -29,6 +29,7 @@ jobs:
       uses: docker://ghcr.io/jenkins-x/jx-changelog:0.0.47
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
+    - uses: anchore/sbom-action/download-syft@v0.11.0
     - env:
         VERSION: ${{ steps.prep.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
