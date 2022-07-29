@@ -9,9 +9,13 @@ fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if ! [ -x "$(command -v golangci-lint)" ]; then
-	echo "Installing GolangCI-Lint"
-	${DIR}/install_golint.sh -b $GOPATH/bin v1.42.1
+linterVersion="$(golangci-lint --version | awk '{print $4}')"
+
+expectedLinterVersion=1.46.2
+
+if [ "${linterVersion}" != "${expectedLinterVersion}" ]; then
+	echo "Install GolangCI-Lint version ${expectedLinterVersion}"
+  exit 1
 fi
 
 export GO111MODULE=on

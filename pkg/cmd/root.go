@@ -146,12 +146,15 @@ func Main(args []string) *cobra.Command {
 	)
 
 	cmd.AddCommand(generalCommands...)
-	groups := templates.CommandGroups{
-		{
-			Message:  "General:",
-			Commands: generalCommands,
-		},
+
+	var groups templates.CommandGroups
+	command := templates.CommandGroup{
+
+		Message:  "General:",
+		Commands: generalCommands,
 	}
+	groups = append(groups, command)
+
 	groups.Add(cmd)
 	filters := []string{"options"}
 

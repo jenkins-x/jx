@@ -1,5 +1,5 @@
 //nolint:gofmt,goimports
-// +build !windows
+//go:build !windows
 
 package app
 

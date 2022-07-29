@@ -8,7 +8,7 @@ RESET='\033[0m'
 
 if ! [ -x "$(command -v goimports)" ]; then
 	echo "Installing goimports"
-    go get golang.org/x/tools/cmd/goimports
+    go install golang.org/x/tools/cmd/goimports
 fi
 
 echo "Running validation scripts..."
