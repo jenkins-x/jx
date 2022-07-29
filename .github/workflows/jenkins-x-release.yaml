@@ -29,10 +29,6 @@ jobs:
       uses: docker://ghcr.io/jenkins-x/jx-changelog:0.0.47
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
-    - name: setup-syft
-      run: |
-        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | \
-        sh -s -- -b /usr/local/bin v0.52.0
     - env:
         VERSION: ${{ steps.prep.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
