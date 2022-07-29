@@ -16,4 +16,9 @@ export REV=$(git rev-parse HEAD)
 export GOVERSION="1.17.9"
 export ROOTPACKAGE="github.com/$REPOSITORY"
 
+# Install syft in this script, not sure why using download syft results in goreleaser unable to find the syft executable
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | \
+sh -s -- -b /usr/local/bin v0.52.0
+chmod +x /usr/local/bin/syft
+
 goreleaser release
