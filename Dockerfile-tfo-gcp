@@ -1,9 +1,11 @@
 FROM google/cloud-sdk:slim
+USER root
 
 ARG TARGETARCH
 ARG TARGETOS
 ARG VERSION
 
+LABEL org.opencontainers.image.source https://github.com/jenkins-x/jx
 
 # unzip
 RUN apt-get install -y unzip bash jq && \
@@ -30,6 +32,3 @@ RUN jx admin help
 COPY run.sh /run.sh
 ENTRYPOINT ["/bin/bash"]
 CMD ["run.sh"]
-
-
-LABEL org.opencontainers.image.source https://github.com/jenkins-x/jx
