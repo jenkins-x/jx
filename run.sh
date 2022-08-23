@@ -1,6 +1,6 @@
 #!/bin/bash -e
 ##
-## TODO - When the $INSTANCE_NAME approaches 253 characters, this script should 
+## TODO - When the $TFO_RESOURCE approaches 253 characters, this script should
 ##        truncate accordingly to make sure that any secrets/configmaps that
 ##        get saved here don't get blocked by the K8S API due to names being
 ##        too long.
@@ -42,7 +42,7 @@ function run_terraform {
             exit 0
         fi
         if [ $n -gt 60 ];then
-            echo "Waiting for user action. Check the cm/${INSTANCE_NAME}-action"
+            echo "Waiting for user action. Check the cm/${TFO_RESOURCE}-action"
             n=0
         fi
         sleep 1
@@ -63,30 +63,30 @@ function save_plan {
 
     # Save the intermediate plan
     cp $CLEAN tfplan
-    kubectl delete cm ${INSTANCE_NAME}-plan > /dev/null 2>&1 || true
-    kubectl create cm ${INSTANCE_NAME}-plan --from-file tfplan
+    kubectl delete cm ${TFO_RESOURCE}-plan > /dev/null 2>&1 || true
+    kubectl create cm ${TFO_RESOURCE}-plan --from-file tfplan
 }
 
 function save_output {
     # Save terraform output as a configmap
     # TODO sensative items should be stored as a secret
-    cat << EOF > "$INSTANCE_NAME-output.yaml"
+    cat << EOF > "$TFO_RESOURCE-output.yaml"
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: $INSTANCE_NAME-output
+  name: $TFO_RESOURCE-output
   namespace: $NAMESPACE
 data:
 $(terraform output -json| jq -r '.|keys[] as $k| "  \($k): |-\n    \(.[$k].value)"')
 EOF
 
-    kubectl apply -f "$INSTANCE_NAME-output.yaml"
+    kubectl apply -f "$TFO_RESOURCE-output.yaml"
 
 }
 
 function get_action {
-    action=`kubectl get cm ${INSTANCE_NAME}-action -ojsonpath='{.data.action}'`
+    action=`kubectl get cm ${TFO_RESOURCE}-action -ojsonpath='{.data.action}'`
     export action
 }
 
@@ -200,8 +200,8 @@ echo -n ${arr[0]} > PLAN
 echo -n ${arr[1]} > CHANGE
 echo -n ${arr[2]} > DESTROY
 
-kubectl delete cm ${INSTANCE_NAME}-status > /dev/null 2>&1 || true
-kubectl create cm ${INSTANCE_NAME}-status \
+kubectl delete cm ${TFO_RESOURCE}-status > /dev/null 2>&1 || true
+kubectl create cm ${TFO_RESOURCE}-status \
     --from-file ERROR \
     --from-file PLAN \
     --from-file CHANGE \
