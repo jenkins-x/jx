@@ -59,30 +59,32 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-boot:latest
           ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
-    - name: Build and push jx-tfo-aws
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-tfo-aws
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ steps.prep.outputs.version }}
-        tags: |
-          ghcr.io/jenkins-x/terraform-operator-aws:latest
-          ghcr.io/jenkins-x/terraform-operator-aws:${{ steps.prep.outputs.version }}
-    - name: Build and push jx-tfo-gcp
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-tfo-gcp
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ steps.prep.outputs.version }}
-        tags: |
-          ghcr.io/jenkins-x/terraform-operator-gcp:latest
-          ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
+    # Commenting these for now, as custom images are a bit complicated to do in the new tf operator versions
+    # Once we figure it out, we can uncomment these lines
+    # - name: Build and push jx-tfo-aws
+    #   uses: docker/build-push-action@v3
+    #   with:
+    #     context: .
+    #     file: ./Dockerfile-tfo-aws
+    #     platforms: linux/amd64
+    #     push: true
+    #     build-args: |
+    #       VERSION=${{ steps.prep.outputs.version }}
+    #     tags: |
+    #       ghcr.io/jenkins-x/terraform-operator-aws:latest
+    #       ghcr.io/jenkins-x/terraform-operator-aws:${{ steps.prep.outputs.version }}
+    # - name: Build and push jx-tfo-gcp
+    #   uses: docker/build-push-action@v3
+    #   with:
+    #     context: .
+    #     file: ./Dockerfile-tfo-gcp
+    #     platforms: linux/amd64
+    #     push: true
+    #     build-args: |
+    #       VERSION=${{ steps.prep.outputs.version }}
+    #     tags: |
+    #       ghcr.io/jenkins-x/terraform-operator-gcp:latest
+    #       ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
     - name: Build and push jx
       uses: docker/build-push-action@v3
       with:
