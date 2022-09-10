@@ -97,6 +97,16 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx:latest
           ghcr.io/jenkins-x/jx:${{ steps.prep.outputs.version }}
+    - name: Generate and Push SBOM
+      uses: docker://ghcr.io/oras-project/oras:v0.13.0
+      with:
+        entrypoint: .github/workflows/jenkins-x/sbom-container.sh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        GIT_USERNAME: jenkins-x-bot-test
+        DOCKER_REGISTRY_ORG: jenkins-x
+        REPO_NAME: ${{ github.event.repository.name }}
+        VERSION: ${{ steps.prep.outputs.version }}
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
