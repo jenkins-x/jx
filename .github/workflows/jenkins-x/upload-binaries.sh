@@ -18,7 +18,7 @@ export ROOTPACKAGE="github.com/$REPOSITORY"
 
 # Install syft in this script, not sure why using download syft results in goreleaser unable to find the syft executable
 curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | \
-sh -s -- -b /usr/local/bin v0.54.0
+sh -s -- -b /usr/local/bin v0.55.0
 chmod +x /usr/local/bin/syft
 
 goreleaser release
