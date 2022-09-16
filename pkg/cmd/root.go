@@ -141,7 +141,7 @@ func Main(args []string) *cobra.Command {
 		aliasCommand(cmd, doCmd, "pipeline", []string{"pipeline", "stop"}, "pipelines"),
 	)
 	generalCommands = append(generalCommands, addCmd, getCmd, createCmd, startCmd, stopCmd,
-		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}, "log"),
+		aliasCommand(cmd, doCmd, "import", []string{"project", "import"}),
 		aliasCommand(cmd, doCmd, "ctx", []string{"context"}),
 	)
 
@@ -204,14 +204,13 @@ func aliasCommand(rootCmd *cobra.Command, fn func(cmd *cobra.Command, args []str
 	realArgs := append([]string{"jx"}, args...)
 	cmd := &cobra.Command{
 		Use:     name,
-		Short:   "alias for: jx " + name,
+		Short:   "alias for: " + strings.Join(realArgs, " "),
 		Aliases: aliases,
 		Run: func(cmd *cobra.Command, args []string) {
 			realArgs = append(realArgs, args...)
 			log.Logger().Debugf("about to invoke alias: %s", strings.Join(realArgs, " "))
 			fn(rootCmd, realArgs)
 		},
-		SuggestFor:         []string{"jx " + name},
 		DisableFlagParsing: true,
 	}
 	return cmd
