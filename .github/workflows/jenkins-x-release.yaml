@@ -1,4 +1,6 @@
 name: Release
+permissions:
+  contents: read # to fetch code (actions/checkout)
 jobs:
   release:
     if: github.repository_owner == 'jenkins-x'
