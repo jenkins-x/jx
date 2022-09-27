@@ -6,7 +6,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: build-make-test
-      uses: docker://golang:1.17.9
+      uses: docker://golang:1.18.6
       with:
         args: -c "make test linux"
         entrypoint: /bin/sh
