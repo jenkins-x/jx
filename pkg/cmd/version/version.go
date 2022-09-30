@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/blang/semver"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -96,7 +98,6 @@ func (o *Options) run() {
 	fmt.Fprintf(o.Out, "goVersion: %s\n", v.GoVersion)
 	fmt.Fprintf(o.Out, "branch: %s\n", v.Branch)
 	fmt.Fprintf(o.Out, "gitTreeState: %s\n", v.GitTreeState)
-
 }
 
 func getBuildInfo() buildInfo {
@@ -150,4 +151,13 @@ func getTreeState() string {
 		return GitTreeState
 	}
 	return TestTreeState
+}
+
+func GetSemverVersion() (semver.Version, error) {
+	text := getVersion()
+	v, err := semver.Make(text)
+	if err != nil {
+		return v, errors.Wrapf(err, "failed to parse version %s", text)
+	}
+	return v, nil
 }
