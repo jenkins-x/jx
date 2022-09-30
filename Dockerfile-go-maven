@@ -14,7 +14,7 @@ ARG VERSION
 ARG TARGETARCH
 ARG TARGETOS
 
-RUN apk add --no-cache curl bash && \
+RUN apk add --no-cache curl bash git make && \
   curl -f -L https://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -C /opt -xzv
 
 RUN curl -f -L https://download.java.net/java/GA/jdk15.0.1/51f4f36ad4ef43e39d0dfdbaf6549e32/9/GPL/openjdk-15.0.1_linux-x64_bin.tar.gz  | tar -C /opt -xzv
