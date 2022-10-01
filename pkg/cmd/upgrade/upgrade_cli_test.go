@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
-	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/jenkins-x/jx/pkg/cmd/version"
 
 	"github.com/blang/semver"
 
@@ -60,7 +60,7 @@ func TestNewCmdUpgradeCLI(t *testing.T) {
 
 func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
-	version.Map["version"] = "1.4.0"
+	version.Version = "1.4.0"
 	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
@@ -69,7 +69,7 @@ func TestVersionCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T)
 
 func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
-	version.Map["version"] = "1.2.3"
+	version.Version = "1.2.3"
 	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
@@ -78,7 +78,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
 
 func TestVersionCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
-	version.Map["version"] = "1.0.0"
+	version.Version = "1.0.0"
 	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
@@ -89,7 +89,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testi
 	var prVersions []semver.PRVersion
 	prVersions = append(prVersions, semver.PRVersion{VersionStr: "dev"})
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
-	version.Map["version"] = "1.2.3"
+	version.Version = "1.2.3"
 	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
@@ -98,7 +98,7 @@ func TestVersionCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testi
 
 func TestVersionCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
-	version.Map["version"] = "1.2.3-dev+6a8285f4"
+	version.Version = "1.2.3-dev+6a8285f4"
 	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
@@ -107,7 +107,7 @@ func TestVersionCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testi
 
 func TestVersionCheckWhenCurrentVersionWithPatchIsLessThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
-	version.Map["version"] = "1.2.2-dev+6a8285f4"
+	version.Version = "1.2.2-dev+6a8285f4"
 	opts := &upgrade.CLIOptions{}
 	update, err := opts.ShouldUpdate(jxVersion)
 	assert.NoError(t, err, "should check version without failure")
