@@ -1,0 +1,22 @@
+FROM alpine:3.16.2
+
+ARG VERSION
+ARG TARGETARCH
+ARG TARGETOS
+
+LABEL org.opencontainers.image.authors="Linux Foundation" \
+      org.opencontainers.image.description="Kubectl docker image used by Jenkins X" \
+      org.opencontainers.image.ref.name="alpine:3.16.2" \
+      org.opencontainers.image.source="https://github.com/jenkins-x/jx/blob/main/Dockerfile-kubectl" \
+      org.opencontainers.image.title="kubectl"
+
+RUN apk add --update --no-cache curl &&\
+    adduser -D -u 1001 jx
+
+RUN curl -LO "https://dl.k8s.io/release/v${VERSION}/bin/${TARGETOS}/${TARGETARCH}/kubectl" &&\
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin
+
+USER 1001
+ENTRYPOINT [ "kubectl" ]
+CMD [ "--help" ]
