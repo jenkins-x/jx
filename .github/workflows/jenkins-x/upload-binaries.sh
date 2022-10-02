@@ -21,4 +21,10 @@ curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | \
 sh -s -- -b /usr/local/bin v0.55.0
 chmod +x /usr/local/bin/syft
 
+# Install Go version 1.18.6
+curl -O -sSfL https://go.dev/dl/go1.18.6.linux-amd64.tar.gz
+rm -rf /usr/local/go/
+tar -C /usr/local -xzf go1.18.6.linux-amd64.tar.gz
+apk add gcompat 
+
 goreleaser release
