@@ -74,3 +74,10 @@ release:
 
 sboms:
   - artifacts: archive
+
+
+signs:
+- cmd: cosign
+  stdin: '{{ .Env.COSIGN_PWD }}'
+  args: ["sign-blob", "--key=env://COSIGN_PRIVATE_KEY", "--output-signature=${signature}", "${artifact}"]
+  artifacts: all
