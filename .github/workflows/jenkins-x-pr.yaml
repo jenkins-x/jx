@@ -1,3 +1,6 @@
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
   pr:
     if: github.repository_owner == 'jenkins-x'
