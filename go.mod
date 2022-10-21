@@ -108,4 +108,4 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.22.15
 )
 
-go 1.18
+go 1.19

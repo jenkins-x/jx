@@ -14,12 +14,7 @@ ORG_REPO := $(ORG)/$(NAME)
 RELEASE_ORG_REPO := $(ORG_REPO)
 ROOT_PACKAGE := github.com/$(ORG_REPO)
 
-# This version is just used to trigger a new build in case we update the version of go in jx3-pipeline-catalog, and dont have new PRs which use the updated version in the catalog.
-# This does not reflect the go binary version which was used to build the jx binary, and also does not reflect the version in the catalog.
-# The sole purpose of this variable is to build a new binary if we ever need to build a new jx binary with a new go version with no code change.
-# If you notice that this version is not the same as the catalog version, please open a PR, the maintainers are happy to review it.
-DUMMY_GO_VERSION := 1.18.6
-
+# The go version is derived from the image built by this repo: https://github.com/jenkins-x/jx-goreleaser-image
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/,*.go)
 
