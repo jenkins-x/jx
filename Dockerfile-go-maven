@@ -1,5 +1,5 @@
 # ToDo: Make it work with alpine, not sure why alpine images complain about java not found
-FROM golang:1.18.6
+FROM golang:1.19.2@sha256:0467d7d12d170ed8d998a2dae4a09aa13d0aa56e6d23c4ec2b1e4faacf86a8131.19.2
 
 # Maven
 ENV MAVEN_VERSION 3.6.3
