@@ -3,92 +3,9 @@ permissions:
   contents: read # to fetch code (actions/checkout)
 jobs:
   release:
-    if: github.repository_owner == 'jenkins-x'
+    if: github.repository_owner == 'osamamagdy'
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: "0"
-        token: ${{ secrets.GIT_BOT_TOKEN }}
-    - uses: fusion-engineering/setup-git-credentials@v2
-      with:
-        credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
-    - name: Run coverage
-      run: make test-coverage
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./build/reports/cover.txt
-    - id: prep
-      name: next release version
-      uses: jenkins-x-plugins/jx-release-version@v2.6.1
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        REPO_NAME: ${{ github.event.repository.name }}
-        VERSION: ${{ steps.prep.outputs.version }}
-      name: changelog
-      uses: docker://ghcr.io/jenkins-x/jx-changelog:0.0.47
-      with:
-        entrypoint: .github/workflows/jenkins-x/changelog.sh
-    - env:
-        VERSION: ${{ steps.prep.outputs.version }}
-        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        REPOSITORY: ${{ github.repository }}
-        COSIGN_PWD: ${{secrets.COSIGN_PWD}}
-        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
-      name: upload-binaries
-      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:0.0.1@sha256:75dde8a5d24f9e7ec58c8d52beed30af3763ed65071610486eabb424abbe5150
-      with:
-        entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: jenkins-x
-        password: ${{ secrets.GHCR_TOKEN }}
-    - name: Build and push jx-boot
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-boot
-        platforms: linux/amd64,linux/arm64
-        push: true
-        build-args: |
-          VERSION=${{ steps.prep.outputs.version }}
-        tags: |
-          ghcr.io/jenkins-x/jx-boot:latest
-          ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
-    # Commenting these for now, as custom images are a bit complicated to do in the new tf operator versions
-    # Once we figure it out, we can uncomment these lines
-    # - name: Build and push jx-tfo-aws
-    #   uses: docker/build-push-action@v3
-    #   with:
-    #     context: .
-    #     file: ./Dockerfile-tfo-aws
-    #     platforms: linux/amd64
-    #     push: true
-    #     build-args: |
-    #       VERSION=${{ steps.prep.outputs.version }}
-    #     tags: |
-    #       ghcr.io/jenkins-x/terraform-operator-aws:latest
-    #       ghcr.io/jenkins-x/terraform-operator-aws:${{ steps.prep.outputs.version }}
-    # - name: Build and push jx-tfo-gcp
-    #   uses: docker/build-push-action@v3
-    #   with:
-    #     context: .
-    #     file: ./Dockerfile-tfo-gcp
-    #     platforms: linux/amd64
-    #     push: true
-    #     build-args: |
-    #       VERSION=${{ steps.prep.outputs.version }}
-    #     tags: |
-    #       ghcr.io/jenkins-x/terraform-operator-gcp:latest
-    #       ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
     - name: Build and push jx
       uses: docker/build-push-action@v3
       with:
@@ -99,16 +16,16 @@ jobs:
         build-args: |
           VERSION=${{ steps.prep.outputs.version }}
         tags: |
-          ghcr.io/jenkins-x/jx:latest
-          ghcr.io/jenkins-x/jx:${{ steps.prep.outputs.version }}
+          ghcr.io/osamamagdy/jx:latest
+          ghcr.io/osamamagdy/jx:${{ steps.prep.outputs.version }}
     - name: Generate and Push SBOM
       uses: docker://ghcr.io/oras-project/oras:v0.13.0
       with:
-        entrypoint: .github/workflows/jenkins-x/sbom-container.sh
+        entrypoint: .github/workflows/osamamagdy/sbom-container.sh
       env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        GIT_USERNAME: jenkins-x-bot-test
-        DOCKER_REGISTRY_ORG: jenkins-x
+        GIT_USERNAME: osamamagdy
+        DOCKER_REGISTRY_ORG: osamamagdy
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
     - name: cosign-installer
@@ -118,92 +35,13 @@ jobs:
         COSIGN_PWD: ${{secrets.COSIGN_PWD}}
         COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        GIT_USERNAME: jenkins-x-bot-test
-        DOCKER_REGISTRY_ORG: jenkins-x
+        GIT_USERNAME: osamamagdy
+        DOCKER_REGISTRY_ORG: osamamagdy
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
       run: cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
 
 
-  release2:
-    if: github.repository_owner == 'jenkins-x'
-    runs-on: ubuntu-latest
-    needs: release
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: "0"
-        token: ${{ secrets.GIT_BOT_TOKEN }}
-    - id: getrelease
-      name: getrelease
-      uses: pozetroninc/github-action-get-latest-release@master
-      with:
-        repository: jenkins-x/jx
-    - id: prep
-      name: prep
-      env:
-        VERSION: ${{ steps.getrelease.outputs.release }}
-      run: |
-        echo "::set-output name=version::${VERSION#v}"
-    - uses: fusion-engineering/setup-git-credentials@v2
-      with:
-        credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: jenkins-x
-        password: ${{ secrets.GHCR_TOKEN }}
-    - name: Build and push kubectl
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-kubectl
-        platforms: linux/amd64,linux/arm64
-        push: true
-        build-args: |
-          VERSION=1.20.2
-        tags: |
-          ghcr.io/jenkins-x/kubectl:latest
-          ghcr.io/jenkins-x/kubectl:1.20.2
-    - name: Build and push jx-go
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-go
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ steps.prep.outputs.version }}
-        tags: |
-          ghcr.io/jenkins-x/jx-go:latest
-          ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
-    - name: Build and push jx-go-maven
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-go-maven
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ steps.prep.outputs.version }}
-        tags: |
-          ghcr.io/jenkins-x/jx-go-maven:latest
-          ghcr.io/jenkins-x/jx-go-maven:${{ steps.prep.outputs.version }}
-    - env:
-        GIT_USERNAME: jenkins-x-bot-test
-        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        VERSION: ${{ steps.prep.outputs.version}}
-        XDG_CONFIG_HOME: /github/home/.config
-      name: promote-release
-      uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.1.3
-      with:
-        args: pr --git-credentials
 "on":
   push:
     branches:
