@@ -111,6 +111,20 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
+    - name: cosign-installer
+      uses: sigstore/cosign-installer@v2.0.0
+    - name: Sign the published Docker image
+      env:
+        COSIGN_PWD: ${{secrets.COSIGN_PWD}}
+        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        GIT_USERNAME: jenkins-x-bot-test
+        DOCKER_REGISTRY_ORG: jenkins-x
+        REPO_NAME: ${{ github.event.repository.name }}
+        VERSION: ${{ steps.prep.outputs.version }}
+      run: cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
+
+
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
