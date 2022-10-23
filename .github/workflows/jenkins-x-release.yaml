@@ -1,3 +1,4 @@
+# provenace generation step is taken from: https://github.com/ko-build/ko/blob/main/.github/workflows/release.yml
 name: Release
 permissions:
   contents: read # to fetch code (actions/checkout)
@@ -5,6 +6,8 @@ jobs:
   release:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.generate-subject.outputs.hashes }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -38,9 +41,18 @@ jobs:
         COSIGN_PWD: ${{secrets.COSIGN_PWD}}
         COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
       name: upload-binaries
+      id: release-artifacts
       uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:0.0.1@sha256:75dde8a5d24f9e7ec58c8d52beed30af3763ed65071610486eabb424abbe5150
       with:
         entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
+    - name: Generate subject
+      id: generate-subject
+      env:
+        ARTIFACTS: "${{ steps.release-artifacts.outputs.artifacts }}"
+      run: |
+        set -euo pipefail
+        checksum_file=$(echo "$ARTIFACTS" | jq -r '.[] | select (.type=="Checksum") | .path')
+        echo "::set-output name=hashes::$(cat $checksum_file | base64 -w0)"
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx
@@ -111,6 +123,16 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
+  provenance:
+    needs: release
+    permissions:
+      actions: read   # To read the workflow path.
+      id-token: write # To sign the provenance.
+      contents: write # To add assets to a release.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.2.1
+    with:
+      base64-subjects: "${{ needs.release.outputs.hashes }}"
+      upload-assets: true
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
