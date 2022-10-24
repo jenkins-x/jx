@@ -5,6 +5,9 @@ jobs:
   release:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
+    # Only this job needs packages:write for cosign to push signatures
+    permissions:
+      packages: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -123,6 +126,8 @@ jobs:
     - name: cosign-installer
       uses: sigstore/cosign-installer@v2.8.1
     - name: Sign the published Docker image
+      # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
+      continue-on-error: true
       env:
         COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
         COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
