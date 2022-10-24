@@ -111,6 +111,15 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
+    - uses: imjasonh/setup-crane@v0.1
+    - name: get image digest
+      env:
+        VERSION: ${{ steps.prep.outputs.version }}
+      run: |
+        DIGEST_SHA_JX_BOOT=$(crane digest ghcr.io/jenkins-x/jx-boot:$VERSION)
+        DIGEST_SHA_JX=$(crane digest ghcr.io/jenkins-x/jx:$VERSION)
+        echo "DIGEST_SHA_JX_BOOT=${DIGEST_SHA_JX_BOOT}" >> $GITHUB_ENV
+        echo "DIGEST_SHA_JX=${DIGEST_SHA_JX}" >> $GITHUB_ENV
     - name: cosign-installer
       uses: sigstore/cosign-installer@v2.8.1
     - name: Sign the published Docker image
@@ -118,12 +127,13 @@ jobs:
         COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
         COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        # ToDo: We should change this to some other user, a test account pushing images and artifacts for jx org sounds wrong!
         GIT_USERNAME: jenkins-x-bot-test
-        DOCKER_REGISTRY_ORG: jenkins-x-bot-test
+        DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
       run: |
-        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION
-        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/jx-boot:$VERSION
+        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$DIGEST_SHA_JX
+        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/jx-boot:$DIGEST_SHA_JX_BOOT
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
