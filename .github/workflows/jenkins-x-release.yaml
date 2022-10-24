@@ -111,7 +111,7 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
-    - uses: imjasonh/setup-crane@v0.1
+    - uses: imjasonh/setup-crane@v0.2
     - name: get image digest
       env:
         VERSION: ${{ steps.prep.outputs.version }}
