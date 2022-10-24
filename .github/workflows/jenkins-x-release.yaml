@@ -54,6 +54,12 @@ jobs:
         registry: ghcr.io
         username: jenkins-x
         password: ${{ secrets.GHCR_TOKEN }}
+    - name: syft-installer
+      uses: anchore/sbom-action/download-syft@v0.12.0
+    - name: cosign-installer
+      uses: sigstore/cosign-installer@v2.8.1
+    - name: crane-installer
+      uses: imjasonh/setup-crane@v0.2
     - name: Build and push jx-boot
       uses: docker/build-push-action@v3
       with:
@@ -66,32 +72,38 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-boot:latest
           ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
-    # Commenting these for now, as custom images are a bit complicated to do in the new tf operator versions
-    # Once we figure it out, we can uncomment these lines
-    # - name: Build and push jx-tfo-aws
-    #   uses: docker/build-push-action@v3
-    #   with:
-    #     context: .
-    #     file: ./Dockerfile-tfo-aws
-    #     platforms: linux/amd64
-    #     push: true
-    #     build-args: |
-    #       VERSION=${{ steps.prep.outputs.version }}
-    #     tags: |
-    #       ghcr.io/jenkins-x/terraform-operator-aws:latest
-    #       ghcr.io/jenkins-x/terraform-operator-aws:${{ steps.prep.outputs.version }}
-    # - name: Build and push jx-tfo-gcp
-    #   uses: docker/build-push-action@v3
-    #   with:
-    #     context: .
-    #     file: ./Dockerfile-tfo-gcp
-    #     platforms: linux/amd64
-    #     push: true
-    #     build-args: |
-    #       VERSION=${{ steps.prep.outputs.version }}
-    #     tags: |
-    #       ghcr.io/jenkins-x/terraform-operator-gcp:latest
-    #       ghcr.io/jenkins-x/terraform-operator-gcp:${{ steps.prep.outputs.version }}
+    - name: get image digest for jx boot
+      env:
+        VERSION: ${{ steps.prep.outputs.version }}
+      run: |
+        DIGEST_SHA_JX_BOOT=$(crane digest ghcr.io/jenkins-x/jx-boot:$VERSION)
+        echo "DIGEST_SHA_JX_BOOT=${DIGEST_SHA_JX_BOOT}" >> $GITHUB_ENV
+    - name: Sign the published Docker image for jx boot
+      # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
+      continue-on-error: true
+      env:
+        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
+        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        # ToDo: We should change this to some other user, a test account pushing images and artifacts for jx org sounds wrong!
+        GIT_USERNAME: jenkins-x-bot-test
+        DOCKER_REGISTRY_ORG: jenkins-x
+      run: |
+        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/"${DOCKER_REGISTRY_ORG}"/jx-boot@"${DIGEST_SHA_JX_BOOT}"
+    - name: Generate and Push signed SBOM for jx-boot
+      # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        GIT_USERNAME: jenkins-x-bot-test
+        DOCKER_REGISTRY_ORG: jenkins-x
+      run: |
+        syft ghcr.io/$DOCKER_REGISTRY_ORG/jx-boot:$VERSION --scope all-layers -o spdx-json > sbom.json
+        # This uploads the sbom
+        cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
+        # This signs the sbom
+        cosign sign --key cosign.key --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
+        rm -f sbom.json
     - name: Build and push jx
       uses: docker/build-push-action@v3
       with:
@@ -104,28 +116,13 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx:latest
           ghcr.io/jenkins-x/jx:${{ steps.prep.outputs.version }}
-    - name: Generate and Push SBOM
-      uses: docker://ghcr.io/oras-project/oras:v0.13.0
-      with:
-        entrypoint: .github/workflows/jenkins-x/sbom-container.sh
-      env:
-        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
-        GIT_USERNAME: jenkins-x-bot-test
-        DOCKER_REGISTRY_ORG: jenkins-x
-        REPO_NAME: ${{ github.event.repository.name }}
-        VERSION: ${{ steps.prep.outputs.version }}
-    - uses: imjasonh/setup-crane@v0.2
-    - name: get image digest
+    - name: get image digest for jx
       env:
         VERSION: ${{ steps.prep.outputs.version }}
       run: |
-        DIGEST_SHA_JX_BOOT=$(crane digest ghcr.io/jenkins-x/jx-boot:$VERSION)
         DIGEST_SHA_JX=$(crane digest ghcr.io/jenkins-x/jx:$VERSION)
-        echo "DIGEST_SHA_JX_BOOT=${DIGEST_SHA_JX_BOOT}" >> $GITHUB_ENV
         echo "DIGEST_SHA_JX=${DIGEST_SHA_JX}" >> $GITHUB_ENV
-    - name: cosign-installer
-      uses: sigstore/cosign-installer@v2.8.1
-    - name: Sign the published Docker image
+    - name: Sign the published Docker image for jx
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
       env:
@@ -138,7 +135,21 @@ jobs:
         REPO_NAME: ${{ github.event.repository.name }}
       run: |
         cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME@$DIGEST_SHA_JX
-        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/jx-boot@$DIGEST_SHA_JX_BOOT
+    - name: Generate and Push signed SBOM for jx
+      # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
+        GIT_USERNAME: jenkins-x-bot-test
+        DOCKER_REGISTRY_ORG: jenkins-x
+        VERSION: ${{ steps.prep.outputs.version }}
+        REPO_NAME: ${{ github.event.repository.name }}
+      run: |
+        syft ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION --scope all-layers -o spdx-json > sbom.json
+        # This uploads the sbom
+        cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
+        # This signs the sbom
+        cosign sign --key cosign.key --attachment sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
