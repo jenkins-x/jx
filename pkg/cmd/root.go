@@ -371,10 +371,15 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	nextArgs := cmdArgs[len(remainingArgs):]
 	log.Logger().Debugf("using the plugin command: %s", termcolor.ColorInfo(foundBinaryPath+" "+strings.Join(nextArgs, " ")))
 
+	// Giving plugin information about how it was invoked, so it can give correct help
+	pluginCommandName := os.Args[0] + " " + strings.Join(remainingArgs, " ")
+	environ := append(os.Environ(),
+		fmt.Sprintf("BINARY_NAME=%s", pluginCommandName),
+		fmt.Sprintf("TOP_LEVEL_COMMAND=%s", pluginCommandName))
 	// invoke cmd binary relaying the current environment and args given
 	// remainingArgs will always have at least one element.
 	// execute will make remainingArgs[0] the "binary name".
-	if err := pluginHandler.Execute(foundBinaryPath, nextArgs, os.Environ()); err != nil {
+	if err := pluginHandler.Execute(foundBinaryPath, nextArgs, environ); err != nil {
 		return err
 	}
 	return nil
