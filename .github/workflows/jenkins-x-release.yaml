@@ -97,12 +97,15 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         GIT_USERNAME: jenkins-x-bot-test
         DOCKER_REGISTRY_ORG: jenkins-x
+        VERSION: ${{ steps.prep.outputs.version }}
+        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
+        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
       run: |
         syft ghcr.io/$DOCKER_REGISTRY_ORG/jx-boot:$VERSION --scope all-layers -o spdx-json > sbom.json
         # This uploads the sbom
         cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
         # This signs the sbom
-        cosign sign --key cosign.key --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
+        cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
         rm -f sbom.json
     - name: Build and push jx
       uses: docker/build-push-action@v3
@@ -144,12 +147,14 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         VERSION: ${{ steps.prep.outputs.version }}
         REPO_NAME: ${{ github.event.repository.name }}
+        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
+        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
       run: |
         syft ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION --scope all-layers -o spdx-json > sbom.json
         # This uploads the sbom
         cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
         # This signs the sbom
-        cosign sign --key cosign.key --attachment sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
+        cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
