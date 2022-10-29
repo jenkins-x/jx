@@ -154,7 +154,7 @@ jobs:
         # This uploads the sbom
         cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
         # This signs the sbom
-        cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
+        cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
   release2:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
