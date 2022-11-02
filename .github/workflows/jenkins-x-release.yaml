@@ -1,13 +1,14 @@
 name: Release
 permissions:
   contents: read # to fetch code (actions/checkout)
+  packages: write # Both of the jobs need to push images to github registry
 jobs:
   release:
     if: github.repository_owner == 'jenkins-x'
     runs-on: ubuntu-latest
-    # Only this job needs packages:write for cosign to push signatures
+    # Only this job needs id-token: write for cosign to push signatures using keyless signing
     permissions:
-      packages: write
+      id-token: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -53,7 +54,7 @@ jobs:
       with:
         registry: ghcr.io
         username: jenkins-x
-        password: ${{ secrets.GHCR_TOKEN }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: syft-installer
       uses: anchore/sbom-action/download-syft@v0.13.0
     - name: cosign-installer
@@ -188,7 +189,7 @@ jobs:
       with:
         registry: ghcr.io
         username: jenkins-x
-        password: ${{ secrets.GHCR_TOKEN }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and push kubectl
       uses: docker/build-push-action@v3
       with:

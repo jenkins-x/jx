@@ -27,7 +27,6 @@ jobs:
           ./build/${{ matrix.target }}/${{ matrix.binary }} upgrade plugins
           ./build/${{ matrix.target }}/${{ matrix.binary }} gitops --help
           ./build/${{ matrix.target }}/${{ matrix.binary }} secret --help
-
 on:
   pull_request:
     branches:
