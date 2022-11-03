@@ -1,6 +1,7 @@
 env:
   - GO111MODULE=on
   - CGO_ENABLED=0
+  - COSIGN_EXPERIMENTAL=true
 before:
   hooks:
     - go mod download
@@ -78,6 +79,13 @@ sboms:
 
 signs:
 - cmd: cosign
-  stdin: '{{ .Env.COSIGN_PWD }}'
-  args: ["sign-blob", "--key=env://COSIGN_PRIVATE_KEY", "--output-signature=${signature}", "${artifact}"]
+  env:
+  - COSIGN_EXPERIMENTAL=1
+  certificate: '${artifact}.pem'
+  output: true
   artifacts: all
+  args:
+    - sign-blob
+    - '--output-certificate=${certificate}'
+    - '--output-signature=${signature}'
+    - '${artifact}'
