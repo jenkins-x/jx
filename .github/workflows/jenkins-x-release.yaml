@@ -1,7 +1,6 @@
 name: Release
 permissions:
   contents: read # to fetch code (actions/checkout)
-  packages: write # Both of the jobs need to push images to github registry
 jobs:
   release:
     if: github.repository_owner == 'jenkins-x'
@@ -9,6 +8,7 @@ jobs:
     # Only this job needs id-token: write for cosign to push signatures using keyless signing
     permissions:
       id-token: write
+      packages: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -158,6 +158,9 @@ jobs:
         cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
   release2:
     if: github.repository_owner == 'jenkins-x'
+    permissions:
+      id-token: write
+      packages: write
     runs-on: ubuntu-latest
     needs: release
     steps:

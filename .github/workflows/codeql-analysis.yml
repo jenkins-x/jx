@@ -11,6 +11,7 @@ on:
 
 jobs:
   analyze:
+    if: github.repository_owner == 'jenkins-x'
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
