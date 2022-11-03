@@ -13,7 +13,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
-        fetch-depth: "0"
+        # Only fetch last 10 commits, before we were fetching everything including v2 commits!
+        fetch-depth: "10"
         token: ${{ secrets.GIT_BOT_TOKEN }}
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
@@ -42,7 +43,7 @@ jobs:
         COSIGN_PWD: ${{secrets.COSIGN_PWD}}
         COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
       name: upload-binaries
-      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:0.0.1@sha256:75dde8a5d24f9e7ec58c8d52beed30af3763ed65071610486eabb424abbe5150
+      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:0.1.0@sha256:4ac5aeb4ce850761aeffc585446ea47bbcfa680d096fdd8c5d00c5a8c5adbcc0
       with:
         entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
     - name: Set up QEMU
@@ -59,10 +60,9 @@ jobs:
       uses: anchore/sbom-action/download-syft@v0.13.0
     - name: cosign-installer
       uses: sigstore/cosign-installer@v2.8.1
-    - name: crane-installer
-      uses: imjasonh/setup-crane@v0.2
     - name: Build and push jx-boot
       uses: docker/build-push-action@v3
+      id: push-jx-boot
       with:
         context: .
         file: ./Dockerfile-boot
@@ -73,24 +73,17 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx-boot:latest
           ghcr.io/jenkins-x/jx-boot:${{ steps.prep.outputs.version }}
-    - name: get image digest for jx boot
-      env:
-        VERSION: ${{ steps.prep.outputs.version }}
-      run: |
-        DIGEST_SHA_JX_BOOT=$(crane digest ghcr.io/jenkins-x/jx-boot:$VERSION)
-        echo "DIGEST_SHA_JX_BOOT=${DIGEST_SHA_JX_BOOT}" >> $GITHUB_ENV
     - name: Sign the published Docker image for jx boot
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
       env:
-        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
-        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        COSIGN_EXPERIMENTAL: "true"
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         # ToDo: We should change this to some other user, a test account pushing images and artifacts for jx org sounds wrong!
         GIT_USERNAME: jenkins-x-bot-test
         DOCKER_REGISTRY_ORG: jenkins-x
       run: |
-        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/"${DOCKER_REGISTRY_ORG}"/jx-boot@"${DIGEST_SHA_JX_BOOT}"
+        cosign sign ghcr.io/"${DOCKER_REGISTRY_ORG}"/jx-boot@"${{ steps.push-jx-boot.outputs.digest }}"
     - name: Generate and Push signed SBOM for jx-boot
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
@@ -99,17 +92,17 @@ jobs:
         GIT_USERNAME: jenkins-x-bot-test
         DOCKER_REGISTRY_ORG: jenkins-x
         VERSION: ${{ steps.prep.outputs.version }}
-        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
-        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        COSIGN_EXPERIMENTAL: "true"
       run: |
         syft ghcr.io/$DOCKER_REGISTRY_ORG/jx-boot:$VERSION --scope all-layers -o spdx-json > sbom.json
         # This uploads the sbom
-        cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
+        cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
         # This signs the sbom
-        cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${DIGEST_SHA_JX_BOOT}
+        cosign sign --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
         rm -f sbom.json
     - name: Build and push jx
       uses: docker/build-push-action@v3
+      id: push-jx
       with:
         context: .
         file: ./Dockerfile
@@ -120,25 +113,18 @@ jobs:
         tags: |
           ghcr.io/jenkins-x/jx:latest
           ghcr.io/jenkins-x/jx:${{ steps.prep.outputs.version }}
-    - name: get image digest for jx
-      env:
-        VERSION: ${{ steps.prep.outputs.version }}
-      run: |
-        DIGEST_SHA_JX=$(crane digest ghcr.io/jenkins-x/jx:$VERSION)
-        echo "DIGEST_SHA_JX=${DIGEST_SHA_JX}" >> $GITHUB_ENV
     - name: Sign the published Docker image for jx
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
       env:
-        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
-        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        COSIGN_EXPERIMENTAL: "true"
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         # ToDo: We should change this to some other user, a test account pushing images and artifacts for jx org sounds wrong!
         GIT_USERNAME: jenkins-x-bot-test
         DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
       run: |
-        cosign sign --key=env://COSIGN_PRIVATE_KEY ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME@$DIGEST_SHA_JX
+        cosign sign ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME@${{ steps.push-jx.outputs.digest }}
     - name: Generate and Push signed SBOM for jx
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
@@ -148,14 +134,13 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         VERSION: ${{ steps.prep.outputs.version }}
         REPO_NAME: ${{ github.event.repository.name }}
-        COSIGN_PASSWORD: ${{secrets.COSIGN_PWD}}
-        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        COSIGN_EXPERIMENTAL: "true"
       run: |
         syft ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME:$VERSION --scope all-layers -o spdx-json > sbom.json
         # This uploads the sbom
-        cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
+        cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${{ steps.push-jx.outputs.digest }}
         # This signs the sbom
-        cosign sign --key=env://COSIGN_PRIVATE_KEY --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${DIGEST_SHA_JX}
+        cosign sign --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${{ steps.push-jx.outputs.digest }}
   release2:
     if: github.repository_owner == 'jenkins-x'
     permissions:
