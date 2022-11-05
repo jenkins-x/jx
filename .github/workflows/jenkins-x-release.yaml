@@ -40,8 +40,7 @@ jobs:
         VERSION: ${{ steps.prep.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPOSITORY: ${{ github.repository }}
-        COSIGN_PWD: ${{secrets.COSIGN_PWD}}
-        COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+        COSIGN_EXPERIMENTAL: "true"
       name: upload-binaries
       uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:0.1.0@sha256:4ac5aeb4ce850761aeffc585446ea47bbcfa680d096fdd8c5d00c5a8c5adbcc0
       with:
