@@ -13,7 +13,7 @@ const (
 	ApplicationVersion = "0.3.1"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.11.1"
+	GitOpsVersion = "0.11.2"
 
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.76"
