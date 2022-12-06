@@ -12,6 +12,9 @@ const (
 	// ApplicationVersion the version of the jx application plugin
 	ApplicationVersion = "0.3.1"
 
+	// ChangelogVersion the version of the jx changelog plugin
+	ChangelogVersion = "0.4.1"
+
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.11.2"
 
@@ -51,6 +54,7 @@ var (
 	Plugins = []jenkinsv1.Plugin{
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "admin", AdminVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "application", ApplicationVersion),
+		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "changelog", ChangelogVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "gitops", GitOpsVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "health", HealthVersion),
 		extensions.CreateJXPlugin(jenkinsxPluginsOrganisation, "pipeline", PipelineVersion),
