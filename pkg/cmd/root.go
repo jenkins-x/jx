@@ -216,7 +216,7 @@ func aliasCommand(rootCmd *cobra.Command, fn func(cmd *cobra.Command, args []str
 	return cmd
 }
 
-func runHelp(cmd *cobra.Command, args []string) {
+func runHelp(cmd *cobra.Command, _ []string) {
 	cmd.Help() //nolint:errcheck
 }
 
@@ -253,7 +253,7 @@ func (h *managedPluginHandler) Execute(executablePath string, cmdArgs, environme
 type localPluginHandler struct{}
 
 // Lookup implements PluginHandler
-func (h *localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
+func (*localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
 	path, err := exec.LookPath(filename)
 	if err != nil {
 		path, err = findStandardPlugin(pluginBinDir, filename)
@@ -305,7 +305,7 @@ func findStandardPlugin(dir, name string) (string, error) {
 }
 
 // Execute implements PluginHandler
-func (h *localPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
+func (*localPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
 	// Windows does not support exec syscall.
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command(executablePath, cmdArgs...)

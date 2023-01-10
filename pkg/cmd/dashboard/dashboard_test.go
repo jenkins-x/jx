@@ -14,7 +14,7 @@ import (
 
 type FakeBrowser struct{}
 
-func (fb *FakeBrowser) Open() error {
+func (*FakeBrowser) Open() error {
 	return nil
 }
 
