@@ -33,7 +33,7 @@ jobs:
         REPO_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.prep.outputs.version }}
       name: changelog
-      uses: docker://ghcr.io/jenkins-x/jx-changelog:0.0.47
+      uses: docker://ghcr.io/jenkins-x/jx-boot:latest
       with:
         entrypoint: .github/workflows/jenkins-x/changelog.sh
     - env:
@@ -177,18 +177,6 @@ jobs:
         registry: ghcr.io
         username: jenkins-x
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build and push kubectl
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: ./Dockerfile-kubectl
-        platforms: linux/amd64,linux/arm64
-        push: true
-        build-args: |
-          VERSION=1.20.2
-        tags: |
-          ghcr.io/jenkins-x/kubectl:latest
-          ghcr.io/jenkins-x/kubectl:1.20.2
     - name: Build and push jx-go
       uses: docker/build-push-action@v3
       with:
