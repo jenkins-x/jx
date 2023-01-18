@@ -379,10 +379,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	// invoke cmd binary relaying the current environment and args given
 	// remainingArgs will always have at least one element.
 	// execute will make remainingArgs[0] the "binary name".
-	if err := pluginHandler.Execute(foundBinaryPath, nextArgs, environ); err != nil {
-		return err
-	}
-	return nil
+	return pluginHandler.Execute(foundBinaryPath, nextArgs, environ)
 }
 
 // FindPluginBinary tries to find the jx-foo binary plugin in the plugins dir `~/.jx/plugins/jx/bin` dir `

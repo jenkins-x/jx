@@ -154,10 +154,7 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenMarkdownCustom(cmd, f, linkHandler); err != nil {
-		return err
-	}
-	return nil
+	return GenMarkdownCustom(cmd, f, linkHandler)
 }
 
 // Test to see if we have a reason to print See Also information in docs
