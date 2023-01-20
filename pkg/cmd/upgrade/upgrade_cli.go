@@ -194,7 +194,7 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 	return gitURL, nil
 }
 
-func (o *CLIOptions) NeedsUpgrade(currentVersion, latestVersion semver.Version) bool {
+func (*CLIOptions) NeedsUpgrade(currentVersion, latestVersion semver.Version) bool {
 	if latestVersion.EQ(currentVersion) {
 		log.Logger().Infof("You are already on the latest version of jx %s", termcolor.ColorInfo(currentVersion.String()))
 		return false
@@ -203,7 +203,7 @@ func (o *CLIOptions) NeedsUpgrade(currentVersion, latestVersion semver.Version) 
 }
 
 // ShouldUpdate checks if CLI version should be updated
-func (o *CLIOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
+func (*CLIOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 	log.Logger().Debugf("Checking if should upgrade %s", newVersion)
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
@@ -224,7 +224,7 @@ func (o *CLIOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 }
 
 // InstallJx installs jx cli
-func (o *CLIOptions) InstallJx(upgrade bool, version string) error {
+func (*CLIOptions) InstallJx(upgrade bool, version string) error {
 	log.Logger().Debugf("installing jx %s", version)
 	binary := "jx"
 	if !upgrade {
