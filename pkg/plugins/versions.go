@@ -10,7 +10,7 @@ const (
 	AdminVersion = "0.2.1"
 
 	// ApplicationVersion the version of the jx application plugin
-	ApplicationVersion = "0.3.1"
+	ApplicationVersion = "0.3.3"
 
 	// ChangelogVersion the version of the jx changelog plugin
 	ChangelogVersion = "0.10.3"
