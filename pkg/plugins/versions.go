@@ -43,7 +43,7 @@ const (
 	SecretVersion = "0.3.5"
 
 	// TestVersion the version of the jx test plugin
-	TestVersion = "0.0.51"
+	TestVersion = "0.0.53"
 
 	// VerifyVersion the version of the jx verify plugin
 	VerifyVersion = "0.3.3"
