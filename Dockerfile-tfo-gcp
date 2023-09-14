@@ -12,7 +12,7 @@ RUN apt-get install -y unzip bash jq && \
     rm -rf /var/lib/apt/lists/*
 
 # terraform
-ENV TERRAFORM 1.1.2
+ENV TERRAFORM 1.4.6
 RUN curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && \
   unzip terraform_${TERRAFORM}_linux_amd64.zip && \
   chmod +x terraform && mv terraform /usr/bin && rm terraform_${TERRAFORM}_linux_amd64.zip
