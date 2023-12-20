@@ -4,7 +4,7 @@
 
 ```shell
 # Download the archive and the cosign generated signature
-curl -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-amd64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-amd64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-amd64.tar.gz.pem
+curl -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-amd64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-amd64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-amd64.tar.gz.pem
 
 # Install cosign: https://docs.sigstore.dev/cosign/installation
 # Verify using cosign
@@ -18,7 +18,7 @@ sudo mv jx /usr/local/bin
 
 ```shell
 # Download the archive and the cosign generated signature
-curl -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-arm.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-arm.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-arm.tar.gz.pem
+curl -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-arm.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-arm.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-arm.tar.gz.pem
 
 # Install cosign: https://docs.sigstore.dev/cosign/installation
 # Verify using cosign
@@ -31,7 +31,7 @@ sudo mv jx /usr/local/bin
 
 ```shell
 # Download the archive and the cosign generated signature
-curl -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-arm64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-arm64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-linux-arm64.tar.gz.pem
+curl -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-arm64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-arm64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux-arm64.tar.gz.pem
 
 # Install cosign: https://docs.sigstore.dev/cosign/installation
 # Verify using cosign
@@ -47,7 +47,7 @@ sudo mv jx /usr/local/bin
 
 ```shell
 # Download the archive and the cosign generated signature
-curl -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-darwin-amd64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-darwin-amd64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-darwin-amd64.tar.gz.pem
+curl -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-darwin-amd64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-darwin-amd64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-darwin-amd64.tar.gz.pem
 
 # Install cosign: https://docs.sigstore.dev/cosign/installation
 # Verify using cosign
@@ -61,7 +61,7 @@ sudo mv jx /usr/local/bin
 
 ```shell
 # Download the archive and the cosign generated signature
-curl -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-darwin-arm64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-darwin-arm64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/{{.Version}}/jx-darwin-arm64.tar.gz.pem
+curl -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-darwin-arm64.tar.gz -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-darwin-arm64.tar.gz.sig -LO https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-darwin-arm64.tar.gz.pem
 
 # Install cosign: https://docs.sigstore.dev/cosign/installation
 # Verify using cosign
