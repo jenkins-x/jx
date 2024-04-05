@@ -59,6 +59,8 @@ jobs:
       uses: anchore/sbom-action/download-syft@v0.13.3
     - name: cosign-installer
       uses: sigstore/cosign-installer@v2.8.1
+      with:
+        cosign-release: 'v2.2.3'
     - name: Build and push jx-boot
       uses: docker/build-push-action@v4
       id: push-jx-boot
