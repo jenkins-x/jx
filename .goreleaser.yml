@@ -86,6 +86,7 @@ signs:
   artifacts: all
   args:
     - sign-blob
+    - --yes=true
     - '--output-certificate=${certificate}'
     - '--output-signature=${signature}'
     - '${artifact}'
