@@ -52,7 +52,7 @@ func NewCmdUpgradePlugins() (*cobra.Command, *PluginOptions) {
 		Short:   "Upgrades all of the plugins in your local Jenkins X CLI",
 		Long:    cmdPluginsLong,
 		Example: cmdPluginsExample,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			err := o.Run()
 			helper.CheckErr(err)
 		},

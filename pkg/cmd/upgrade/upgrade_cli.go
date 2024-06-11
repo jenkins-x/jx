@@ -73,7 +73,7 @@ func NewCmdUpgradeCLI() (*cobra.Command, *CLIOptions) {
 		Short:   "Upgrades your local Jenkins X CLI",
 		Long:    cmdCLILong,
 		Example: cmdCLIExample,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			err := o.Run()
 			helper.CheckErr(err)
 		},

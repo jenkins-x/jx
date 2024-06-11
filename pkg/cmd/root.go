@@ -66,7 +66,7 @@ func Main(args []string) *cobra.Command {
 	getCmd := &cobra.Command{
 		Use:   "get TYPE [flags]",
 		Short: "Display one or more resources",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			err := cmd.Help()
 			helper.CheckErr(err)
 		},
@@ -75,7 +75,7 @@ func Main(args []string) *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:   "add TYPE [flags]",
 		Short: "Adds one or more resources",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			err := cmd.Help()
 			helper.CheckErr(err)
 		},
@@ -84,7 +84,7 @@ func Main(args []string) *cobra.Command {
 		Use:     "build TYPE [flags]",
 		Short:   "Display one or more resources relating to a pipeline build",
 		Aliases: []string{"builds"},
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			err := cmd.Help()
 			helper.CheckErr(err)
 		},
@@ -92,7 +92,7 @@ func Main(args []string) *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create TYPE [flags]",
 		Short: "Create one or more resources",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			err := cmd.Help()
 			helper.CheckErr(err)
 		},
@@ -101,7 +101,7 @@ func Main(args []string) *cobra.Command {
 	startCmd := &cobra.Command{
 		Use:   "start TYPE [flags]",
 		Short: "Starts a resource",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			err := cmd.Help()
 			helper.CheckErr(err)
 		},
@@ -109,7 +109,7 @@ func Main(args []string) *cobra.Command {
 	stopCmd := &cobra.Command{
 		Use:   "stop TYPE [flags]",
 		Short: "Stops a resource",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			err := cmd.Help()
 			helper.CheckErr(err)
 		},
@@ -206,7 +206,7 @@ func aliasCommand(rootCmd *cobra.Command, fn func(cmd *cobra.Command, args []str
 		Use:     name,
 		Short:   "alias for: " + strings.Join(realArgs, " "),
 		Aliases: aliases,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			realArgs = append(realArgs, args...)
 			log.Logger().Debugf("about to invoke alias: %s", strings.Join(realArgs, " "))
 			fn(rootCmd, realArgs)
