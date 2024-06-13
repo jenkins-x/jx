@@ -82,7 +82,7 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 		Short:   "View or change the current namespace context in the current Kubernetes cluster",
 		Long:    cmdLong,
 		Example: cmdExample,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			o.Args = args
 			err := o.Run()
 			helper.CheckErr(err)

@@ -68,7 +68,7 @@ func NewCmdVersion() (*cobra.Command, *Options) {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Displays the version of this command",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			o.run()
 		},
 	}
