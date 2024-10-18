@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/extensions"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/homedir"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/httphelpers"
-	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 )
@@ -153,25 +153,25 @@ func InstallStandardPlugin(dir, name string) (string, error) {
 	client := httphelpers.GetClient()
 	req, err := http.NewRequest("GET", u, http.NoBody)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to create http request for %s", u)
+		return "", fmt.Errorf("failed to create http request for %s: %w", u, err)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		if resp != nil {
-			return "", errors.Wrapf(err, "failed to GET endpoint %s with status %s", u, resp.Status)
+			return "", fmt.Errorf("failed to GET endpoint %s with status %s: %w", u, resp.Status, err)
 		}
-		return "", errors.Wrapf(err, "failed to GET endpoint %s", u)
+		return "", fmt.Errorf("failed to GET endpoint %s: %w", u, err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to read response from %s", u)
+		return "", fmt.Errorf("failed to read response from %s: %w", u, err)
 	}
 
 	release := &githubRelease{}
 	err = json.Unmarshal(body, release)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to unmarshal release from %s", u)
+		return "", fmt.Errorf("failed to unmarshal release from %s: %w", u, err)
 	}
 	latestVersion := strings.TrimPrefix(release.TagName, "v")
 	if latestVersion == "" {

@@ -1,6 +1,7 @@
 package upgrade
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/jenkins-x/jx/pkg/plugins"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 )
 
@@ -68,7 +69,7 @@ func NewCmdUpgradePlugins() (*cobra.Command, *PluginOptions) {
 func (o *PluginOptions) Run() error {
 	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	if err != nil {
-		return errors.Wrap(err, "failed to find plugin bin directory")
+		return fmt.Errorf("failed to find plugin bin directory: %w", err)
 	}
 
 	if o.CommandRunner == nil {
@@ -82,7 +83,7 @@ func (o *PluginOptions) Run() error {
 		log.Logger().Infof("checking binary jx plugin %s version %s is installed", termcolor.ColorInfo(p.Name), termcolor.ColorInfo(p.Spec.Version))
 		fileName, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to ensure plugin is installed %s", p.Name)
+			return fmt.Errorf("failed to ensure plugin is installed %s: %w", p.Name, err)
 		}
 
 		if o.Boot {
@@ -93,7 +94,7 @@ func (o *PluginOptions) Run() error {
 				}
 				_, err = o.CommandRunner(c)
 				if err != nil {
-					return errors.Wrapf(err, "failed to upgrade gitops plugin %s", p.Name)
+					return fmt.Errorf("failed to upgrade gitops plugin %s: %w", p.Name, err)
 				}
 			}
 			continue
@@ -107,7 +108,7 @@ func (o *PluginOptions) Run() error {
 			}
 			_, err = o.CommandRunner(c)
 			if err != nil {
-				return errors.Wrapf(err, "failed to upgrade plugin %s", p.Name)
+				return fmt.Errorf("failed to upgrade plugin %s: %w", p.Name, err)
 			}
 		}
 	}
@@ -115,12 +116,12 @@ func (o *PluginOptions) Run() error {
 		// Upgrade the rest
 		file, err := os.Open(pluginBinDir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to read plugin dir %s", pluginBinDir)
+			return fmt.Errorf("failed to read plugin dir %s: %w", pluginBinDir, err)
 		}
 		defer file.Close()
 		files, err := file.Readdirnames(0)
 		if err != nil {
-			return errors.Wrapf(err, "failed to read plugin dir %s", pluginBinDir)
+			return fmt.Errorf("failed to read plugin dir %s: %w", pluginBinDir, err)
 		}
 		pluginPattern := regexp.MustCompile("^(jx-.*)-[0-9.]+$")
 		extraPlugins := make(map[string]bool)

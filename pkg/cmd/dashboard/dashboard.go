@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
@@ -9,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/services"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/options"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -89,16 +90,16 @@ func (o *Options) Run() error {
 	var err error
 	o.KubeClient, o.Namespace, err = kube.LazyCreateKubeClientAndNamespace(o.KubeClient, o.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "creating kubernetes client")
+		return fmt.Errorf("creating kubernetes client: %w", err)
 	}
 	client := o.KubeClient
 
 	u, err := services.FindServiceURL(client, o.Namespace, o.ServiceName)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml")
+		return fmt.Errorf("failed to find dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml: %w", err)
 	}
 	if u == "" {
-		return errors.Errorf("no dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml")
+		return fmt.Errorf("no dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml")
 	}
 
 	log.Logger().Infof("Jenkins X dashboard is running at: %s", info(u))
@@ -109,7 +110,7 @@ func (o *Options) Run() error {
 
 	u, err = o.addUserPasswordToURL(u)
 	if err != nil {
-		return errors.Wrapf(err, "failed to enrich dashboard URL %s", u)
+		return fmt.Errorf("failed to enrich dashboard URL %s: %w", u, err)
 	}
 
 	log.Logger().Debugf("opening: %s", info(u))
@@ -129,7 +130,7 @@ func (o *Options) addUserPasswordToURL(urlText string) (string, error) {
 	ns := o.Namespace
 	secret, err := o.KubeClient.CoreV1().Secrets(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
-		return urlText, errors.Wrapf(err, "failed to load Secret %s in namespace %s", name, ns)
+		return urlText, fmt.Errorf("failed to load Secret %s in namespace %s: %w", name, ns, err)
 	}
 	if secret.Data == nil {
 		secret.Data = map[string][]byte{}
@@ -148,7 +149,7 @@ func (o *Options) addUserPasswordToURL(urlText string) (string, error) {
 
 	u, err := url.Parse(urlText)
 	if err != nil {
-		return urlText, errors.Wrapf(err, "failed to parse URL %s", urlText)
+		return urlText, fmt.Errorf("failed to parse URL %s: %w", urlText, err)
 	}
 	u.User = url.UserPassword(username, password)
 	return u.String(), nil

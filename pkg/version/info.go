@@ -14,9 +14,8 @@
 package version
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
@@ -80,7 +79,7 @@ func GetSemverVersion() (semver.Version, error) {
 	text := strings.TrimPrefix(GetVersion(), VersionPrefix)
 	v, err := semver.Make(text)
 	if err != nil {
-		return v, errors.Wrapf(err, "failed to parse version %s", text)
+		return v, fmt.Errorf("failed to parse version %s: %w", text, err)
 	}
 	return v, nil
 }

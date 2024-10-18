@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/options"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/jenkins-x/jx/pkg/plugins"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
 
@@ -73,12 +73,12 @@ func (o *Options) Run() error {
 	// lets find the octant binary...
 	octantBin, err := plugins.GetOctantBinary("")
 	if err != nil {
-		return errors.Wrap(err, "failed to download the octant binary")
+		return fmt.Errorf("failed to download the octant binary: %w", err)
 	}
 
 	err = VerifyOctantPlugins(o.CommandRunner)
 	if err != nil {
-		return errors.Wrap(err, "failed to download the Jenkins X octant plugins")
+		return fmt.Errorf("failed to download the Jenkins X octant plugins: %w", err)
 	}
 
 	args := append([]string{"--browser-path", o.BrowserPath}, o.OctantArgs...)
@@ -102,7 +102,7 @@ func (o *Options) Run() error {
 	}
 	_, err = o.CommandRunner(c)
 	if err != nil {
-		return errors.Wrapf(err, "failed to start octant via: %s", c.CLI())
+		return fmt.Errorf("failed to start octant via: %s: %w", c.CLI(), err)
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func VerifyOctantPluginVersion(runner cmdrunner.CommandRunner, pluginName, requi
 	version := ""
 	exists, err := util.FileExists(octantJxBin)
 	if err != nil {
-		return errors.Wrapf(err, "failed to check if file exists %s", octantJxBin)
+		return fmt.Errorf("failed to check if file exists %s: %w", octantJxBin, err)
 	}
 
 	if exists {
@@ -157,11 +157,11 @@ func VerifyOctantPluginVersion(runner cmdrunner.CommandRunner, pluginName, requi
 
 	err = os.MkdirAll(pluginDir, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create octant plugin directory %s", pluginDir)
+		return fmt.Errorf("failed to create octant plugin directory %s: %w", pluginDir, err)
 	}
 	err = files.CopyFile(jxBin, octantJxBin)
 	if err != nil {
-		return errors.Wrapf(err, "failed to copy new plugin version %s to %s", jxBin, octantJxBin)
+		return fmt.Errorf("failed to copy new plugin version %s to %s: %w", jxBin, octantJxBin, err)
 	}
 
 	log.Logger().Debugf("updated plugin file %s", info(octantJxBin))

@@ -18,8 +18,6 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 
-	"github.com/pkg/errors"
-
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
 
 	jxc "github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
@@ -102,25 +100,25 @@ func (o *Options) Run() error {
 	currentNS := ""
 	o.KubeClient, currentNS, err = kube.LazyCreateKubeClientAndNamespace(o.KubeClient, "")
 	if err != nil {
-		return errors.Wrap(err, "creating kubernetes client")
+		return fmt.Errorf("creating kubernetes client: %w", err)
 	}
 	client := o.KubeClient
 
 	f := kubeclient.NewFactory()
 	config, err := f.CreateKubeConfig()
 	if err != nil {
-		return errors.Wrap(err, "creating kubernetes configuration")
+		return fmt.Errorf("creating kubernetes configuration: %w", err)
 	}
 	cfg, pathOptions, err := kubeclient.LoadConfig()
 	if err != nil {
-		return errors.Wrap(err, "loading Kubernetes configuration")
+		return fmt.Errorf("loading Kubernetes configuration: %w", err)
 	}
 
 	ns := ""
 	if o.Env != "" || o.PickEnv {
 		ns, err = o.findNamespaceFromEnv(currentNS, o.Env)
 		if err != nil {
-			return errors.Wrapf(err, "failed to find Jenkins X environment: %s", o.Env)
+			return fmt.Errorf("failed to find Jenkins X environment: %s: %w", o.Env, err)
 		}
 		if ns == "" {
 			return nil
@@ -165,7 +163,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 	var err error
 	o.JXClient, ns, err = jxclient.LazyCreateJXClientAndNamespace(o.JXClient, ns)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to create jx client")
+		return "", fmt.Errorf("failed to create jx client: %w", err)
 	}
 
 	names, err := o.GetEnvironmentNames(ns)
@@ -178,7 +176,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 		devNS := ""
 		devNS, _, err = jxenv.GetDevNamespace(o.KubeClient, ns)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to find current dev namespace from %s", ns)
+			return "", fmt.Errorf("failed to find current dev namespace from %s: %w", ns, err)
 		}
 		if devNS != ns {
 			log.Logger().Infof("using the team namespace %s to find Environments", info(devNS))
@@ -192,7 +190,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 	if name == "" {
 		name, err = o.pickName(names, "", "Pick environment:", "pick the kubernetes namespace for the current kubernetes cluster")
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to pick environment")
+			return "", fmt.Errorf("failed to pick environment: %w", err)
 		}
 		if name == "" {
 			return "", nil
@@ -204,7 +202,7 @@ func (o *Options) findNamespaceFromEnv(ns, name string) (string, error) {
 		if apierrors.IsNotFound(err) {
 			return "", options.InvalidArg(name, names)
 		}
-		return "", errors.Wrapf(err, "failed to load Environment %s in namespace %s", name, ns)
+		return "", fmt.Errorf("failed to load Environment %s in namespace %s: %w", name, ns, err)
 	}
 	return env.Spec.Namespace, nil
 }
@@ -216,7 +214,7 @@ func (o *Options) GetEnvironmentNames(ns string) ([]string, error) {
 		err = nil
 	}
 	if err != nil {
-		return names, errors.Wrapf(err, "failed to find Environment names in namespace %s", ns)
+		return names, fmt.Errorf("failed to find Environment names in namespace %s: %w", ns, err)
 	}
 	return names, err
 }
@@ -240,7 +238,7 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 				return nil, err
 			}
 		default:
-			return nil, errors.Wrapf(err, "getting namespace %q", ns)
+			return nil, fmt.Errorf("getting namespace %q: %w", ns, err)
 		}
 	}
 	ctx := kube.CurrentContext(config)
@@ -293,7 +291,7 @@ func createNamespace(client kubernetes.Interface, ns string) error {
 	}
 	_, err := client.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "unable to create namespace %s", ns)
+		return fmt.Errorf("unable to create namespace %s: %w", ns, err)
 	}
 	return nil
 }
@@ -301,12 +299,12 @@ func createNamespace(client kubernetes.Interface, ns string) error {
 func pickNamespace(o *Options, client kubernetes.Interface, defaultNamespace string) (string, error) {
 	names, err := getNamespaceNames(client)
 	if err != nil {
-		return "", errors.Wrap(err, "retrieving namespace the names of the namespaces")
+		return "", fmt.Errorf("retrieving namespace the names of the namespaces: %w", err)
 	}
 
 	selectedNamespace, err := o.pickName(names, defaultNamespace, "Change namespace:", "pick the kubernetes namespace for the current kubernetes cluster")
 	if err != nil {
-		return "", errors.Wrap(err, "picking the namespace")
+		return "", fmt.Errorf("picking the namespace: %w", err)
 	}
 	return selectedNamespace, nil
 }
