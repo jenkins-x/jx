@@ -141,7 +141,7 @@ clean: ## Clean the generated artifacts
 	rm -rf build release dist
 
 get-fmt-deps: ## Install test dependencies
-	$(GO_NOMOD) get golang.org/x/tools/cmd/goimports
+	$(GO_NOMOD) install golang.org/x/tools/cmd/goimports
 
 .PHONY: fmt
 fmt: importfmt ## Format the code

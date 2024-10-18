@@ -18,9 +18,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.19.2'
+          go-version: '1.23'
       - run: make ${{ matrix.target }}
       - run: |
           ./build/${{ matrix.target }}/${{ matrix.binary }} version

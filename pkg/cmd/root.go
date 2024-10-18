@@ -26,7 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx/pkg/cmd/version"
 	"github.com/jenkins-x/jx/pkg/plugins"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 )
 
@@ -258,7 +258,7 @@ func (*localPluginHandler) Lookup(filename, pluginBinDir string) (string, error)
 	if err != nil {
 		path, err = findStandardPlugin(pluginBinDir, filename)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to load plugin %s", filename)
+			return "", fmt.Errorf("failed to load plugin %s: %w", filename, err)
 		}
 	}
 	return path, nil
@@ -267,12 +267,12 @@ func (*localPluginHandler) Lookup(filename, pluginBinDir string) (string, error)
 func findStandardPlugin(dir, name string) (string, error) {
 	file, err := os.Open(dir)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to read plugin dir %s", dir)
+		return "", fmt.Errorf("failed to read plugin dir %s: %w", dir, err)
 	}
 	defer file.Close()
 	files, err := file.Readdirnames(0)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to read plugin dir %s", dir)
+		return "", fmt.Errorf("failed to read plugin dir %s: %w", dir, err)
 	}
 	pluginPattern, err := regexp.Compile("^" + name + "-([0-9.]+)$")
 	if err != nil {
@@ -349,7 +349,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 			p := *plugins.PluginMap[commandName]
 			path, err = extensions.EnsurePluginInstalled(p, pluginBinDir)
 			if err != nil {
-				return errors.Wrapf(err, "failed to install binary plugin %s version %s to %s", commandName, p.Spec.Version, pluginBinDir)
+				return fmt.Errorf("failed to install binary plugin %s version %s to %s: %w", commandName, p.Spec.Version, pluginBinDir, err)
 			}
 		}
 
