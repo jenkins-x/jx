@@ -1,3 +1,4 @@
+version: 2
 env:
   - GO111MODULE=on
   - CGO_ENABLED=0
@@ -56,7 +57,7 @@ checksum:
 
 changelog:
   # set it to true if you wish to skip the changelog generation
-  skip: true
+  disable: true
 
 release:
   # If set to true, will not auto-publish the release.
