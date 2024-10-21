@@ -27,7 +27,7 @@ jobs:
         files: ./build/reports/cover.txt
     - id: prep
       name: next release version
-      uses: jenkins-x-plugins/jx-release-version@v2.6.1
+      uses: jenkins-x-plugins/jx-release-version@v2.7.6
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPO_NAME: ${{ github.event.repository.name }}
