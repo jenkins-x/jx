@@ -11,7 +11,7 @@ jobs:
       packages: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         # Only fetch last 10 commits, before we were fetching everything including v2 commits!
         fetch-depth: "0"
@@ -151,7 +151,7 @@ jobs:
     needs: release
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: "0"
         token: ${{ secrets.GIT_BOT_TOKEN }}
