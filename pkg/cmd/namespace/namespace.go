@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -77,9 +78,28 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 	cmd := &cobra.Command{
 		Use:     "namespace",
 		Aliases: []string{"ns"},
+		Args:    cobra.MaximumNArgs(1),
 		Short:   "View or change the current namespace context in the current Kubernetes cluster",
 		Long:    cmdLong,
 		Example: cmdExample,
+		ValidArgsFunction: func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			client, _, err := kube.LazyCreateKubeClientAndNamespace(o.KubeClient, "")
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveError
+			}
+			names, err := getNamespaceNames(client)
+
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveError
+			}
+			var contextNames []string
+			for _, v := range names {
+				if strings.HasPrefix(v, toComplete) {
+					contextNames = append(contextNames, v)
+				}
+			}
+			return contextNames, cobra.ShellCompDirectiveNoFileComp
+		},
 		Run: func(_ *cobra.Command, args []string) {
 			o.Args = args
 			err := o.Run()
