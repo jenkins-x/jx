@@ -3,16 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"sort"
 	"strings"
-	"syscall"
 
-	"github.com/blang/semver"
-	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/templates"
@@ -26,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx/pkg/cmd/version"
 	"github.com/jenkins-x/jx/pkg/plugins"
-
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +27,17 @@ func Main(args []string) *cobra.Command {
 		Use:   "jx",
 		Short: "Jenkins X 3.x command line",
 		Run:   runHelp,
+		// Hook before and after Run initialize and write profiles to disk,
+		// respectively.
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+
+			if cmd.Name() == cobra.ShellCompRequestCmd || cmd.Name() == cobra.ShellCompNoDescRequestCmd {
+				// This is the __complete or __completeNoDesc command which
+				// indicates shell completion has been requested.
+				plugins.SetupPluginCompletion(cmd, args)
+			}
+			return nil
+		},
 	}
 
 	po := &templates.Options{}
@@ -48,10 +50,10 @@ func Main(args []string) *cobra.Command {
 		if err != nil {
 			log.Logger().Errorf("%v", err)
 		}
-		return pluginCommandGroups, po.ManagedPluginsEnabled
+		return pluginCommandGroups, false
 	}
 	doCmd := func(cmd *cobra.Command, args []string) {
-		handleCommand(po, cmd, args, getPluginCommandGroups)
+		handleCommand(cmd, args)
 	}
 
 	generalCommands := []*cobra.Command{
@@ -159,23 +161,17 @@ func Main(args []string) *cobra.Command {
 	filters := []string{"options"}
 
 	templates.ActsAsRootCommand(cmd, filters, getPluginCommandGroups, groups...)
-	handleCommand(po, cmd, args, getPluginCommandGroups)
+	handleCommand(cmd, args)
 	return cmd
 }
 
-func handleCommand(po *templates.Options, cmd *cobra.Command, args []string, getPluginCommandGroups func() (templates.PluginCommandGroups, bool)) {
-	managedPlugins := &managedPluginHandler{
-		JXClient:  po.JXClient,
-		Namespace: po.Namespace,
-	}
-	localPlugins := &localPluginHandler{}
+func handleCommand(cmd *cobra.Command, args []string) {
 
 	if len(args) == 0 {
 		args = os.Args
 	}
 	if len(args) > 1 {
 		cmdPathPieces := args[1:]
-
 		pluginDir, err := homedir.DefaultPluginBinDir()
 		if err != nil {
 			log.Logger().Errorf("%v", err)
@@ -185,13 +181,18 @@ func handleCommand(po *templates.Options, cmd *cobra.Command, args []string, get
 		// only look for suitable executables if
 		// the specified command does not already exist
 		if _, _, err := cmd.Find(cmdPathPieces); err != nil {
-			if _, managedPluginsEnabled := getPluginCommandGroups(); managedPluginsEnabled {
-				if err := handleEndpointExtensions(managedPlugins, cmdPathPieces, pluginDir); err != nil {
-					log.Logger().Errorf("%v", err)
-					os.Exit(1)
+			var cmdName string // first "non-flag" arguments
+			for _, arg := range cmdPathPieces {
+				if !strings.HasPrefix(arg, "-") {
+					cmdName = arg
+					break
 				}
-			} else {
-				if err := handleEndpointExtensions(localPlugins, cmdPathPieces, pluginDir); err != nil {
+			}
+			switch cmdName {
+			case "help", cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd, "completion":
+				// Don't search for a plugin
+			default:
+				if err := handleEndpointExtensions(cmdPathPieces, pluginDir); err != nil {
 					log.Logger().Errorf("%v", err)
 					os.Exit(1)
 				}
@@ -206,6 +207,13 @@ func aliasCommand(rootCmd *cobra.Command, fn func(cmd *cobra.Command, args []str
 		Use:     name,
 		Short:   "alias for: " + strings.Join(realArgs, " "),
 		Aliases: aliases,
+		ValidArgsFunction: func(_ *cobra.Command, completeArgs []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			cmd, pluginArgs, err := rootCmd.Find(args)
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return plugins.PluginCompletion(cmd, append(pluginArgs, completeArgs...), toComplete)
+		},
 		Run: func(_ *cobra.Command, args []string) {
 			realArgs = append(realArgs, args...)
 			log.Logger().Debugf("about to invoke alias: %s", strings.Join(realArgs, " "))
@@ -220,113 +228,7 @@ func runHelp(cmd *cobra.Command, _ []string) {
 	cmd.Help() //nolint:errcheck
 }
 
-// PluginHandler is capable of parsing command line arguments
-// and performing executable filename lookups to search
-// for valid plugin files, and execute found plugins.
-type PluginHandler interface {
-	// Lookup receives a potential filename and returns
-	// a full or relative path to an executable, if one
-	// exists at the given filename, or an error.
-	Lookup(filename string, pluginBinDir string) (string, error)
-	// Execute receives an executable's filepath, a slice
-	// of arguments, and a slice of environment variables
-	// to relay to the executable.
-	Execute(executablePath string, cmdArgs, environment []string) error
-}
-
-type managedPluginHandler struct {
-	JXClient  versioned.Interface
-	Namespace string
-	localPluginHandler
-}
-
-// Lookup implements PluginHandler
-func (h *managedPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
-	return h.localPluginHandler.Lookup(filename, pluginBinDir)
-}
-
-// Execute implements PluginHandler
-func (h *managedPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
-	return h.localPluginHandler.Execute(executablePath, cmdArgs, environment)
-}
-
-type localPluginHandler struct{}
-
-// Lookup implements PluginHandler
-func (*localPluginHandler) Lookup(filename, pluginBinDir string) (string, error) {
-	path, err := exec.LookPath(filename)
-	if err != nil {
-		path, err = findStandardPlugin(pluginBinDir, filename)
-		if err != nil {
-			return "", fmt.Errorf("failed to load plugin %s: %w", filename, err)
-		}
-	}
-	return path, nil
-}
-
-func findStandardPlugin(dir, name string) (string, error) {
-	file, err := os.Open(dir)
-	if err != nil {
-		return "", fmt.Errorf("failed to read plugin dir %s: %w", dir, err)
-	}
-	defer file.Close()
-	files, err := file.Readdirnames(0)
-	if err != nil {
-		return "", fmt.Errorf("failed to read plugin dir %s: %w", dir, err)
-	}
-	pluginPattern, err := regexp.Compile("^" + name + "-([0-9.]+)$")
-	if err != nil {
-		return "", err
-	}
-
-	vers := make([]string, 0)
-	for _, plugin := range files {
-		res := pluginPattern.FindStringSubmatch(plugin)
-		if len(res) > 1 {
-			vers = append(vers, res[1])
-		}
-	}
-
-	if len(vers) > 0 {
-		vs := make([]semver.Version, 0)
-		for _, r := range vers {
-			v, err := semver.Parse(r)
-			if err == nil {
-				vs = append(vs, v)
-			}
-		}
-
-		sort.Sort(sort.Reverse(semver.Versions(vs)))
-		if len(vs) > 0 {
-			return filepath.Join(dir, name+"-"+vs[0].String()), nil
-		}
-	}
-	return plugins.InstallStandardPlugin(dir, name)
-}
-
-// Execute implements PluginHandler
-func (*localPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
-	// Windows does not support exec syscall.
-	if runtime.GOOS == "windows" {
-		cmd := exec.Command(executablePath, cmdArgs...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Env = environment
-		err := cmd.Run()
-		if err == nil {
-			os.Exit(0)
-		}
-		return err
-	}
-
-	// invoke cmd binary relaying the environment and args given
-	// append executablePath to cmdArgs, as execve will make first argument the "binary name".
-	// ToDo: Look at sanitizing the inputs passed to syscall exec, may be move away from syscall as it's deprecated.
-	return syscall.Exec(executablePath, append([]string{executablePath}, cmdArgs...), environment) //nolint
-}
-
-func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, pluginBinDir string) error {
+func handleEndpointExtensions(cmdArgs []string, pluginBinDir string) error {
 	var remainingArgs []string // all "non-flag" arguments
 
 	for idx := range cmdArgs {
@@ -355,7 +257,7 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 
 		// lets see if there's a local build of the plugin on the PATH for developers...
 		if path == "" {
-			path, err = pluginHandler.Lookup(commandName, pluginBinDir)
+			path, err = plugins.Lookup(commandName, pluginBinDir)
 		}
 		if path != "" {
 			foundBinaryPath = path
@@ -379,26 +281,5 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string, plu
 	// invoke cmd binary relaying the current environment and args given
 	// remainingArgs will always have at least one element.
 	// execute will make remainingArgs[0] the "binary name".
-	return pluginHandler.Execute(foundBinaryPath, nextArgs, environ)
-}
-
-// FindPluginBinary tries to find the jx-foo binary plugin in the plugins dir `~/.jx/plugins/jx/bin` dir `
-func FindPluginBinary(pluginDir, commandName string) string {
-	if pluginDir != "" {
-		files, err := os.ReadDir(pluginDir)
-		if err != nil {
-			log.Logger().Debugf("failed to read plugin dir %s", err.Error())
-		} else {
-			prefix := commandName + "-"
-			for _, f := range files {
-				name := f.Name()
-				if strings.HasPrefix(name, prefix) {
-					path := filepath.Join(pluginDir, name)
-					log.Logger().Debugf("found plugin %s at %s", commandName, path)
-					return path
-				}
-			}
-		}
-	}
-	return ""
+	return plugins.Execute(foundBinaryPath, nextArgs, environ)
 }
