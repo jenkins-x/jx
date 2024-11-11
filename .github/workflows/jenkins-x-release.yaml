@@ -62,7 +62,7 @@ jobs:
       with:
         cosign-release: 'v2.2.3'
     - name: Build and push jx-boot
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       id: push-jx-boot
       with:
         context: .
@@ -102,7 +102,7 @@ jobs:
         cosign sign --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
         rm -f sbom.json
     - name: Build and push jx
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       id: push-jx
       with:
         context: .
@@ -180,7 +180,7 @@ jobs:
         username: jenkins-x
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and push jx-go
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-go
@@ -192,7 +192,7 @@ jobs:
           ghcr.io/jenkins-x/jx-go:latest
           ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
     - name: Build and push jx-go-maven
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-go-maven
