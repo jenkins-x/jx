@@ -2,7 +2,6 @@ package upgrade_test
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/blang/semver"
 
-	jxfake "github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	// typev1 "github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 )
@@ -49,10 +47,7 @@ func TestNeedsUpgrade(t *testing.T) {
 }
 
 func TestNewCmdUpgradeCLI(t *testing.T) {
-	kubeClient := jxfake.NewSimpleClientset()
-	os.Setenv("KUBECONFIG", "testdata/kubeconfig")
 	cmd, o := upgrade.NewCmdUpgradeCLI()
-	o.JXClient = kubeClient
 	o.Version = "3.2.238"
 	err := cmd.Execute()
 	assert.NoError(t, err)
