@@ -21,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/version"
 
 	jxcore "github.com/jenkins-x/jx-api/v4/pkg/apis/core/v4beta1"
-	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 
@@ -59,7 +58,6 @@ const (
 type CLIOptions struct {
 	CommandRunner       cmdrunner.CommandRunner
 	GitClient           gitclient.Interface
-	JXClient            versioned.Interface
 	Version             string
 	VersionStreamGitURL string
 	FromEnvironment     bool
@@ -88,12 +86,7 @@ func NewCmdUpgradeCLI() (*cobra.Command, *CLIOptions) {
 // Run implements the command
 func (o *CLIOptions) Run() error {
 	var err error
-	o.JXClient, err = jxclient.LazyCreateJXClient(o.JXClient)
-	if err != nil {
-		return fmt.Errorf("failed to create jx client: %w", err)
-	}
 
-	// upgrading to a specific version is not yet supported in brew so lets disable it for upgrades
 	candidateInstallVersion, err := o.candidateInstallVersion()
 	if err != nil {
 		return fmt.Errorf("failed to find jx cli version: %w", err)
@@ -179,7 +172,12 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 	}
 	if o.FromEnvironment {
 		// lookup the cluster git repo from the dev environment and use that as the versionstream
-		env, err := jxenv.GetDevEnvironment(o.JXClient, jxcore.DefaultNamespace)
+		jXClient, err := jxclient.LazyCreateJXClient(nil)
+		if err != nil {
+			return "", fmt.Errorf("failed to create jx client: %w", err)
+		}
+
+		env, err := jxenv.GetDevEnvironment(jXClient, jxcore.DefaultNamespace)
 		if err == nil {
 			if env.Spec.Source.URL != "" {
 				gitURL = env.Spec.Source.URL
