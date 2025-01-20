@@ -56,7 +56,7 @@ jobs:
         username: jenkins-x
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: syft-installer
-      uses: anchore/sbom-action/download-syft@v0.17.5
+      uses: anchore/sbom-action/download-syft@v0.17.9
     - name: cosign-installer
       uses: sigstore/cosign-installer@v3.7.0
       with:
