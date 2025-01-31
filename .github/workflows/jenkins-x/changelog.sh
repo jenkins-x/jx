@@ -13,6 +13,7 @@ echo "setting git user"
 git config --global user.name jenkins-x-bot-test
 git config --global user.email "jenkins-x@googlegroups.com"
 
+git clean -f
 git tag -fa v$VERSION -m "chore: release version $VERSION"
 git push origin v$VERSION
 
