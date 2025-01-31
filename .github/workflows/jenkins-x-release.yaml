@@ -25,6 +25,7 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         files: ./build/reports/cover.txt
+        token: ${{ secrets.CODECOV_TOKEN }}
     - id: prep
       name: next release version
       uses: jenkins-x-plugins/jx-release-version@v2.7.10
