@@ -106,6 +106,6 @@ issues:
   max-same-issues: 0
 
 run:
-  timeout: 30m
+  timeout: 1h30m
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
