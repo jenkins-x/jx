@@ -274,7 +274,7 @@ func handleEndpointExtensions(cmdArgs []string, pluginBinDir string) error {
 	log.Logger().Debugf("using the plugin command: %s", termcolor.ColorInfo(foundBinaryPath+" "+strings.Join(nextArgs, " ")))
 
 	// Giving plugin information about how it was invoked, so it can give correct help
-	pluginCommandName := os.Args[0] + " " + strings.Join(remainingArgs, " ")
+	pluginCommandName := os.Args[0] + " " + strings.Join(remainingArgs, " ")
 	environ := append(os.Environ(),
 		fmt.Sprintf("BINARY_NAME=%s", pluginCommandName),
 		fmt.Sprintf("TOP_LEVEL_COMMAND=%s", pluginCommandName))
