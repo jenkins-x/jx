@@ -16,7 +16,7 @@ const (
 	ChangelogVersion = "0.10.12"
 
 	// GitOpsVersion the version of the jx gitops plugin
-	GitOpsVersion = "0.24.4"
+	GitOpsVersion = "0.24.5"
 
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.77"
