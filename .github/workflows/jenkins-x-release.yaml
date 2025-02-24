@@ -59,7 +59,7 @@ jobs:
     - name: syft-installer
       uses: anchore/sbom-action/download-syft@v0.18.0
     - name: cosign-installer
-      uses: sigstore/cosign-installer@v3.7.0
+      uses: sigstore/cosign-installer@v3.8.1
       with:
         cosign-release: 'v2.2.3'
     - name: Build and push jx-boot
