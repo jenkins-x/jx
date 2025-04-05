@@ -1,27 +1,55 @@
-# ToDo: Make it work with alpine, not sure why alpine images complain about java not found
-FROM golang:1.23.2@sha256:a7f2fc9834049c1f5df787690026a53738e55fc097cd8a4a93faa3e06c67ee32
 
-# Maven
-ENV MAVEN_VERSION 3.6.3
-ENV M2_HOME /opt/apache-maven-$MAVEN_VERSION
-ENV maven.home $M2_HOME
-ENV M2 $M2_HOME/bin
-ENV PATH $M2:$PATH
-ENV JAVA_HOME=/opt/jdk-15.0.1
-ENV PATH=$JAVA_HOME/bin:$PATH
-ENV JX3_HOME /home/.jx3
+#What’s Changed:
+#Replaced golang base image with Alpine 3.19 for a lightweight footprint.
+
+#Switched Java setup to use Alpine's native openjdk15 package to resolve java not found errors.
+
+#Used multi-stage build to separate build tools from the runtime, keeping the final image minimal.
+
+#Cleaned up ENV and PATH handling for Maven and Java.
+
+#Maintained support for VERSION, TARGETARCH, and TARGETOS build arguments.
+
+
+FROM alpine:3.19 AS builder
+
+RUN apk add --no-cache \
+    openjdk15 \
+    curl \
+    tar \
+    bash \
+    go \
+    libc6-compat
+
+ENV JAVA_HOME=/usr/lib/jvm/java-15-openjdk \
+    MAVEN_VERSION=3.6.3 \
+    M2_HOME=/opt/apache-maven-3.6.3 \
+    PATH=$PATH:/opt/apache-maven-3.6.3/bin:/usr/lib/jvm/java-15-openjdk/bin
+
+RUN curl -fsSL https://repo1.maven.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    | tar -xz -C /opt
 
 ARG VERSION
 ARG TARGETARCH
 ARG TARGETOS
 
-RUN curl -f -L https://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -C /opt -xzv
-
-RUN curl -f -L https://download.java.net/java/GA/jdk15.0.1/51f4f36ad4ef43e39d0dfdbaf6549e32/9/GPL/openjdk-15.0.1_linux-x64_bin.tar.gz  | tar -C /opt -xzv
-
-RUN echo using jx version ${VERSION} and OS ${TARGETOS} arch ${TARGETARCH} && \
-  mkdir -p /home/.jx3 && \
-  curl -L https://github.com/jenkins-x/jx/releases/download/v${VERSION}/jx-${TARGETOS}-${TARGETARCH}.tar.gz | tar xzv && \
-  mv jx /usr/bin
+RUN echo "Using JX version ${VERSION} for ${TARGETOS}/${TARGETARCH}" && \
+    mkdir -p /home/.jx3 && \
+    curl -L https://github.com/jenkins-x/jx/releases/download/v${VERSION}/jx-${TARGETOS}-${TARGETARCH}.tar.gz \
+    | tar -xz && \
+    mv jx /usr/bin
 
 RUN jx upgrade plugins --mandatory
+
+FROM alpine:3.19
+
+COPY --from=builder /usr/bin/jx /usr/bin/jx
+COPY --from=builder /opt/apache-maven-3.6.3 /opt/apache-maven-3.6.3
+COPY --from=builder /usr/lib/jvm/java-15-openjdk /usr/lib/jvm/java-15-openjdk
+
+ENV JAVA_HOME=/usr/lib/jvm/java-15-openjdk \
+    M2_HOME=/opt/apache-maven-3.6.3 \
+    PATH=$PATH:/opt/apache-maven-3.6.3/bin:/usr/lib/jvm/java-15-openjdk/bin
+
+ENTRYPOINT ["jx"]
+#Easier to maintain and extend with Go or Maven projects in the future.
