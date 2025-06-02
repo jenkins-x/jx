@@ -19,7 +19,7 @@ const (
 	GitOpsVersion = "0.26.0"
 
 	// HealthVersion the version of the jx health plugin
-	HealthVersion = "0.0.79"
+	HealthVersion = "0.0.80"
 
 	// OctantVersion the default version of octant to use
 	OctantVersion = "0.23.0"
