@@ -13,7 +13,7 @@ const (
 	ApplicationVersion = "0.3.7"
 
 	// ChangelogVersion the version of the jx changelog plugin
-	ChangelogVersion = "0.10.13"
+	ChangelogVersion = "0.10.14"
 
 	// GitOpsVersion the version of the jx gitops plugin
 	GitOpsVersion = "0.26.0"
