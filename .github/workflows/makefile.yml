@@ -14,8 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: configure
-      run: ./configure
+    - name: configure OS Aplet ❤️ ®️ 🇨🇿 ME-AI 
+      run: ./configure 
+      test: ./configure 
 
     - name: Install dependencies
       run: make
