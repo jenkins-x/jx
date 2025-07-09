@@ -21,12 +21,6 @@ const (
 	// HealthVersion the version of the jx health plugin
 	HealthVersion = "0.0.80"
 
-	// OctantVersion the default version of octant to use
-	OctantVersion = "0.23.0"
-
-	// OctantJXVersion the default version of octant-jx plugin to use
-	OctantJXVersion = "0.0.44"
-
 	// PipelineVersion the version of the jx pipeline plugin
 	PipelineVersion = "0.7.28"
 

@@ -14,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/jenkins-x/jx/pkg/cmd/dashboard"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
-	"github.com/jenkins-x/jx/pkg/cmd/ui"
 	"github.com/jenkins-x/jx/pkg/cmd/upgrade"
 	"github.com/jenkins-x/jx/pkg/cmd/version"
 	"github.com/jenkins-x/jx/pkg/plugins"
@@ -58,7 +57,6 @@ func Main(args []string) *cobra.Command {
 	generalCommands := []*cobra.Command{
 		cobras.SplitCommand(dashboard.NewCmdDashboard()),
 		cobras.SplitCommand(namespace.NewCmdNamespace()),
-		cobras.SplitCommand(ui.NewCmdUI()),
 		cobras.SplitCommand(upgrade.NewCmdUpgrade()),
 		cobras.SplitCommand(version.NewCmdVersion()),
 	}
