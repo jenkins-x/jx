@@ -40,17 +40,16 @@ func Main(args []string) *cobra.Command {
 		},
 	}
 
-	po := &templates.Options{}
-	getPluginCommandGroups := func() (templates.PluginCommandGroups, bool) {
+	getPluginCommandGroups := func() templates.PluginCommandGroups {
 		verifier := &extensions.CommandOverrideVerifier{
 			Root:        cmd,
 			SeenPlugins: make(map[string]string),
 		}
-		pluginCommandGroups, err := po.GetPluginCommandGroups(verifier, plugins.Plugins)
+		pluginCommandGroups, err := templates.GetPluginCommandGroups(verifier, plugins.Plugins)
 		if err != nil {
 			log.Logger().Errorf("%v", err)
 		}
-		return pluginCommandGroups, false
+		return pluginCommandGroups
 	}
 	doCmd := func(cmd *cobra.Command, args []string) {
 		handleCommand(cmd, args)

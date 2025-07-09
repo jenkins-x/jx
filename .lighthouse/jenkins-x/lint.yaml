@@ -21,7 +21,10 @@ spec:
           name: ""
           resources: {}
         - name: make-lint
-          resources: {}
+          resources:
+            requests:
+              cpu: 1400m
+              memory: 1400Mi
   podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 1h30m0s
