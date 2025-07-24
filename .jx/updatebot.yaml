@@ -1,9 +1,13 @@
 apiVersion: updatebot.jenkins-x.io/v1alpha1
 kind: UpdateConfig
 spec:
+  pullRequestLabels:
+  - dependency/jx
   rules:
     - urls:
         - https://github.com/jenkins-x/jx3-pipeline-catalog
+      reusePullRequest: true
+      sparseCheckout: true
       changes:
         - regex:
             pattern: "jenkins-x/jx:(.*)"
@@ -15,6 +19,8 @@ spec:
               - "**/*.yaml"
     - urls:
         - https://github.com/jenkins-x/jx3-versions
+      reusePullRequest: true
+      sparseCheckout: true
       changes:
         - versionTemplate: |
             {{ pullRequestSha "jenkins-x/jx3-pipeline-catalog" }}
@@ -53,6 +59,8 @@ spec:
               - "charts/jenkins-x/lighthouse/values.yaml.gotmpl"
     - urls:
         - https://github.com/jenkins-x-charts/jxboot-helmfile-resources
+      reusePullRequest: true
+      sparseCheckout: true
       changes:
         - regex:
             pattern: "jx: (.*)"

@@ -212,7 +212,7 @@ jobs:
       name: promote-release
       uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.8.6
       with:
-        args: pr --git-credentials
+        args: pr --git-credentials --add-changelog ../changelog.md
 "on":
   push:
     branches:
