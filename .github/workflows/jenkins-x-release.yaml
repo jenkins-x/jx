@@ -59,7 +59,7 @@ jobs:
     - name: syft-installer
       uses: anchore/sbom-action/download-syft@v0.19.0
     - name: cosign-installer
-      uses: sigstore/cosign-installer@v3.8.2
+      uses: sigstore/cosign-installer@v3.9.2
       with:
         cosign-release: 'v2.2.3'
     - name: Build and push jx-boot
@@ -212,7 +212,7 @@ jobs:
       name: promote-release
       uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.8.6
       with:
-        args: pr --git-credentials --add-changelog ../changelog.md
+        args: pr --git-credentials --add-changelog changelog.md
 "on":
   push:
     branches:
