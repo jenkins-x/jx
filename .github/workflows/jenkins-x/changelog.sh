@@ -19,4 +19,6 @@ git push origin v$VERSION
 
 jx changelog create --verbose --header-file=hack/changelog-header.md --version=v$VERSION --prerelease --output-markdown=../changelog-with-install.md
 # Remove installation instruction from changelog to propagate
-sed -n '/^## Changes/,$p' ../changelog-with-install.md > changelog.md
+echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+sed -n '/^## Changes/,$p' ../changelog-with-install.md  >> "$GITHUB_OUTPUT"
+echo EOF >> "$GITHUB_OUTPUT"
