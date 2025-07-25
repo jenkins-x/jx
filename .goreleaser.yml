@@ -39,7 +39,8 @@ archives:
   - name_template: "jx-{{ .Os }}-{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 checksum:
   # You can change the name of the checksums file.
   # Default is `jx_{{ .Version }}_checksums.txt`.
