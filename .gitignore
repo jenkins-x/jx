@@ -73,4 +73,6 @@ docker-credential-*
 # sbom json created by syft
 sbom.json
 
+changelog.md
+
 
