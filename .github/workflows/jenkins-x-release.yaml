@@ -9,6 +9,8 @@ jobs:
     permissions:
       id-token: write
       packages: write
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -209,10 +211,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         VERSION: ${{ steps.prep.outputs.version}}
         XDG_CONFIG_HOME: /github/home/.config
+        CHANGELOG: ${{needs.release.outputs.changelog}}
       name: promote-release
       uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.8.6
       with:
-        args: pr --git-credentials --add-changelog changelog.md
+        entrypoint: .github/workflows/jenkins-x/updatebot.sh
 "on":
   push:
     branches:
