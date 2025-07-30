@@ -168,7 +168,7 @@ jobs:
       env:
         VERSION: ${{ steps.getrelease.outputs.release }}
       run: |
-        echo "::set-output name=version::${VERSION#v}"
+        echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
     - uses: fusion-engineering/setup-git-credentials@v2
       with:
         credentials: ${{ format('https://x-access-token:{0}@github.com/', secrets.GIT_BOT_TOKEN) }}
