@@ -22,3 +22,7 @@ jx changelog create --verbose --header-file=hack/changelog-header.md --version=v
 echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
 sed -n '/^## Changes/,$p' ../changelog-with-install.md  >> "$GITHUB_OUTPUT"
 echo EOF >> "$GITHUB_OUTPUT"
+
+# Debug output
+echo Step output:
+cat "$GITHUB_OUTPUT"
