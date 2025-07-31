@@ -22,7 +22,7 @@ const (
 	HealthVersion = "0.0.81"
 
 	// PipelineVersion the version of the jx pipeline plugin
-	PipelineVersion = "0.7.30"
+	PipelineVersion = "0.7.31"
 
 	// PreviewVersion the version of the jx preview plugin
 	PreviewVersion = "0.5.11"
