@@ -30,7 +30,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
     - id: prep
       name: next release version
-      uses: jenkins-x-plugins/jx-release-version@v2.7.10
+      uses: jenkins-x-plugins/jx-release-version@v2.7.13
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPO_NAME: ${{ github.event.repository.name }}
