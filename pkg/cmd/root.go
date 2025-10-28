@@ -272,11 +272,10 @@ func handleEndpointExtensions(cmdArgs []string, pluginBinDir string) error {
 
 	// Giving plugin information about how it was invoked, so it can give correct help
 	pluginCommandName := os.Args[0] + " " + strings.Join(remainingArgs, " ")
-	environ := append(os.Environ(),
-		fmt.Sprintf("BINARY_NAME=%s", pluginCommandName),
-		fmt.Sprintf("TOP_LEVEL_COMMAND=%s", pluginCommandName))
+	os.Setenv("BINARY_NAME", pluginCommandName)
+	os.Setenv("TOP_LEVEL_COMMAND", pluginCommandName)
 	// invoke cmd binary relaying the current environment and args given
 	// remainingArgs will always have at least one element.
 	// execute will make remainingArgs[0] the "binary name".
-	return plugins.Execute(foundBinaryPath, nextArgs, environ)
+	return plugins.Execute(foundBinaryPath, nextArgs, os.Environ())
 }
