@@ -104,6 +104,8 @@ jobs:
         # This signs the sbom
         cosign sign --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
         rm -f sbom.json
+    - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
+      uses: jlumbroso/free-disk-space@v1.3.1
     - name: Build and push jx
       uses: docker/build-push-action@v6
       id: push-jx
