@@ -25,7 +25,7 @@ const (
 	PipelineVersion = "0.7.32"
 
 	// PreviewVersion the version of the jx preview plugin
-	PreviewVersion = "0.6.4"
+	PreviewVersion = "0.6.5"
 
 	// ProjectVersion the version of the jx project plugin
 	ProjectVersion = "0.2.83"
