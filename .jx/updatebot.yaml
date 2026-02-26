@@ -6,7 +6,6 @@ spec:
   rules:
     - urls:
         - https://github.com/jenkins-x/jx3-pipeline-catalog
-      reusePullRequest: true
       sparseCheckout: true
       changes:
         - regex:
