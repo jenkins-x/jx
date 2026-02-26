@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/yaml.v2"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	"sigs.k8s.io/yaml"
 )
 
 //AddonConfig Addon Configuration

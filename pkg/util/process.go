@@ -7,19 +7,24 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx-logging/pkg/log"
 )
 
 func RunCommandBackground(name string, output io.Writer, verbose bool, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = output
 	e.Stderr = output
-	os.Setenv("PATH", PathWithBinary())
-	err := e.Start()
+	err := os.Setenv("PATH", PathWithBinary())
+	if err != nil {
+		return errors.Wrap(err, "failed to set PATH env variable")
+	}
+	err = e.Start()
+	//Todo: Could be simplified, and also we should either return or log, not both
 	if err != nil && verbose {
-		log.Errorf("Error: Command failed to start  %s %s\n", name, strings.Join(args, " "))
+		log.Logger().Errorf("Error: Command failed to start  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -47,12 +52,12 @@ func KillProcessesTree(binary string, processes []*process.Process, m map[int32]
 				// if windows lets remove .exe
 				name = strings.TrimSuffix(name, ".exe")
 				if name == binary {
-					log.Infof("killing %s process with pid %d\n", binary, int(pid))
+					log.Logger().Infof("killing %s process with pid %d", binary, int(pid))
 					err = p.Terminate()
 					if err != nil {
-						log.Warnf("Failed to terminate process with pid %d: %s", int(pid), err)
+						log.Logger().Warnf("Failed to terminate process with pid %d: %s", int(pid), err)
 					} else {
-						log.Infof("killed %s process with pid %d\n", binary, int(pid))
+						log.Logger().Infof("killed %s process with pid %d", binary, int(pid))
 					}
 					return true, err
 				}

@@ -3,11 +3,11 @@ package chats
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
-// CreateChatProvider represents an integration interface to chat
+// ChatProvider represents an integration interface to chat
 type ChatProvider interface {
 	GetChannelMetrics(name string) (*ChannelMetrics, error)
 }

@@ -1,0 +1,5 @@
+dependencies:
+- host: github.com
+  owner: jenkins-x
+  repo: jx
+  version: 2.0.0

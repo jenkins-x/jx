@@ -274,26 +274,6 @@ func (a *account) List() ([]Account, error) {
 	return accounts, err
 }
 
-func GetAccounts(accounts []Account) map[string]*Account {
-	mapaccounts := make(map[string]*Account)
-	i := 1
-	for _, account := range accounts {
-		mapaccounts[accountDisplayText(i, account)] = &account
-		i++
-	}
-	return mapaccounts
-}
-
-func accountDisplayText(i int, account Account) string {
-	if account.GUID == "" {
-		return ""
-	}
-	if account.IMSAccountID == "" {
-		return fmt.Sprintf("%d. %s (%s)", i, account.Name, account.GUID)
-	}
-	return fmt.Sprintf("%d. %s (%s) <-> %s", i, account.Name, account.GUID, account.IMSAccountID)
-}
-
 //FindByOwner ...
 func (a *account) FindByOwner(userID string) (*Account, error) {
 	accounts, err := a.List()

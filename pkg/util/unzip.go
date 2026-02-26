@@ -74,7 +74,7 @@ func UnzipSpecificFiles(src, dest string, onlyFiles ...string) error {
 
 // extract the specific file into the destination directory.
 func extractFile(dest string, f *zip.File) error {
-	name := filepath.Join(dest, f.Name)
+	name := filepath.Join(dest, f.Name) // #nosec
 	// We need to be secure to prevent attacks like
 	// https://snyk.io/blog/zip-slip-vulnerability
 	// the result is already 'Clean'ed so we only need to check the string starts
@@ -89,7 +89,10 @@ func extractFile(dest string, f *zip.File) error {
 	defer rc.Close()
 
 	if f.FileInfo().IsDir() {
-		os.MkdirAll(name, os.ModePerm)
+		err := os.MkdirAll(name, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	} else {
 		var fdir string
 		if lastIndex := strings.LastIndex(name, string(os.PathSeparator)); lastIndex > -1 {
@@ -107,7 +110,8 @@ func extractFile(dest string, f *zip.File) error {
 		}
 		defer f.Close()
 
-		_, err = io.Copy(f, rc)
+		limited := io.LimitReader(rc, 100*1024*1024)
+		_, err = io.Copy(f, limited)
 		if err != nil {
 			return err
 		}

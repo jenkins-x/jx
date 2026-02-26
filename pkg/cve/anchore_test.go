@@ -1,3 +1,5 @@
+// +build unit
+
 package cve_test
 
 import (
@@ -10,10 +12,10 @@ import (
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/cve"
-	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/cve"
+	"github.com/jenkins-x/jx/v2/pkg/table"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/suite"
 )
 

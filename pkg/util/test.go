@@ -7,12 +7,12 @@ import (
 
 func handleErr(request *http.Request, response http.ResponseWriter, err error) {
 	response.WriteHeader(http.StatusInternalServerError)
-	response.Write([]byte(err.Error()))
+	response.Write([]byte(err.Error())) //nolint:errcheck
 }
 
 func handleOk(response http.ResponseWriter, body []byte) {
 	response.WriteHeader(http.StatusOK)
-	response.Write(body)
+	response.Write(body) //nolint:errcheck
 }
 
 type MethodMap map[string]string

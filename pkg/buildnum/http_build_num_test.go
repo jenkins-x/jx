@@ -1,3 +1,5 @@
+// +build unit
+
 package buildnum
 
 import (
@@ -6,11 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/buildnum/mocks/matchers"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/buildnum/mocks/matchers"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
 	. "github.com/petergtz/pegomock"
 
-	"github.com/jenkins-x/jx/pkg/buildnum/mocks"
+	build_num_test "github.com/jenkins-x/jx/v2/pkg/buildnum/mocks"
 
 	"github.com/stretchr/testify/assert"
 )

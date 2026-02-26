@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 type GitIssueProvider struct {

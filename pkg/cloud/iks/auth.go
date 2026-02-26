@@ -56,26 +56,34 @@ type ConfigJSON struct {
 func ConfigFromJSON(config *ibmcloud.Config) (accountID string, err error) {
 	configjson := new(ConfigJSON)
 	usr, err := user.Current()
-	if err == nil {
-		jsonFile, err := os.Open(usr.HomeDir + "/.bluemix/config.json")
-		if err == nil {
-			defer jsonFile.Close()
-			byteValue, _ := ioutil.ReadAll(jsonFile)
-
-			json.Unmarshal(byteValue, configjson)
-
-			config.Region = configjson.Region
-			config.IAMAccessToken = configjson.IAMToken
-			config.IAMRefreshToken = configjson.IAMRefreshToken
-			config.SSLDisable = configjson.SSLDisabled
-			config.Region = configjson.Region
-			config.BluemixAPIKey = "fake"
-			config.IBMID = "fake"
-			config.IBMIDPassword = "fake"
-			accountID = configjson.Account.GUID
-		}
+	if err != nil {
+		return "", err
 	}
-	return
+
+	jsonFile, err := os.Open(usr.HomeDir + "/.bluemix/config.json")
+	if err != nil {
+		return "", err
+	}
+
+	defer jsonFile.Close() //nolint:errcheck
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	err = json.Unmarshal(byteValue, configjson)
+	if err != nil {
+		return "", err
+	}
+
+	config.Region = configjson.Region
+	config.IAMAccessToken = configjson.IAMToken
+	config.IAMRefreshToken = configjson.IAMRefreshToken
+	config.SSLDisable = configjson.SSLDisabled
+	config.Region = configjson.Region
+	config.BluemixAPIKey = "fake"
+	config.IBMID = "fake"
+	config.IBMIDPassword = "fake"
+	accountID = configjson.Account.GUID
+
+	return accountID, nil
 }
 
 func getIAMAuthRepository(config *ibmcloud.Config) (*IAMAuthRepository, error) {

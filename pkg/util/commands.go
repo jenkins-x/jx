@@ -1,14 +1,16 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
+
+	"github.com/cenkalti/backoff"
 )
 
 // Command is a struct containing the details of an external command to be executed
@@ -22,7 +24,35 @@ type Command struct {
 	Timeout            time.Duration
 	Out                io.Writer
 	Err                io.Writer
+	In                 io.Reader
 	Env                map[string]string
+}
+
+// CommandError is the error object encapsulating an error from a Command
+type CommandError struct {
+	Command Command
+	Output  string
+	cause   error
+}
+
+func (c CommandError) Error() string {
+	// sanitise any password arguments before printing the error string. The actual sensitive argument is still present
+	// in the Command object
+	sanitisedArgs := make([]string, len(c.Command.Args))
+	copy(sanitisedArgs, c.Command.Args)
+	for i, arg := range sanitisedArgs {
+		if strings.Contains(strings.ToLower(arg), "password") && i < len(sanitisedArgs)-1 {
+			// sanitise the subsequent argument to any 'password' fields
+			sanitisedArgs[i+1] = "*****"
+		}
+	}
+
+	return fmt.Sprintf("failed to run '%s %s' command in directory '%s', output: '%s'",
+		c.Command.Name, strings.Join(sanitisedArgs, " "), c.Command.Dir, c.Output)
+}
+
+func (c CommandError) Cause() error {
+	return c.cause
 }
 
 // SetName Setter method for Name to enable use of interface instead of Command struct
@@ -70,7 +100,7 @@ func (c *Command) SetEnv(env map[string]string) {
 	c.Env = env
 }
 
-// CurrentEnv returns the current envrionment variables
+// CurrentEnv returns the current environment variables
 func (c *Command) CurrentEnv() map[string]string {
 	return c.Env
 }
@@ -114,7 +144,10 @@ func (c *Command) Error() error {
 
 // Run Execute the command and block waiting for return values
 func (c *Command) Run() (string, error) {
-	os.Setenv("PATH", PathWithBinary(c.Dir))
+	err := os.Setenv("PATH", PathWithBinary(c.Dir))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to set PATH env variable")
+	}
 	var r string
 	var e error
 
@@ -134,7 +167,7 @@ func (c *Command) Run() (string, error) {
 	}
 	c.ExponentialBackOff.MaxElapsedTime = c.Timeout
 	c.ExponentialBackOff.Reset()
-	err := backoff.Retry(f, c.ExponentialBackOff)
+	err = backoff.Retry(f, c.ExponentialBackOff)
 	if err != nil {
 		return "", err
 	}
@@ -143,7 +176,10 @@ func (c *Command) Run() (string, error) {
 
 // RunWithoutRetry Execute the command without retrying on failure and block waiting for return values
 func (c *Command) RunWithoutRetry() (string, error) {
-	os.Setenv("PATH", PathWithBinary(c.Dir))
+	err := os.Setenv("PATH", PathWithBinary(c.Dir))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to set PATH env variable")
+	}
 	var r string
 	var e error
 
@@ -155,8 +191,24 @@ func (c *Command) RunWithoutRetry() (string, error) {
 	return r, e
 }
 
+func (c *Command) String() string {
+	var builder strings.Builder
+	for k, v := range c.Env {
+		builder.WriteString(k)
+		builder.WriteString("=")
+		builder.WriteString(v)
+		builder.WriteString(" ")
+	}
+	builder.WriteString(c.Name)
+	for _, arg := range c.Args {
+		builder.WriteString(" ")
+		builder.WriteString(arg)
+	}
+	return builder.String()
+}
+
 func (c *Command) run() (string, error) {
-	e := exec.Command(c.Name, c.Args...)
+	e := exec.Command(c.Name, c.Args...) // #nosec
 	if c.Dir != "" {
 		e.Dir = c.Dir
 	}
@@ -187,39 +239,53 @@ func (c *Command) run() (string, error) {
 		e.Stderr = c.Err
 	}
 
+	if c.In != nil {
+		e.Stdin = c.In
+	}
+
 	var text string
 	var err error
 
 	if c.Out != nil {
 		err := e.Run()
 		if err != nil {
-			return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
-				c.Name, strings.Join(c.Args, " "), c.Dir, text)
+			return text, CommandError{
+				Command: *c,
+				cause:   err,
+			}
 		}
 	} else {
 		data, err := e.CombinedOutput()
 		output := string(data)
 		text = strings.TrimSpace(output)
 		if err != nil {
-			return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
-				c.Name, strings.Join(c.Args, " "), c.Dir, text)
+			return text, CommandError{
+				Command: *c,
+				Output:  text,
+				cause:   err,
+			}
 		}
 	}
 
 	return text, err
 }
 
-// PathWithBinary Sets the $PATH variable. Accepts an optional slice of strings containing paths to add to $PATH
-func PathWithBinary(paths ...string) string {
-	path := os.Getenv("PATH")
-	binDir, _ := JXBinLocation()
-	answer := path + string(os.PathListSeparator) + binDir
+//PathWithBinary Returns the path to be used to execute a binary from, takes the form JX_HOME/bin:mvnBinDir:customPaths
+func PathWithBinary(customPaths ...string) string {
+	existingEnvironmentPath := os.Getenv("PATH")
+
+	extraPaths := ""
+	for _, p := range customPaths {
+		if p != "" {
+			extraPaths += string(os.PathListSeparator) + p
+		}
+	}
+
 	mvnBinDir, _ := MavenBinaryLocation()
 	if mvnBinDir != "" {
-		answer += string(os.PathListSeparator) + mvnBinDir
+		extraPaths += string(os.PathListSeparator) + mvnBinDir
 	}
-	for _, p := range paths {
-		answer += string(os.PathListSeparator) + p
-	}
-	return answer
+	jxBinDir, _ := JXBinLocation()
+
+	return jxBinDir + string(os.PathListSeparator) + existingEnvironmentPath + extraPaths
 }

@@ -1,0 +1,16 @@
+cat: {}
+cherry_pick_unapproved: {}
+config_updater:
+  gzip: false
+heart: {}
+label:
+  additional_labels: null
+owners: {}
+requiresig: {}
+sigmention: {}
+size:
+  l: 0
+  m: 0
+  s: 0
+  xl: 0
+  xxl: 0

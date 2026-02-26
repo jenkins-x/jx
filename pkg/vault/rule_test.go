@@ -1,10 +1,12 @@
+// +build unit
+
 package vault_test
 
 import (
 	"testing"
 
 	"github.com/hashicorp/hcl"
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/v2/pkg/vault"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +14,6 @@ func TestEncodeVaultPathRule(t *testing.T) {
 	tests := map[string]struct {
 		rule *vault.PathRule
 		err  bool
-		want string
 	}{
 		"marshal policy": {
 			rule: &vault.PathRule{

@@ -1,0 +1,32 @@
+pipelineConfig:
+  pipelines:
+    release:
+      pipeline:
+        options:
+          sidecars:
+            - name: top-level-sidecar
+              image: top-level/sidecar:tag
+        agent:
+          image: some-image
+        stages:
+          - name: A Working Stage
+            options:
+              sidecars:
+                - name: stage-level-sidecar
+                  image: stage-level/sidecar:latest
+                  volumeMounts:
+                    - name: shared-volume
+                      mountPath: /shared
+              volumes:
+                - name: shared-volume
+                  emptyDir: {}
+              containerOptions:
+                volumeMounts:
+                  - name: shared-volume
+                    mountPath: /mnt/shared
+            steps:
+              - command: echo
+                args:
+                  - hello
+                  - world
+                name: A Step With Spaces And Such

@@ -1,0 +1,13 @@
+currentserver: test
+defaultusername: "test"
+pipelineserver: "test"
+pipelineusername: "test"
+servers:
+- currentuser: "test"
+  kind: github
+  name: ghe
+  url: https://github.something.com
+  users:
+  - apitoken: "vault:test-cluster/pipelineUser:token"
+    bearertoken: ""
+    username: "test"

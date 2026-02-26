@@ -1,10 +1,12 @@
+// +build unit
+
 package util_test
 
 import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -120,7 +122,7 @@ func TestRetoreEnviron(t *testing.T) {
 			}
 			for wantKey, wantValue := range tc.want {
 				value, set := os.LookupEnv(wantKey)
-				assert.Truef(t, set, "should set env vairable '%s'", wantKey)
+				assert.Truef(t, set, "should set env variable '%s'", wantKey)
 				assert.Equalf(t, wantValue, value, "should set env variable '%s'='%s'", wantKey, wantValue)
 				err := os.Unsetenv(wantKey)
 				assert.NoError(t, err, "should unset the envariable '%s", wantKey)

@@ -1,3 +1,5 @@
+// +build unit
+
 package gits_test
 
 import (
@@ -7,15 +9,14 @@ import (
 	"testing"
 
 	bitbucket "github.com/gfleury/go-bitbucket-v1"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
-	userName = "test-user"
-	orgname  = "test-org"
+	orgname = "test-org"
 )
 
 type BitbucketServerProviderTestSuite struct {
@@ -49,8 +50,20 @@ var bitbucketServerRouter = util.Router{
 		"GET": "pr.json",
 		"PUT": "pr.json",
 	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/7": util.MethodMap{
+		"GET": "pr-merge-success.json",
+	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/commits": util.MethodMap{
 		"GET": "pr-commits.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/7/commits": util.MethodMap{
+		"GET": "pr-commits.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/activities": util.MethodMap{
+		"GET": "pr-activity.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/7/activities": util.MethodMap{
+		"GET": "pr-activity.json",
 	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/merge": util.MethodMap{
 		"POST": "pr-merge-success.json",
@@ -60,12 +73,22 @@ var bitbucketServerRouter = util.Router{
 	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks": util.MethodMap{
 		"POST": "webhook.json",
+		"GET":  "webhooks.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks/123": util.MethodMap{
+		"PUT": "webhook.json",
 	},
 	"/rest/api/1.0/users/test-user": util.MethodMap{
 		"GET": "user.json",
 	},
 	"/rest/build-status/1.0/commits/d6f24ee03d76a2caf0a4e1975fb43e8f61759b9c": util.MethodMap{
 		"GET": "build-statuses.json",
+	},
+	"/rest/api/1.0/projects/test-org/repos/repo/permissions/users": util.MethodMap{
+		"PUT": "user.json",
+	},
+	"/rest/api/1.0/application-properties": util.MethodMap{
+		"GET": "app-props.json",
 	},
 }
 
@@ -120,6 +143,35 @@ func (suite *BitbucketServerProviderTestSuite) TestListOrganizations() {
 	suite.Require().NotEmpty(orgs)
 }
 
+// https://github.com/jenkins-x/jx/issues/2682
+// Issue #2682
+func (suite *BitbucketServerProviderTestSuite) TestListOrganizationsFailing() {
+	as := auth.AuthServer{}
+	ua := auth.UserAuth{}
+
+	git := gits.NewGitCLI()
+	bp, err := gits.NewBitbucketServerProvider(&as, &ua, git)
+
+	suite.Require().NotNil(bp)
+	suite.Require().Nil(err)
+
+	var ok bool
+	provider, ok := bp.(*gits.BitbucketServerProvider)
+	suite.Require().True(ok)
+	suite.Require().NotNil(suite.provider)
+
+	// Broken URL
+	cfg := bitbucket.NewConfiguration("http://127.0.0.1:4444/rest")
+	ctx := context.Background()
+
+	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, ua.ApiToken)
+	provider.Client = bitbucket.NewAPIClient(apiKeyAuthContext, cfg)
+
+	orgs, err := provider.ListOrganisations()
+	suite.Require().EqualError(err, "Get http://127.0.0.1:4444/rest/api/1.0/projects?limit=25&start=0: dial tcp 127.0.0.1:4444: connect: connection refused")
+	suite.Require().Empty(orgs)
+
+}
 func (suite *BitbucketServerProviderTestSuite) TestListRepositories() {
 	repos, err := suite.provider.ListRepositories("TEST-ORG")
 
@@ -178,7 +230,7 @@ func (suite *BitbucketServerProviderTestSuite) TestForkRepository() {
 
 func (suite *BitbucketServerProviderTestSuite) TestCreatePullRequest() {
 	args := gits.GitPullRequestArguments{
-		GitRepositoryInfo: &gits.GitRepositoryInfo{
+		GitRepository: &gits.GitRepository{
 			Name:    "test-repo",
 			Project: "TEST-ORG",
 		},
@@ -193,6 +245,7 @@ func (suite *BitbucketServerProviderTestSuite) TestCreatePullRequest() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "OPEN")
+	suite.Require().Equal(pr.Title, args.Title)
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestUpdatePullRequestStatus() {
@@ -216,17 +269,18 @@ func (suite *BitbucketServerProviderTestSuite) TestUpdatePullRequestStatus() {
 func (suite *BitbucketServerProviderTestSuite) TestGetPullRequest() {
 
 	pr, err := suite.provider.GetPullRequest(
-		"test-user",
-		&gits.GitRepositoryInfo{Name: "test-repo", Project: "TEST-ORG"},
+		"TEST-ORG",
+		&gits.GitRepository{Name: "test-repo", Project: "TEST-ORG"},
 		1,
 	)
 
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.Number, 1)
+	suite.Require().Equal(pr.Title, "Test Pull Request")
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestPullRequestCommits() {
-	commits, err := suite.provider.GetPullRequestCommits("test-user", &gits.GitRepositoryInfo{
+	commits, err := suite.provider.GetPullRequestCommits("TEST-ORG", &gits.GitRepository{
 		URL:     "https://auth.example.com/projects/TEST-ORG/repos/test-repo",
 		Name:    "test-repo",
 		Project: "TEST-ORG",
@@ -280,16 +334,62 @@ func (suite *BitbucketServerProviderTestSuite) TestMergePullRequest() {
 	err := suite.provider.MergePullRequest(pr, "Merging from unit tests")
 
 	suite.Require().Nil(err)
+
+	pr2, err := suite.provider.GetPullRequest(
+		"TEST-ORG",
+		&gits.GitRepository{Name: "test-repo", Project: "TEST-ORG"},
+		7,
+	)
+
+	suite.Require().Nil(err)
+	suite.Require().Equal(*pr2.Number, 7)
+	suite.T().Logf("PR: %+v", pr2)
+	suite.Require().Equal(*pr2.Merged, true)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestJenkinsWebHookPath() {
+	p := suite.provider.JenkinsWebHookPath("notUsed", "notUsed")
+	suite.Require().Equal("/bitbucket-scmsource-hook/notify?server_url=http%3A%2F%2Fauth.example.com", p)
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestCreateWebHook() {
 
 	data := &gits.GitWebHookArguments{
-		Repo:   &gits.GitRepositoryInfo{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
+		Repo:   &gits.GitRepository{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
 		URL:    "https://my-jenkins.example.com/bitbucket-webhook/",
 		Secret: "someSecret",
 	}
 	err := suite.provider.CreateWebHook(data)
+
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestListWebHooks() {
+
+	webHooks, err := suite.provider.ListWebHooks("TEST-ORG", "test-repo")
+
+	suite.Require().Nil(err)
+	suite.Require().Len(webHooks, 1)
+
+	webHook := webHooks[0]
+	suite.Require().Equal(gits.GitWebHookArguments{
+		ID:     123,
+		Owner:  "TEST-ORG",
+		Repo:   nil,
+		URL:    "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		Secret: "abc123",
+	}, *webHook)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestUpdateWebHook() {
+
+	data := &gits.GitWebHookArguments{
+		Repo:        &gits.GitRepository{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
+		URL:         "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		ExistingURL: "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		Secret:      "someSecret",
+	}
+	err := suite.provider.UpdateWebHook(data)
 
 	suite.Require().Nil(err)
 }
@@ -301,7 +401,7 @@ func (suite *BitbucketServerProviderTestSuite) TestUserInfo() {
 	suite.Require().Equal(gits.GitUser{
 		Login: "test-user",
 		Name:  "Test User",
-		Email: "",
+		Email: "test-user@example.com",
 		URL:   "http://auth.example.com/users/test-user",
 	}, *userInfo)
 }

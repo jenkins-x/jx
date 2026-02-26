@@ -7,7 +7,7 @@ func Int32ToA(n int32) string {
 }
 
 func AtoInt32(text string) (int32, error) {
-	i, err := strconv.Atoi(text)
+	i, err := strconv.ParseInt(text, 10, 32)
 	if err != nil {
 		return 0, err
 	}

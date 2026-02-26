@@ -1,0 +1,24 @@
+cat: {}
+cherry_pick_unapproved: {}
+config_updater:
+  gzip: false
+  maps:
+    env/prow/config.yaml:
+      name: config
+    env/prow/plugins.yaml:
+      name: plugins
+heart: {}
+label:
+  additional_labels: null
+owners: {}
+plugins:
+  @@DEV_ENV_ORG@@/environment-@@DEV_ENV_ORG@@-@@DEV_ENV_REPO@@-dev:
+  - config-updater
+requiresig: {}
+sigmention: {}
+size:
+  l: 0
+  m: 0
+  s: 0
+  xl: 0
+  xxl: 0

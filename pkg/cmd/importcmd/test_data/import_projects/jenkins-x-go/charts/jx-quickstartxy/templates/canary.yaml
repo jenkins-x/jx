@@ -1,0 +1,85 @@
+{{- if .Values.canary.enabled }}
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    draft: {{ default "draft-app" .Values.draft }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+  provider: istio
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ template "fullname" . }}
+  progressDeadlineSeconds: {{ .Values.canary.progressDeadlineSeconds }}
+  {{- if .Values.hpa.enabled }}
+  autoscalerRef:
+    apiVersion: autoscaling/v2beta1
+    kind: HorizontalPodAutoscaler
+    name: {{ template "fullname" . }}
+  {{- end }}
+  service:
+    port: {{ .Values.service.externalPort }}
+    targetPort: {{ .Values.service.internalPort }}
+    gateways:
+    - {{ template "fullname" . }}
+    hosts:
+    - {{ .Values.canary.host }}
+  analysis:
+    interval: {{ .Values.canary.canaryAnalysis.interval }}
+    threshold: {{ .Values.canary.canaryAnalysis.threshold }}
+    maxWeight: {{ .Values.canary.canaryAnalysis.maxWeight }}
+    stepWeight: {{ .Values.canary.canaryAnalysis.stepWeight }}
+    metrics:
+    - name: request-success-rate
+      threshold: {{ .Values.canary.canaryAnalysis.metrics.requestSuccessRate.threshold }}
+      interval: {{ .Values.canary.canaryAnalysis.metrics.requestSuccessRate.interval }}
+    - name: latency
+      templateRef:
+        name: latency
+      thresholdRange:
+        max: {{ .Values.canary.canaryAnalysis.metrics.requestDuration.threshold }}
+      interval: {{ .Values.canary.canaryAnalysis.metrics.requestDuration.interval }}
+
+---
+
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: latency
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.istio-system:9090
+  query: |
+    histogram_quantile(
+        0.99,
+        sum(
+            rate(
+                istio_request_duration_milliseconds_bucket{
+                    reporter="destination",
+                    destination_workload_namespace="{{ "{{" }} namespace {{ "}}" }}",
+                    destination_workload=~"{{ "{{" }} target {{ "}}" }}"
+                }[{{ "{{" }} interval {{ "}}" }}]
+            )
+        ) by (le)
+    )
+
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: {{ .Values.service.externalPort }}
+      name: http
+      protocol: HTTP
+    hosts:
+    - {{ .Values.canary.host }}
+{{- end }}

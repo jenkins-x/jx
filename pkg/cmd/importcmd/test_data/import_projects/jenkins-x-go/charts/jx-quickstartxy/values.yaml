@@ -1,0 +1,95 @@
+# Default values for Go projects.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+image:
+  repository: draft
+  tag: dev
+  pullPolicy: IfNotPresent
+
+# define environment variables here as a map of key: value
+env:
+
+# enable this flag to use knative serve to deploy the app
+knativeDeploy: false
+
+# HorizontalPodAutoscaler
+hpa:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  cpuTargetAverageUtilization: 80
+  memoryTargetAverageUtilization: 80
+
+# Canary deployments
+# If enabled, Istio v1.5+ and Flagger need to be installed in the cluster
+canary:
+  enabled: false
+  progressDeadlineSeconds: 60
+  canaryAnalysis:
+    interval: "1m"
+    threshold: 5
+    maxWeight: 60
+    stepWeight: 20
+    # WARNING: Canary deployments will fail and rollback if there is no traffic that will generate the below specified metrics.
+    metrics:
+      requestSuccessRate:
+        threshold: 99
+        interval: "1m"
+      requestDuration:
+        threshold: 1000
+        interval: "1m"
+  # The host is using Istio Gateway and is currently not auto-generated
+  # Please overwrite the `canary.host` in `values.yaml` in each environment repository (e.g., staging, production)
+  host: acme.com
+
+service:
+  name: jx-quickstartxy
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 8080
+  annotations:
+    fabric8.io/expose: "true"
+    fabric8.io/ingress.annotations: "kubernetes.io/ingress.class: nginx"
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 80m
+    memory: 128Mi
+probePath: /
+livenessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+readinessProbe:
+  failureThreshold: 1
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+
+# custom ingress annotations on this service
+ingress:
+  annotations:
+#      kubernetes.io/ingress.class: nginx
+
+# values we use from the `jx-requirements.yml` file if we are using helmfile and helm 3
+jxRequirements:
+  ingress:
+    domain: ""
+    externalDNS: false
+    namespaceSubDomain: -jx.
+    tls:
+      email: ""
+      enabled: false
+      production: false
+
+    # For Kubernetes v1.14+, use 'networking.k8s.io/v1beta1'
+    apiVersion: "extensions/v1beta1"
+
+    # shared ingress annotations on all services
+    annotations:
+    #  kubernetes.io/ingress.class: nginx

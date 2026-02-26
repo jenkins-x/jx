@@ -1,9 +1,11 @@
+// +build unit
+
 package util_test
 
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,5 +32,43 @@ func TestUrlHostNameWithoutPort(t *testing.T) {
 		actual, err := util.UrlHostNameWithoutPort(rawURI)
 		assert.NoError(t, err, "for input: %s", rawURI)
 		assert.Equal(t, expected, actual, "for input: %s", rawURI)
+	}
+}
+
+func TestSanitizeURL(t *testing.T) {
+	t.Parallel()
+	tests := map[string]string{
+		"http://test.com":                 "http://test.com",
+		"http://user:test@github.com":     "http://github.com",
+		"https://user:test@github.com":    "https://github.com",
+		"https://user:@github.com":        "https://github.com",
+		"https://:pass@github.com":        "https://github.com",
+		"git@github.com:jenkins-x/jx.git": "git@github.com:jenkins-x/jx.git",
+		"invalid/url":                     "invalid/url",
+	}
+
+	for test, expected := range tests {
+		t.Run(test, func(t *testing.T) {
+			actual := util.SanitizeURL(test)
+			assert.Equal(t, expected, actual, "for url: %s", test)
+		})
+	}
+}
+
+func TestIsURL(t *testing.T) {
+	t.Parallel()
+	tests := map[string]bool{
+		"":                 false,
+		"/a/b/c":           false,
+		"http//test.com":   false,
+		"http://test.com":  true,
+		"https://test.com": true,
+	}
+
+	for test, expected := range tests {
+		t.Run(test, func(t *testing.T) {
+			actual := util.IsValidUrl(test)
+			assert.Equal(t, expected, actual, "%s", test)
+		})
 	}
 }

@@ -9,14 +9,22 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/cmd/testhelpers"
+
+	"github.com/jenkins-x/jx/v2/pkg/gits"
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+	"github.com/jenkins-x/jx/v2/pkg/tests"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEnvModifyNamespace(t *testing.T) {
+	originalKubeCfg, tempKubeCfg, err := testhelpers.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := testhelpers.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
 	tempDir, err := ioutil.TempDir("", "test-env-modify-namespace")
 	assert.NoError(t, err)
 
@@ -46,7 +54,7 @@ func TestEnvModifyNamespace(t *testing.T) {
 	env := kube.NewPermanentEnvironment("jx")
 	env.Spec.Namespace = testNs
 
-	err = kube.ModifyNamespace(os.Stdout, tempDir, env, git)
+	err = kube.ModifyNamespace(os.Stdout, tempDir, env, git, nil)
 	assert.NoError(t, err)
 
 	tests.AssertFileContains(t, filepath.Join(tempDir, "Makefile"), `NAMESPACE := "`+testNs+`"`)

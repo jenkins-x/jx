@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jenkins-x/jx/v2/pkg/kube"
+
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -21,12 +23,6 @@ type ImagePullSecret struct {
 
 // PatchImagePullSecrets patches the specified ImagePullSecrets to the given service account
 func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string, imagePullSecrets []string) error {
-	// If we ever have log.Debugf, these would be useful to print
-	//log.Infof("Namespace: %s\n", ns)
-	//log.Infof("Service Account: %s\n", sa)
-	//log.Infof("Secret: %s\n", imagePullSecrets)
-
-	// '{"imagePullSecrets": [{"name": "<secret>"}]}'
 	var ips []ImagePullSecret
 	for _, secret := range imagePullSecrets {
 		jsonSecret := ImagePullSecret{
@@ -41,7 +37,7 @@ func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string
 	if err != nil {
 		return err
 	}
-	//log.Infof("Resultant JSON: %s\n", string(b))
+	//log.Logger().Infof("Resultant JSON: %s\n", string(b))
 	_, err = kubeClient.CoreV1().ServiceAccounts(ns).Patch(sa, types.StrategicMergePatchType, b)
 	if err != nil {
 		return err
@@ -50,13 +46,17 @@ func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string
 }
 
 const (
-	subjectKind                  = "ServiceAccount"
-	serviceAccountNameAnnotation = "kubernetes.io/service-account.name"
-	tokenDataKey                 = "token"
+	subjectKind  = "ServiceAccount"
+	tokenDataKey = "token"
+	certDataKey  = "ca.crt"
 )
 
 // CreateServiceAccount creates a new services account in the given namespace and returns the service account name
 func CreateServiceAccount(kubeClient kubernetes.Interface, namespace string, name string) (*v1.ServiceAccount, error) {
+	err := kube.EnsureNamespaceCreated(kubeClient, namespace, nil, nil)
+	if err != nil {
+		return nil, err
+	}
 	sa, err := kubeClient.CoreV1().ServiceAccounts(namespace).Get(name, metav1.GetOptions{})
 	// If a services account already exists just re-use it
 	if err == nil {
@@ -93,7 +93,17 @@ func DeleteServiceAccount(kubeClient kubernetes.Interface, namespace string, nam
 }
 
 // GetServiceAccountToken return the token of a service account
-func GetServiceAccountToken(kubeClient kubernetes.Interface, namespace string, name string) (string, error) {
+func GetServiceAccountToken(kubeClient kubernetes.Interface, namespace string, serviceAccountName string) (string, error) {
+	return getServiceAccountSecret(kubeClient, namespace, serviceAccountName, tokenDataKey)
+}
+
+// GetServiceAccountCert returns the certificate data for the specified service account in the given namespace.
+// Returns an error if an error occurs retrieving the certificate.
+func GetServiceAccountCert(kubeClient kubernetes.Interface, namespace string, serviceAccountName string) (string, error) {
+	return getServiceAccountSecret(kubeClient, namespace, serviceAccountName, certDataKey)
+}
+
+func getServiceAccountSecret(kubeClient kubernetes.Interface, namespace string, serviceAccountName string, key string) (string, error) {
 	secretList, err := kubeClient.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "listing secrets")
@@ -101,14 +111,14 @@ func GetServiceAccountToken(kubeClient kubernetes.Interface, namespace string, n
 	for _, secret := range secretList.Items {
 		annotations := secret.ObjectMeta.Annotations
 		for k, v := range annotations {
-			if k == serviceAccountNameAnnotation && v == name {
-				token, ok := secret.Data[tokenDataKey]
+			if k == v1.ServiceAccountNameKey && v == serviceAccountName {
+				data, ok := secret.Data[key]
 				if !ok {
-					return "", errors.New("no token found in service account secret")
+					return "", fmt.Errorf("no %s found for service account %s in namespace %s", key, serviceAccountName, namespace)
 				}
-				return string(token), nil
+				return string(data), nil
 			}
 		}
 	}
-	return "", fmt.Errorf("no token found for service account name %s", name)
+	return "", fmt.Errorf("no %s found for service account %s in namespace %s", key, serviceAccountName, namespace)
 }

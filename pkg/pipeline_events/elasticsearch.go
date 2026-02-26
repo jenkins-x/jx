@@ -5,16 +5,18 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"fmt"
 
 	"bytes"
 
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	v1 "github.com/jenkins-x/jx-api/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/auth"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 type result interface {
@@ -90,7 +92,10 @@ func (e ElasticsearchProvider) SendRelease(r *v1.Release) error {
 				r.Namespace: r.CreationTimestamp.String(),
 			},
 		}
-		e.SendIssue(&esissue)
+		err = e.SendIssue(&esissue)
+		if err != nil {
+			return errors.Wrapf(err, "send issue")
+		}
 	}
 	return nil
 }
@@ -104,7 +109,7 @@ func (e ElasticsearchProvider) SendIssue(i *ESIssue) error {
 	}
 	var index *Index
 
-	log.Infof("sending issue %s\n", id)
+	log.Logger().Infof("sending issue %s", id)
 	err = e.post("issues", id, data, &index)
 	if err != nil {
 		return err

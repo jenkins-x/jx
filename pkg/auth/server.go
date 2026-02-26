@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 func (s *AuthServer) Label() string {
@@ -70,6 +70,9 @@ func (s *AuthServer) CurrentAuth() *UserAuth {
 }
 
 func (s *AuthServer) GetUserAuth(username string) *UserAuth {
+	if s == nil {
+		return nil
+	}
 	for _, user := range s.Users {
 		if username == user.Username {
 			return user

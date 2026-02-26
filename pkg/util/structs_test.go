@@ -1,9 +1,11 @@
+// +build unit
+
 package util_test
 
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

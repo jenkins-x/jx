@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx-logging/pkg/log"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 type BlogBarReport struct {
@@ -48,7 +48,7 @@ func (r *BlogBarReport) Render() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Generated JavaScript %s\n", util.ColorInfo(r.JSFileName))
+	log.Logger().Infof("Generated JavaScript %s", util.ColorInfo(r.JSFileName))
 	return nil
 }
 

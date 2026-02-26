@@ -5,7 +5,7 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/v2/pkg/util"
 )
 
 type Table struct {

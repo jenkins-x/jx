@@ -1,0 +1,44 @@
+buildPack: none
+pipelineConfig:
+  pipelines:
+    pullRequest:
+      pipeline:
+        agent:
+          image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+        stages:
+          - name: ci
+            environment:
+              - name: BASE_WORKSPACE
+                value: /workspace/source
+              - name: GOPATH
+                value: /workspace/go
+              - name: PATH
+                value: "/usr/local/git/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/workspace/go/bin"
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 8Gi
+                  requests:
+                    cpu: 3
+                    memory: 6Gi
+            steps:
+              - name: mk-jx-project-dir
+                image: bash
+                command: mkdir
+                args:
+                  - -p
+                  - /workspace/go/src/github.com/jenkins-x/jx
+              - name: copy-jx-project-to-gopath
+                image: bash
+                command: cp
+                args:
+                  - -Rv
+                  - "./"
+                  - "/workspace/go/src/github.com/jenkins-x/jx"
+                dir: /workspace/source
+              - name: generate
+                image: golang:1.13.8
+                command: ./hack/generate.sh
+                dir: /workspace/go/src/github.com/jenkins-x/jx

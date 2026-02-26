@@ -1,6 +1,6 @@
 package jenkins
 
-import "github.com/jenkins-x/jx/pkg/gits"
+import "github.com/jenkins-x/jx/v2/pkg/gits"
 
 func BranchPattern(gitKind string) string {
 	switch gitKind {

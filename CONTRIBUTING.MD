@@ -6,11 +6,12 @@ development environment for working on the jx source code.
 
 ## Prerequisites
 
-To compile and test jx binaries you will need:
+To compile, test and contribute towards the jx binaries you will need:
 
  - [git][]
- - [Go][] 1.11 or later, with support for compiling to `linux/amd64`
+ - [Go][] 1.11, 1.12 or 1.13, with support for compiling to `linux/amd64` (Go version 1.14 is at the moment not supported).
  - [dep](https://github.com/golang/dep)
+ - [pre-commit](https://pre-commit.com) _optional: we use [detect-secrets](https://github.com/Yelp/detect-secrets) to help prevent secrets leaking into the code base_
  
 
 In most cases, install the prerequisite according to its instructions. See the next section
@@ -127,11 +128,11 @@ A test is unencapsulated (not isolated) if it cannot be run (with repeatable suc
 ### Mocking / Stubbing
 Mocking or stubbing methods in your unit tests will get you a long way towards test isolation. Coupled with the use of interface based APIs you should be able to make your methods easily testable and useful to other packages that may need to import them.
 https://github.com/petergtz/pegomock Is our current mocking library of choice, mainly because it is very easy to use and doesn't require you to write your own mocks (Yay!)
-We place all interfaces for each package in a file called `interface.go` in the relevant folder. So you can find all interfaces for `github.com/jenkins-x/jx/pkg/util` in `github.com/jenkins-x/jx/pkg/util/interface.go` 
+We place all interfaces for each package in a file called `interface.go` in the relevant folder. So you can find all interfaces for `github.com/jenkins-x/jx/v2/pkg/util` in `github.com/jenkins-x/jx/v2/pkg/util/interface.go` 
 Generating/Regenerating a mock for a given interface is easy, just go to the `interface.go` file that corresponds with the interface you would like to mock and add a comment directly above your interface definition that will look something like this:
 ```
 // CommandInterface defines the interface for a Command
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface -o mocks/command_interface.go
+//go:generate pegomock generate github.com/jenkins-x/jx/v2/pkg/util CommandInterface -o mocks/command_interface.go
 type CommandInterface interface {
 	DidError() bool
 	DidFail() bool
@@ -145,7 +146,7 @@ type CommandInterface interface {
 	SetExponentialBackOff(*backoff.ExponentialBackOff)
 }
 ```
-In the example you can see that we pass the generator to use: `pegomock generate` the package path name: `github.com/jenkins-x/jx/pkg/util` the name of the interface: `CommandInterface` and finally an output directive to write the generated file to a mock subfolder. To keep things nice and tidy it's best to write each mocked interface to a separate file in this folder. So in this case: `-o mocks/command_interface.go`
+In the example you can see that we pass the generator to use: `pegomock generate` the package path name: `github.com/jenkins-x/jx/v2/pkg/util` the name of the interface: `CommandInterface` and finally an output directive to write the generated file to a mock subfolder. To keep things nice and tidy it's best to write each mocked interface to a separate file in this folder. So in this case: `-o mocks/command_interface.go`
 
 Now simply run:
 ```
@@ -166,8 +167,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+	"github.com/jenkins-x/jx/v2/pkg/util"
+	mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -184,7 +185,7 @@ func TestJXBinaryLocationSuccess(t *testing.T) {
 ```
 Here we're importing the mock we need in our import declaration:
 ```
-mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+mocks "github.com/jenkins-x/jx/v2/pkg/util/mocks"
 ```
 Then inside the test we're instantiating `NewMockCommandInterface` which was automatically generated for us by pegomock.
 
@@ -259,11 +260,24 @@ dlv --listen=:2345 --headless=true --api-version=2 exec `which jx` -- $*
 
 Then you can change your `jx someArgs` CLI to `jxDebug someArgs` then debug it!
 
+## Pre-commit Hooks
+
+These are installed as a git 'pre-commit' hook and it operates automatically via a hook when using the `git commit` command. To setup this hook:
+* Install [pre-commit](https://pre-commit.com/#install)
+* Once installed, ensure you're at the root of this repository where the `.pre-commit-config.yaml` file exists, then:
+
+```bash
+pre-commit install
+```
+
+If you wish to find out more:
+- [pre-commit](https://pre-commit.com)
+- [git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks)
+
 [git]: https://git-scm.com/
 [dep]: https://github.com/golang/dep 
 [go]: https://golang.org/
 [Homebrew]: https://brew.sh/
 [Kubernetes]: https://github.com/kubernetes/kubernetes
-[Minikube]: https://github.com/kubernetes/minikube
 [upstream]: https://help.github.com/articles/fork-a-repo/
 [upx]: https://upx.github.io
