@@ -191,7 +191,8 @@ func handleCommand(cmd *cobra.Command, args []string) {
 			default:
 				if err := handleEndpointExtensions(cmdPathPieces, pluginDir); err != nil {
 					log.Logger().Errorf("%v", err)
-					os.Exit(1)
+					// Adding plugins to cmd to get correct suggestions for misspelling
+					plugins.RegisterPluginCommands(cmd, true)
 				}
 			}
 		}
