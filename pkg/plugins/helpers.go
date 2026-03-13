@@ -112,12 +112,12 @@ func SetupPluginCompletion(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	registerPluginCommands(root, true)
+	RegisterPluginCommands(root, true)
 }
 
-// registerPluginCommand allows adding Cobra command to the command tree or extracting them for usage in
+// RegisterPluginCommand allows adding Cobra command to the command tree or extracting them for usage in
 // e.g. the help function or for registering the completion function
-func registerPluginCommands(rootCmd *cobra.Command, list bool) (cmds []*cobra.Command) {
+func RegisterPluginCommands(rootCmd *cobra.Command, list bool) (cmds []*cobra.Command) {
 	var userDefinedCommands []*cobra.Command
 
 	for _, plugin := range AllPlugins() {
