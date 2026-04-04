@@ -25,6 +25,7 @@ import (
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 
 	"github.com/blang/semver"
+	goupdate "github.com/inconshreveable/go-update"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/versionstream"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
@@ -34,6 +35,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/gitclient/cli"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 
+	jxutil "github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -239,14 +241,66 @@ func (*CLIOptions) InstallJx(upgrade bool, version string) error {
 	}
 	log.Logger().Infof("downloading version %s...", version)
 	clientURL := fmt.Sprintf("%s%s/"+binary+"-%s-%s.%s", BinaryDownloadBaseURL, version, runtime.GOOS, runtime.GOARCH, extension)
+	sigURL := clientURL + ".sig"
+
+	// Download the binary to a temporary file
+	tmpDir, err := os.MkdirTemp("", "jx-upgrade-")
+	if err != nil {
+		return fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	artifactPath := filepath.Join(tmpDir, binary+"."+extension)
+	sigPath := artifactPath + ".sig"
+
+	log.Logger().Infof("Downloading %s ...", termcolor.ColorInfo(clientURL))
+	err = jxutil.DownloadFile(clientURL, artifactPath)
+	if err != nil {
+		return fmt.Errorf("failed to download binary from %s to %s: %w", clientURL, artifactPath, err)
+	}
+
+	log.Logger().Infof("Downloading signature %s ...", termcolor.ColorInfo(sigURL))
+	err = jxutil.DownloadFile(sigURL, sigPath)
+	if err != nil {
+		log.Logger().Warnf("failed to download signature from %s: %v", sigURL, err)
+		log.Logger().Warnf("proceeding without signature verification (not yet mandatory for all releases)")
+	} else {
+		// Load public key
+		publicKeyURL := "https://raw.githubusercontent.com/jenkins-x/jx/main/jx.pub"
+		publicKeyPEM, err := jxutil.GetFileAsString(publicKeyURL)
+		if err != nil {
+			return fmt.Errorf("failed to download public key from %s: %w", publicKeyURL, err)
+		}
+
+		err = jxutil.VerifySignature(artifactPath, sigPath, []byte(publicKeyPEM))
+		if err != nil {
+			return fmt.Errorf("signature verification failed for %s: %w", clientURL, err)
+		}
+		log.Logger().Infof("Signature verification successful for %s", termcolor.ColorInfo(clientURL))
+	}
+
 	exe, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get the jx executable which is running this command: %w", err)
 	}
 
-	err = selfupdate.UpdateTo(clientURL, exe)
+	f, err := os.Open(artifactPath)
 	if err != nil {
-		return fmt.Errorf("failed to upgrade jx cli to version %s: %w", version, err)
+		return fmt.Errorf("failed to open downloaded artifact: %w", err)
+	}
+	defer f.Close()
+
+	// Uncompress if needed
+	reader, err := selfupdate.UncompressCommand(f, clientURL, binary)
+	if err != nil {
+		return fmt.Errorf("failed to uncompress artifact: %w", err)
+	}
+
+	err = goupdate.Apply(reader, goupdate.Options{
+		TargetPath: exe,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upgrade jx cli from %s: %w", artifactPath, err)
 	}
 	log.Logger().Infof("Jenkins X client has been upgraded to version %s", version)
 	return nil
