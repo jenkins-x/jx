@@ -36,7 +36,7 @@ var (
 	}
 )
 
-// UpgradeOptions the options for upgrading a cluster
+// PluginOptions the options for upgrading plugins
 type PluginOptions struct {
 	CommandRunner cmdrunner.CommandRunner
 	OnlyMandatory bool
@@ -44,7 +44,7 @@ type PluginOptions struct {
 	Path          string
 }
 
-// NewCmdUpgrade creates a command object for the command
+// NewCmdUpgradePlugins creates a command object for upgrading plugins
 func NewCmdUpgradePlugins() (*cobra.Command, *PluginOptions) {
 	o := &PluginOptions{}
 

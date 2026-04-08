@@ -18,7 +18,7 @@ var (
 	`)
 )
 
-// UpgradeOptions the options for upgrading a cluster
+// Options the options for upgrading a cluster
 type Options struct {
 	Cmd *cobra.Command
 }

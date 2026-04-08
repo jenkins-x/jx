@@ -51,10 +51,11 @@ var (
 const (
 	// BinaryDownloadBaseURL the base URL for downloading the binary from - will always have "VERSION/jx-OS-ARCH.EXTENSION" appended to it when used
 	BinaryDownloadBaseURL  = "https://github.com/jenkins-x/jx/releases/download/v"
+	// LatestVersionstreamURL default version stream
 	LatestVersionstreamURL = "https://github.com/jenkins-x/jx3-versions.git"
 )
 
-// UpgradeOptions the options for upgrading a cluster
+// CLIOptions options for upgrade cli
 type CLIOptions struct {
 	CommandRunner       cmdrunner.CommandRunner
 	GitClient           gitclient.Interface
@@ -63,7 +64,7 @@ type CLIOptions struct {
 	FromEnvironment     bool
 }
 
-// NewCmdUpgrade creates a command object for the command
+// NewCmdUpgradeCLI creates new upgrade cmd
 func NewCmdUpgradeCLI() (*cobra.Command, *CLIOptions) {
 	o := &CLIOptions{}
 
@@ -193,6 +194,7 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 	return gitURL, nil
 }
 
+// NeedsUpgrade returns true if upgrade is needed
 func (*CLIOptions) NeedsUpgrade(currentVersion, latestVersion semver.Version) bool {
 	if latestVersion.EQ(currentVersion) {
 		log.Logger().Infof("You are already on the latest version of jx %s", termcolor.ColorInfo(currentVersion.String()))
@@ -310,6 +312,7 @@ func shouldInstallBinary(name string) (bool, error) {
 	return download, nil
 }
 
+// BinaryWithExtension appends suitable extension
 func BinaryWithExtension(binary string) string {
 	if runtime.GOOS == "windows" {
 		if binary == "gcloud" {

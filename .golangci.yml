@@ -40,6 +40,10 @@ linters-settings:
   goimports: {}
   revive:
     confidence: 0
+    rules:
+      - name: exported
+        arguments:
+          - "disableStutteringCheck"
   gofmt:
     simplify: true
   mnd:

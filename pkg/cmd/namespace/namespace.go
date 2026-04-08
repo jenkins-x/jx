@@ -32,6 +32,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+// Options options for namespace
 type Options struct {
 	KubeClient kubernetes.Interface
 	Input      input.Interface
@@ -73,6 +74,7 @@ var (
 	info = termcolor.ColorInfo
 )
 
+// NewCmdNamespace returns the namespace cmd
 func NewCmdNamespace() (*cobra.Command, *Options) {
 	o := &Options{}
 	cmd := &cobra.Command{
@@ -115,6 +117,7 @@ func NewCmdNamespace() (*cobra.Command, *Options) {
 	return cmd, o
 }
 
+// Run implements the command
 func (o *Options) Run() error {
 	var err error
 	currentNS := ""

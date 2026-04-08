@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// Options command options
 type Options struct {
 	options.BaseOptions
 	KubeClient          kubernetes.Interface
@@ -33,14 +34,17 @@ type Options struct {
 	BrowserHandler      Opener
 }
 
+// Opener interface for opening url
 type Opener interface {
 	Open() error
 }
 
+// Browser handler
 type Browser struct {
 	URL string
 }
 
+// Open url
 func (b *Browser) Open() error {
 	err := browser.OpenURL(b.URL)
 	if err != nil {
@@ -86,6 +90,7 @@ func NewCmdDashboard() (*cobra.Command, *Options) {
 	return cmd, o
 }
 
+// Run command
 func (o *Options) Run() error {
 	var err error
 	o.KubeClient, o.Namespace, err = kube.LazyCreateKubeClientAndNamespace(o.KubeClient, o.Namespace)
