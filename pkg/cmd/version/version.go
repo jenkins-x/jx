@@ -53,7 +53,7 @@ const (
 	TestGoVersion = "1.17.8"
 )
 
-// ShowOptions the options for viewing running PRs
+// Options the options for viewing running PRs
 type Options struct {
 	Verbose bool
 	Quiet   bool
@@ -153,6 +153,7 @@ func getTreeState() string {
 	return TestTreeState
 }
 
+// GetSemverVersion gets the semantic version.
 func GetSemverVersion() (semver.Version, error) {
 	text := getVersion()
 	v, err := semver.Make(text)

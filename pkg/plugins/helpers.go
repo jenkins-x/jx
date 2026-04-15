@@ -71,6 +71,7 @@ func InstallStandardPlugin(dir, name string) (string, error) {
 	return extensions.EnsurePluginInstalled(plugin, dir)
 }
 
+// AllPlugins lists all plugins
 func AllPlugins() (validArgs []string) {
 	pluginBinDir, err := homedir.DefaultPluginBinDir()
 	for k := range Plugins {
@@ -115,7 +116,7 @@ func SetupPluginCompletion(cmd *cobra.Command, args []string) {
 	RegisterPluginCommands(root, true)
 }
 
-// RegisterPluginCommand allows adding Cobra command to the command tree or extracting them for usage in
+// RegisterPluginCommands allows adding Cobra command to the command tree or extracting them for usage in
 // e.g. the help function or for registering the completion function
 func RegisterPluginCommands(rootCmd *cobra.Command, list bool) (cmds []*cobra.Command) {
 	var userDefinedCommands []*cobra.Command
@@ -257,6 +258,7 @@ func getPluginCompletions(executablePath string, cmdArgs, environment []string) 
 	return comps, directive
 }
 
+// FindStandardPlugin finds standard plugin
 func FindStandardPlugin(dir, name string) (string, error) {
 	file, err := os.Open(dir)
 	if err != nil {
@@ -297,6 +299,7 @@ func FindStandardPlugin(dir, name string) (string, error) {
 	return InstallStandardPlugin(dir, name)
 }
 
+// Lookup looks up the given file
 func Lookup(filename, pluginBinDir string) (string, error) {
 	path, err := exec.LookPath(filename)
 	if err != nil {
@@ -308,6 +311,7 @@ func Lookup(filename, pluginBinDir string) (string, error) {
 	return path, nil
 }
 
+// Execute performs the command
 func Execute(executablePath string, cmdArgs, environment []string) error {
 	// Windows does not support exec syscall.
 	if runtime.GOOS == "windows" {
