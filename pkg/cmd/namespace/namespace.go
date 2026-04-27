@@ -17,6 +17,8 @@ import (
 	"github.com/jenkins-x/jx-kube-client/v3/pkg/kubeclient"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/rest"
 
 	"github.com/jenkins-x/jx-helpers/v3/pkg/kube"
@@ -46,7 +48,8 @@ type Options struct {
 }
 
 var (
-	cmdLong = templates.LongDesc(`
+	configExtension = "previous-ns.jayex.io"
+	cmdLong         = templates.LongDesc(`
 		Displays or changes the current namespace.`)
 	cmdExample = templates.Examples(`
 		# view the current namespace
@@ -69,6 +72,9 @@ var (
 
 		# interactively select the Environment to switch to
 		jx ns --pick
+
+		# change to the previously selected namespace
+		jx ns -
 `)
 
 	info = termcolor.ColorInfo
@@ -151,6 +157,18 @@ func (o *Options) Run() error {
 		ns = namespace(o)
 	}
 
+	if ns == "-" {
+		ctx := kube.CurrentContext(cfg)
+		if ext, ok := ctx.Extensions[configExtension].(*runtime.Unknown); ok {
+			err = json.Unmarshal(ext.Raw, &ns)
+			if err != nil {
+				log.Logger().WithError(err).Warnf("can't interpret previous namespace")
+			}
+		}
+		if ns == "" {
+			log.Logger().Warnf("no previous namespace was set")
+		}
+	}
 	if ns == "" && !o.BatchMode {
 		ns, err = pickNamespace(o, client, currentNS)
 		if err != nil {
@@ -271,6 +289,16 @@ func changeNamespace(client kubernetes.Interface, config *api.Config, pathOption
 		name := "pod"
 		config.Contexts[name] = ctx
 		config.CurrentContext = name
+	} else {
+		jsonNs, err := json.Marshal(ctx.Namespace)
+		if err != nil {
+			log.Logger().WithError(err).Warnf("fail to store previous namespace in %s", pathOptions.GetDefaultFilename())
+		} else {
+			ctx.Extensions[configExtension] = &runtime.Unknown{
+				Raw:         jsonNs,
+				ContentType: runtime.ContentTypeJSON,
+			}
+		}
 	}
 
 	if ctx.Namespace == ns {
