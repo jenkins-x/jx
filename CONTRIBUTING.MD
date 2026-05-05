@@ -4,6 +4,8 @@
 This guide is for developers who want to improve the Jenkins X jx CLI. These instructions will help you set up a
 development environment for working on the jx source code.
 
+You can find all the jx related issues in the jx repo; for searching, use labels as filters.
+
 ## Prerequisites
 
 To compile, test and contribute towards the jx binaries you will need:
@@ -53,6 +55,14 @@ branch and to create pull requests:
 
 ```shell
 $ git remote add upstream https://github.com/jenkins-x/jx.git
+```
+
+## Linting
+
+Before building your changes, please ensure that your code complies with the project's golangci-lint guidelines. 
+
+```shell
+$ golangci-lint run
 ```
 
 ## Build Your Changes
