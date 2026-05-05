@@ -9,6 +9,15 @@
 
 `jx` is the modular command line CLI for [Jenkins X 3.x](https://jenkins-x.io/v3/about/)
 
+## Supported Kubernetes Versions
+
+Jenkins X 3.x currently supports the following Kubernetes versions:
+*   **1.32** (Latest)
+*   **1.31**
+*   **1.30**
+
+For more information on Jenkins X architecture and requirements, see the [about page](https://jenkins-x.io/v3/about/).
+
 ## Commands
 
 See the [jx command reference](https://jenkins-x.io/v3/develop/reference/jx/)

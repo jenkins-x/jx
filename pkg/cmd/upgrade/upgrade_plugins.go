@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx-helpers/v3/pkg/termcolor"
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/jenkins-x/jx/pkg/plugins"
+	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
 )
@@ -84,6 +85,23 @@ func (o *PluginOptions) Run() error {
 		fileName, err := extensions.EnsurePluginInstalled(p, pluginBinDir)
 		if err != nil {
 			return fmt.Errorf("failed to ensure plugin is installed %s: %w", p.Name, err)
+		}
+
+		// Verify signature if available
+		sigURL := p.Spec.Binaries[0].URL + ".sig" // This is a heuristic, but often correct for JX plugins
+		sigPath := fileName + ".sig"
+		log.Logger().Debugf("Checking signature for plugin %s from %s", p.Name, sigURL)
+
+		err = jxutil.DownloadFile(sigURL, sigPath)
+		if err == nil {
+			defer os.Remove(sigPath)
+			// Load public key
+			publicKeyURL := "https://raw.githubusercontent.com/jenkins-x/jx/main/jx.pub"
+			_, err := jxutil.GetFileAsString(publicKeyURL)
+			if err == nil {
+				// ToDo: once jx-helpers supports passing a verified archive we can verify BEFORE EnsurePluginInstalled
+				log.Logger().Debugf("signature found for plugin %s, but verification of unpacked binaries is not yet implemented", p.Name)
+			}
 		}
 
 		if o.Boot {
