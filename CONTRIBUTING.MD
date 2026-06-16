@@ -9,7 +9,7 @@ development environment for working on the jx source code.
 To compile, test and contribute towards the jx binaries you will need:
 
  - [git][]
- - [Go][] 1.23 is supported
+ - [Go][] 1.26 is supported
 
 In most cases, install the prerequisite according to its instructions. See the next section
 for a note about Go cross-compiling support.
@@ -29,7 +29,7 @@ It is also straightforward to build Go from source:
 
 ```shell
 $ sudo su
-$ curl -sSL https://go.dev/dl/go1.23.4.src.tar.gz | tar -C /usr/local -xz
+$ curl -sSL https://go.dev/dl/go1.26.3.src.tar.gz | tar -C /usr/local -xz
 $ cd /usr/local/go/src
 $ # compile Go for the default platform first, then add cross-compile support
 $ ./make.bash --no-clean

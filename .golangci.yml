@@ -1,115 +1,127 @@
-linters-settings:
-  depguard:
-    rules:
-      main:
-        list-mode: original
-        deny:
-        - pkg: github.com/jenkins-x/jx/v2/pkg/log
-          desc: "use jenkins-x/jx-logging instead"
-        - pkg: github.com/satori/go.uuid
-          desc: "use github.com/google/uuid instead"
-        - pkg: github.com/pborman/uuid
-          desc: "use github.com/google/uuid instead"
-  dupl:
-    threshold: 100
-  exhaustive:
-    default-signifies-exhaustive: false
-  funlen:
-    lines: 200
-    statements: 150
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  gocritic:
-    enabled-tags:
-    - diagnostic
-    - experimental
-    - opinionated
-    - performance
-    - style
-    disabled-checks:
-    - dupImport # https://github.com/go-critic/go-critic/issues/845
-    - ifElseChain
-    - octalLiteral
-    - whyNoLint
-    - wrapperFunc
-    - importShadow # not important for now
-    - unnamedResult # not important
-  gocyclo:
-    min-complexity: 15
-  goimports: {}
-  revive:
-    confidence: 0
-    rules:
-      - name: exported
-        arguments:
-          - "disableStutteringCheck"
-  gofmt:
-    simplify: true
-  mnd:
-    # don't include the "operation" and "assign"
-    checks: [argument, case, condition, return]
-  govet:
-    settings:
-      printf:
-        funcs:
-        - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Debugf
-        - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Infof
-        - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Warnf
-        - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Errorf
-        - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Fatalf
-  lll:
-    line-length: 140
-  misspell: {}
-  nolintlint:
-    allow-unused: false # report any unused nolint directives
-    require-explanation: false # don't require an explanation for nolint directives
-    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+version: "2"
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
+  default: none
   enable:
-  - asciicheck
-  - bodyclose
-  - depguard
-  - errcheck
-  - gofmt
-  - goimports
-  - goprintffuncname
-  - gosec
-  - gosimple
-  - ineffassign
-  - misspell
-  - mnd
-  - nakedret
-  - rowserrcheck
-  - staticcheck
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - revive
-  - gocritic
-  - govet
-  - dupl
-issues:
-  exclude-dirs:
-  - cmd/docs
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-  #    - path: _test\.go
-  #      linters:
-  #        - gomnd
-  #    https://github.com/go-critic/go-critic/issues/926
-  - linters:
+    - asciicheck
+    - bodyclose
+    - depguard
+    - dupl
+    - errcheck
     - gocritic
-    text: "unnecessaryDefer:"
-  exclude:
-  - 'shadow: declaration of "err" shadows declaration at'
+    - goprintffuncname
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - mnd
+    - nakedret
+    - revive
+    - rowserrcheck
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  settings:
+    depguard:
+      rules:
+        main:
+          list-mode: original
+          deny:
+            - pkg: github.com/jenkins-x/jx/v2/pkg/log
+              desc: use jenkins-x/jx-logging instead
+            - pkg: github.com/satori/go.uuid
+              desc: use github.com/google/uuid instead
+            - pkg: github.com/pborman/uuid
+              desc: use github.com/google/uuid instead
+    dupl:
+      threshold: 100
+    exhaustive:
+      default-signifies-exhaustive: false
+    funlen:
+      lines: 200
+      statements: 150
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+        - wrapperFunc
+        - importShadow
+        - unnamedResult
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    govet:
+      settings:
+        printf:
+          funcs:
+            - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Debugf
+            - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Infof
+            - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Warnf
+            - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Errorf
+            - (github.com/jenkins-x/jx-logging/v3/pkg/log/Logger()).Fatalf
+    lll:
+      line-length: 140
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+    nolintlint:
+      require-explanation: false
+      require-specific: false
+      allow-unused: false
+    revive:
+      confidence: 0
+      rules:
+        - name: exported
+          arguments:
+            - disableStutteringCheck
+    staticcheck:
+      checks:
+        - all
+        - '-QF1001'
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - gocritic
+        text: 'unnecessaryDefer:'
+      - path: (.+)\.go$
+        text: 'shadow: declaration of "err" shadows declaration at'
+    paths:
+      - cmd/docs
+      - third_party$
+      - builtin$
+      - examples$
+issues:
   max-same-issues: 0
-
-run:
-  timeout: 1h30m
-# golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax
+    paths:
+      - cmd/docs
+      - third_party$
+      - builtin$
+      - examples$

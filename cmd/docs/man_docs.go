@@ -73,8 +73,7 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	}
 	defer f.Close()
 
-	headerCopy := *header
-	return GenMan(cmd, &headerCopy, f)
+	return GenMan(cmd, new(*header), f)
 }
 
 // GenManTreeOptions is the options for generating the man pages.

@@ -86,7 +86,7 @@ func NewCmdDashboard() (*cobra.Command, *Options) {
 	cmd.Flags().BoolVarP(&o.NoBrowser, "no-open", "", false, "Disable opening the URL; just show it on the console")
 	cmd.Flags().StringVarP(&o.ServiceName, "name", "n", "jx-pipelines-visualizer", "The name of the dashboard service")
 	cmd.Flags().StringVarP(&o.BasicAuthSecretName, "secret", "s", "jx-basic-auth-user-password", "The name of the Secret containing the basic auth login/password")
-	o.BaseOptions.AddBaseFlags(cmd)
+	o.AddBaseFlags(cmd)
 	return cmd, o
 }
 
