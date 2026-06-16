@@ -147,7 +147,7 @@ func (o *Options) Run() error {
 	if o.Env != "" || o.PickEnv {
 		ns, err = o.findNamespaceFromEnv(currentNS, o.Env)
 		if err != nil {
-			return fmt.Errorf("failed to find Jenkins X environment: %s: %w", o.Env, err)
+			return fmt.Errorf("failed to find JayeX environment: %s: %w", o.Env, err)
 		}
 		if ns == "" {
 			return nil

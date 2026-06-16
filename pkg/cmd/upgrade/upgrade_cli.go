@@ -39,7 +39,7 @@ import (
 
 var (
 	cmdCLILong = templates.LongDesc(`
-		Upgrades your local Jenkins X CLI
+		Upgrades your local JayeX CLI
 `)
 
 	cmdCLIExample = templates.Examples(`
@@ -70,7 +70,7 @@ func NewCmdUpgradeCLI() (*cobra.Command, *CLIOptions) {
 
 	cmd := &cobra.Command{
 		Use:     "cli",
-		Short:   "Upgrades your local Jenkins X CLI",
+		Short:   "Upgrades your local JayeX CLI",
 		Long:    cmdCLILong,
 		Example: cmdCLIExample,
 		Run: func(_ *cobra.Command, _ []string) {
@@ -250,7 +250,7 @@ func (*CLIOptions) InstallJx(upgrade bool, version string) error {
 	if err != nil {
 		return fmt.Errorf("failed to upgrade jx cli to version %s: %w", version, err)
 	}
-	log.Logger().Infof("Jenkins X client has been upgraded to version %s", version)
+	log.Logger().Infof("JayeX client has been upgraded to version %s", version)
 	return nil
 }
 

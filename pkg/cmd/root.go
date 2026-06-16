@@ -24,7 +24,7 @@ import (
 func Main(args []string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "jx",
-		Short: "Jenkins X 3.x command line",
+		Short: "JayeX 3.x command line",
 		Run:   runHelp,
 		// Hook before and after Run initialize and write profiles to disk,
 		// respectively.

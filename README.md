@@ -1,4 +1,4 @@
-# Jenkins X CLI
+# JayeX CLI
 
 [![Documentation](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://pkg.go.dev/mod/github.com/jenkins-x/jx)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jenkins-x/jx)](https://goreportcard.com/report/github.com/jenkins-x/jx)
@@ -7,11 +7,11 @@
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://slack.k8s.io/)
 [![codecov](https://codecov.io/gh/jenkins-x/jx/branch/main/graph/badge.svg?token=aBT7eQHx37)](https://codecov.io/gh/jenkins-x/jx)
 
-`jx` is the modular command line CLI for [Jenkins X 3.x](https://jenkins-x.io/v3/about/)
+`jx` is the modular command line CLI for [JayeX 3.x](https://jayex.io/v3/about/)
 
 ## Commands
 
-See the [jx command reference](https://jenkins-x.io/v3/develop/reference/jx/)
+See the [jx command reference](https://jayex.io/v3/develop/reference/jx/)
 
 ## Issues
 
@@ -24,14 +24,14 @@ To track [issues in this repository](https://github.com/jenkins-x/jx/issues) and
 
 You can browse the documentation for all of the `jx`  plugins at:
 
-* [Plugin CLI Reference](https://jenkins-x.io/v3/develop/reference/jx/)
+* [Plugin CLI Reference](https://jayex.io/v3/develop/reference/jx/)
 * [Plugin Source](https://github.com/jenkins-x-plugins)
 
 
 ## Components
 
 * [jx-git-operator](https://github.com/jenkins-x/jx-git-operator) is an operator for triggering jobs when git commits are made
-* [octant-jx](https://github.com/jenkins-x/octant-jx) an open source Jenkins X UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octant)
+* [octant-jx](https://github.com/jenkins-x/octant-jx) an open source JayeX UI for  [vmware-tanzu/octant](https://github.com/vmware-tanzu/octant)
 
 ## Libraries
 

@@ -19,7 +19,7 @@ import (
 
 var (
 	cmdPluginsLong = templates.LongDesc(`
-		Upgrades all of the plugins in your local Jenkins X CLI
+		Upgrades all of the plugins in your local JayeX CLI
 `)
 
 	cmdPluginsExample = templates.Examples(`
@@ -50,7 +50,7 @@ func NewCmdUpgradePlugins() (*cobra.Command, *PluginOptions) {
 
 	cmd := &cobra.Command{
 		Use:     "plugins",
-		Short:   "Upgrades all of the plugins in your local Jenkins X CLI",
+		Short:   "Upgrades all of the plugins in your local JayeX CLI",
 		Long:    cmdPluginsLong,
 		Example: cmdPluginsExample,
 		Run: func(_ *cobra.Command, _ []string) {

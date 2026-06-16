@@ -55,7 +55,7 @@ func (b *Browser) Open() error {
 
 var (
 	cmdLong = templates.LongDesc(`
-		View the Jenkins X Pipelines Dashboard.`)
+		View the JayeX Pipelines Dashboard.`)
 
 	cmdExample = templates.Examples(`
 		# open the dashboard
@@ -74,7 +74,7 @@ func NewCmdDashboard() (*cobra.Command, *Options) {
 	cmd := &cobra.Command{
 		Use:     "dashboard",
 		Aliases: []string{"dash"},
-		Short:   "View the Jenkins X Pipelines Dashboard",
+		Short:   "View the JayeX Pipelines Dashboard",
 		Long:    cmdLong,
 		Example: cmdExample,
 		Run: func(_ *cobra.Command, _ []string) {
@@ -107,7 +107,7 @@ func (o *Options) Run() error {
 		return fmt.Errorf("no dashboard URL. Check you have 'chart: jxgh/jx-pipelines-visualizer' in your helmfile.yaml")
 	}
 
-	log.Logger().Infof("Jenkins X dashboard is running at: %s", info(u))
+	log.Logger().Infof("JayeX dashboard is running at: %s", info(u))
 
 	if o.NoBrowser {
 		return nil
