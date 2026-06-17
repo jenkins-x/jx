@@ -1,0 +1,6 @@
+apiVersion: v2
+name: gateway-api
+description: A custom Helm chart providing a sensible default Gateway API implementation for Jenkins X
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

@@ -1,0 +1,38 @@
+# Default values for gateway-api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+gatewayClassName: "envoy"
+gatewayName: "jx-gateway"
+
+listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: https
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: jx-gateway-tls
+          kind: Secret
+
+httproute:
+  enabled: true
+  name: default-fallback
+  hostnames: []
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: default-backend
+          port: 80
