@@ -11,6 +11,6 @@ git config --global --get user.email
 echo "setting git user"
 
 git config --global user.name jenkins-x-bot-test
-git config --global user.email "jenkins-x@googlegroups.com"
+git config --global user.email "jayex@cd.foundation"
 
 jx gitops helm release
