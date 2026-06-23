@@ -1,8 +1,5 @@
 #!/usr/bin/env sh
 
-if [ -n "$GITHUB_WORKSPACE" ] && [ -d "$GITHUB_WORKSPACE" ]; then
-  cd "$GITHUB_WORKSPACE"
-fi
-
+git config --global --add safe.directory "$GITHUB_WORKSPACE"
 echo "$CHANGELOG" > changelog.md
 jx-updatebot pr --git-credentials --add-changelog changelog.md
