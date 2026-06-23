@@ -87,7 +87,7 @@ jobs:
         GIT_USERNAME: jenkins-x-bot-test
         DOCKER_REGISTRY_ORG: jenkins-x
       run: |
-        cosign sign ghcr.io/"${DOCKER_REGISTRY_ORG}"/jx-boot@"${{ steps.push-jx-boot.outputs.digest }}"
+        cosign sign --yes=true ghcr.io/"${DOCKER_REGISTRY_ORG}"/jx-boot@"${{ steps.push-jx-boot.outputs.digest }}"
     - name: Generate and Push signed SBOM for jx-boot
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
@@ -102,7 +102,7 @@ jobs:
         # This uploads the sbom
         cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
         # This signs the sbom
-        cosign sign --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
+        cosign sign --yes=true --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/jx-boot@${{ steps.push-jx-boot.outputs.digest }}
         rm -f sbom.json
     - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
       uses: jlumbroso/free-disk-space@v1.3.1
@@ -130,7 +130,7 @@ jobs:
         DOCKER_REGISTRY_ORG: jenkins-x
         REPO_NAME: ${{ github.event.repository.name }}
       run: |
-        cosign sign ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME@${{ steps.push-jx.outputs.digest }}
+        cosign sign --yes=true ghcr.io/$DOCKER_REGISTRY_ORG/$REPO_NAME@${{ steps.push-jx.outputs.digest }}
     - name: Generate and Push signed SBOM for jx
       # ToDo(ankitm123): Remove this when this step works, for now we want this to unblock other releases
       continue-on-error: true
@@ -146,7 +146,7 @@ jobs:
         # This uploads the sbom
         cosign attach sbom --sbom sbom.json ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${{ steps.push-jx.outputs.digest }}
         # This signs the sbom
-        cosign sign --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${{ steps.push-jx.outputs.digest }}
+        cosign sign --yes=true --attachment sbom ghcr.io/${DOCKER_REGISTRY_ORG}/${REPO_NAME}@${{ steps.push-jx.outputs.digest }}
   release2:
     if: github.repository_owner == 'jenkins-x'
     permissions:
