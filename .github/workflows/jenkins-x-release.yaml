@@ -30,7 +30,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
     - id: prep
       name: next release version
-      uses: jenkins-x-plugins/jx-release-version@v2.7.13
+      uses: jenkins-x-plugins/jx-release-version@v2.9.6
     - env:
         GITHUB_TOKEN: ${{ secrets.GIT_BOT_TOKEN }}
         REPO_NAME: ${{ github.event.repository.name }}
@@ -45,7 +45,7 @@ jobs:
         REPOSITORY: ${{ github.repository }}
         COSIGN_EXPERIMENTAL: "true"
       name: upload-binaries
-      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:1.0.2@sha256:7632b381687494e910e06a88b3801e39c1f17fbb44402db3cef45b2b342204e1
+      uses: docker://ghcr.io/jenkins-x/jx-goreleaser-image:1.0.3@sha256:f304b286bf8c0995b8161172eb54ab12bcd744f89caf71fc3a91329de87a3b4f
       with:
         entrypoint: .github/workflows/jenkins-x/upload-binaries.sh
     - name: Set up QEMU
@@ -215,7 +215,7 @@ jobs:
         XDG_CONFIG_HOME: /github/home/.config
         CHANGELOG: ${{needs.release.outputs.changelog}}
       name: promote-release
-      uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.8.6
+      uses: docker://ghcr.io/jenkins-x/jx-updatebot:0.8.17
       with:
         entrypoint: .github/workflows/jenkins-x/updatebot.sh
 "on":

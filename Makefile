@@ -132,10 +132,6 @@ release: clean linux test
 
 release-all: release linux win darwin
 
-.PHONY: goreleaser
-goreleaser:
-	step-go-releaser --organisation=$(ORG) --revision=$(REV) --branch=$(BRANCH) --build-date=$(BUILD_DATE) --go-version=$(GO_VERSION) --root-package=$(ROOT_PACKAGE) --version=$(VERSION)
-
 .PHONY: clean
 clean: ## Clean the generated artifacts
 	rm -rf build release dist

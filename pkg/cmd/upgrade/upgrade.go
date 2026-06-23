@@ -9,7 +9,7 @@ import (
 
 var (
 	cmdLong = templates.LongDesc(`
-		Upgrades all of the plugins in your local Jenkins X CLI
+		Upgrades all of the plugins in your local JayeX CLI
 `)
 
 	cmdExample = templates.Examples(`
