@@ -5,17 +5,17 @@ The JayeX project takes security seriously. We make every possible effort to ens
 ## Supported Versions
 
 | Version | Supported          |
-| ------- | ------------------ |
-| 2.0.x   | :white_check_mark: |
+|---------| ------------------ |
+| 3.x   | :white_check_mark: |
 
 
 ## Reporting a Vulnerability
 
-If you find a vulnerability in JayeX, please report it in the Jenkins CI issue tracker under the [SECURITY](https://issues.jenkins-ci.org/browse/SECURITY) project. **Please do not report security issues in the github tracker.**
-This project is configured in such a way that only the reporter and the security team can see the details. By restricting access to this potentially sensitive information, we can work on a fix and deliver it before the method of attack becomes well-known.
+If you find a vulnerability in JayeX, please report it in https://github.com/jenkins-x/jx/security/advisories. 
+**Please do not report security issues in the normal github issue tracker.**
 
-If you are unable to report using the above issue tracker, you can also send your report to the private Jenkins Security Team mailing list: jenkinsci-cert@googlegroups.com
+If you are unable to report using the above method, you can also send your report to the private JayeX maintainers mailing list: jayex@cd.foundation
 
 ## Vulnerabilities in Apps
 
-Whilst the JayeX team is not responsible for the quality of third party apps, please still use the above reporting mechanism and we will co-ordinate with the app developer to ensure a fix in a secure maner.
+Whilst the JayeX team is not responsible for the quality of third party apps, please still use the above reporting mechanism and we will co-ordinate with the app developer to ensure a fix in a secure manner.
