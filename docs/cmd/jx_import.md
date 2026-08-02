@@ -12,6 +12,19 @@ jx import
 
 alias for: jx project import
 
+### Validate the imported pipeline
+
+`jx import` can finish even when a trigger configuration refers to a file
+that does not exist. Before relying on the imported pipeline, run the pipeline
+lint command from the project directory:
+
+```
+jx pipeline lint
+```
+
+Fix any invalid references reported by the lint command, such as a typo in a
+`triggers.yaml` source value, and run it again before opening a pull request.
+
 ### Options
 
 ```
