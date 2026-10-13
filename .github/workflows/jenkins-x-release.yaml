@@ -65,7 +65,7 @@ jobs:
       with:
         cosign-release: 'v2.2.3'
     - name: Build and push jx-boot
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       id: push-jx-boot
       with:
         context: .
@@ -107,7 +107,7 @@ jobs:
     - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
       uses: jlumbroso/free-disk-space@v1.3.1
     - name: Build and push jx
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       id: push-jx
       with:
         context: .
@@ -185,7 +185,7 @@ jobs:
         username: jenkins-x
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and push jx-go
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ./Dockerfile-go
@@ -197,7 +197,7 @@ jobs:
           ghcr.io/jenkins-x/jx-go:latest
           ghcr.io/jenkins-x/jx-go:${{ steps.prep.outputs.version }}
     - name: Build and push jx-go-maven
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ./Dockerfile-go-maven
