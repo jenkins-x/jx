@@ -150,26 +150,37 @@ func (o *CLIOptions) getVersionStreamURL(gitURL string) (string, error) {
 
 	path := filepath.Join("versionStream", "Kptfile")
 	exists, err := files.FileExists(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to check if %s exists: %w", path, err)
+	}
 
 	if o.FromEnvironment && exists {
-		return "", errors.New("local %s found in current directory and from-environment flag set, pick only one")
+		return "", fmt.Errorf("local %s found in current directory and from-environment flag set, pick only one", path)
 	}
 
 	// if there's a local kptfile found use the versionstream git details in that, if not use the cluster git repo
-	if err == nil && exists {
+	if exists {
+		// a broken or incomplete local Kptfile must not silently fall back to
+		// another version stream: that would upgrade the CLI to a version
+		// which does not match the user's cluster
 		node, err := yaml.ReadFile(path)
-		if err == nil {
-			refNode, err := node.Pipe(yaml.Lookup("upstream", "git", "repo"))
-			if err == nil {
-				gitURL, err = refNode.String()
-				if err != nil {
-					return "", fmt.Errorf("failed to get a string value of the Kptfile git repo: %w", err)
-				}
-				gitURL = strings.TrimSpace(gitURL)
-
-				log.Logger().Infof("using local versionstream URL %s from Kptfile to resolve jx version", gitURL)
-			}
+		if err != nil {
+			return "", fmt.Errorf("failed to read local Kptfile %s: %w", path, err)
 		}
+		refNode, err := node.Pipe(yaml.Lookup("upstream", "git", "repo"))
+		if err != nil {
+			return "", fmt.Errorf("failed to find the upstream git repository in local Kptfile %s: %w", path, err)
+		}
+		if refNode.IsNil() {
+			return "", fmt.Errorf("local Kptfile %s does not specify an upstream git repository", path)
+		}
+		gitURL, err = refNode.String()
+		if err != nil {
+			return "", fmt.Errorf("failed to get a string value of the Kptfile git repo: %w", err)
+		}
+		gitURL = strings.TrimSpace(gitURL)
+
+		log.Logger().Infof("using local versionstream URL %s from Kptfile to resolve jx version", gitURL)
 	}
 	if o.FromEnvironment {
 		// lookup the cluster git repo from the dev environment and use that as the versionstream
